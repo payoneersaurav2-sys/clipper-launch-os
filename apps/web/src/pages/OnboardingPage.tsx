@@ -89,19 +89,33 @@ export default function OnboardingPage() {
   const handleFinish = async () => {
     if (!user) return;
     setSaving(true);
-    // Create workspace
-    await createWorkspace.mutateAsync(form.workspaceName || 'My Workspace');
-    // Save onboarding data
-    await supabase.from('users').update({
-      onboarding_complete: true,
-      niche: form.niche,
-      platform: form.platform,
-      posting_frequency: form.frequency,
-      experience_level: form.experience,
-      goals: form.goals,
-    }).eq('id', user.id);
-    useAuthStore.setState({ onboardingComplete: true });
-    navigate('/dashboard');
+    try {
+      // Create workspace
+      await createWorkspace.mutateAsync(form.workspaceName || 'My Workspace');
+      // Save onboarding data
+      const { error } = await supabase.from('users').update({
+        onboarding_complete: true,
+        niche: form.niche,
+        platform: form.platform,
+        posting_frequency: form.frequency,
+        experience_level: form.experience,
+        goals: form.goals,
+      }).eq('id', user.id);
+      
+      if (error) {
+        console.error("Failed to update user:", error);
+        alert("Failed to save onboarding data. Please try again.");
+        setSaving(false);
+        return;
+      }
+      
+      useAuthStore.setState({ onboardingComplete: true });
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error("Failed to finish onboarding:", err);
+      alert(err.message || "Something went wrong creating your workspace.");
+      setSaving(false);
+    }
   };
 
   return (
