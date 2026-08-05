@@ -10,23 +10,26 @@ interface WordmarkProps {
 }
 
 const sizeMap = {
-  sm: 'text-[14px]',
-  md: 'text-[15px]',
-  lg: 'text-[20px]',
+  sm: { fontSize: '13px', letterSpacing: '0.02em' },
+  md: { fontSize: '15px', letterSpacing: '0.02em' },
+  lg: { fontSize: '20px', letterSpacing: '0.025em' },
 };
 
 function WordmarkInner({ size = 'md', className }: { size?: WordmarkProps['size']; className?: string }) {
+  const { fontSize, letterSpacing } = sizeMap[size];
   return (
     <span
-      className={cn(
-        'font-semibold tracking-[-0.04em] leading-none select-none',
-        sizeMap[size],
-        className
-      )}
-      style={{ fontFeatureSettings: '"kern" 1, "liga" 1' }}
+      className={cn('leading-none select-none', className)}
+      style={{
+        fontFamily: '"Orbitron", sans-serif',
+        fontWeight: 800,
+        fontSize,
+        letterSpacing,
+        lineHeight: 1,
+      }}
     >
-      <span className="text-[#FAFAFA]">Creator</span>
-      <span className="text-primary"> OS</span>
+      <span style={{ color: '#FAFAFA' }}>CREATOR</span>
+      <span style={{ color: '#7C3AED' }}> OS</span>
     </span>
   );
 }
@@ -41,3 +44,4 @@ export default function Wordmark({ className, size = 'md', href = '/', as = 'lin
     </Link>
   );
 }
+
