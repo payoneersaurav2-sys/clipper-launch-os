@@ -2,7 +2,6 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -26,11 +25,10 @@ export default function LoginPage() {
       </div>
       
       {errorMsg && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Authentication Failed</AlertTitle>
-          <AlertDescription>{errorMsg}</AlertDescription>
-        </Alert>
+        <div className="flex items-center gap-2 p-3 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <p>{errorMsg}</p>
+        </div>
       )}
 
       <Button onClick={handleWhopLogin} className="w-full h-12 bg-[#FF6243] hover:bg-[#FF6243]/90 text-white font-medium border-0">
