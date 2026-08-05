@@ -173,13 +173,38 @@ export default function ClipPipelinePage() {
           </Button>
         </div>
       ) : (
-        <div className="overflow-x-auto pb-6">
-          <div className="flex gap-4 min-w-max">
-            {STAGES.map(stage => (
-              <KanbanColumn key={stage.key} stage={stage} clips={clipsByStage(stage.key)} onMove={handleMove} />
-            ))}
+        <>
+          {/* Desktop Kanban */}
+          <div className="hidden md:block overflow-x-auto pb-6">
+            <div className="flex gap-4 min-w-max">
+              {STAGES.map(stage => (
+                <KanbanColumn key={stage.key} stage={stage} clips={clipsByStage(stage.key)} onMove={handleMove} />
+              ))}
+            </div>
           </div>
-        </div>
+
+          {/* Mobile List View */}
+          <div className="block md:hidden space-y-8 pb-6">
+            {STAGES.map(stage => {
+              const stageClips = clipsByStage(stage.key);
+              if (stageClips.length === 0) return null;
+              return (
+                <div key={stage.key} className="space-y-3">
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: stage.color }} />
+                    <span className="text-[14px] font-medium text-[#FAFAFA]">{stage.label}</span>
+                    <span className="ml-auto text-[11px] text-[#71717A] bg-white/[0.06] px-2 py-0.5 rounded-full">{stageClips.length}</span>
+                  </div>
+                  <div className="space-y-2">
+                    {stageClips.map(clip => (
+                      <KanbanCard key={clip.id} clip={clip} onMove={handleMove} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <AnimatePresence>

@@ -26,12 +26,13 @@ export function FeedbackWidget() {
     setSending(true);
 
     // Store in Supabase notifications table as a feedback entry
-    await supabase.from('notifications').insert({
+    const { error } = await supabase.from('notifications').insert({
       user_id: user?.id ?? '00000000-0000-0000-0000-000000000000',
       type: 'system',
       title: `[FEEDBACK:${type.toUpperCase()}] ${user?.email ?? 'anonymous'}`,
       message: message.trim(),
-    }).catch(() => {});
+    });
+    if (error) console.error("Failed to send feedback:", error);
 
     setSending(false);
     setSent(true);
