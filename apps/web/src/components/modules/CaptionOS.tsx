@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useCaptions } from '@/hooks/useCaptions';
 import { useAI } from '@/hooks/useAI';
@@ -13,9 +14,16 @@ import { Plus, Loader2, Sparkles, Copy, Check, Layers } from 'lucide-react';
 const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter'];
 
 export function CaptionOS() {
+  const location = useLocation();
   const { data: ideas } = useClipIdeas();
-  const latestIdea = ideas?.[0];
   const { activeWorkspace } = useWorkspaceStore();
+
+  // Prefer idea passed from Idea Studio, fall back to latest
+  const passedId = (location.state as any)?.ideaId;
+  const latestIdea = passedId
+    ? ideas?.find(i => i.id === passedId) ?? ideas?.[0]
+    : ideas?.[0];
+
   const { data: captions, isLoading, createCaption } = useCaptions(latestIdea?.id);
   const { generateJSON, isGenerating, error, clearError } = useAI();
   const [newCaption, setNewCaption] = useState('');

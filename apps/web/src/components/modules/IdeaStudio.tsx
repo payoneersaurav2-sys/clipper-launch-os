@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useAI } from '@/hooks/useAI';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { buildGenerateIdeasPrompt, buildExpandIdeaPrompt } from '@/lib/ai-services';
-import AIOutputPanel from '@/components/AIOutputPanel';
 import EmptyState from '@/components/EmptyState';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Lightbulb, Plus, Loader2, Sparkles, ChevronDown } from 'lucide-react';
+import { Lightbulb, Plus, Loader2, Sparkles, ChevronDown, Zap, Type } from 'lucide-react';
 
 export function IdeaStudio() {
+  const navigate = useNavigate();
   const { data: ideas, isLoading, createIdea } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
   const { generateJSON, isGenerating, error, cancel, clearError } = useAI();
@@ -20,6 +21,10 @@ export function IdeaStudio() {
   const [expanded, setExpanded] = useState<Record<string, any>>({});
 
   const ws = { id: activeWorkspace?.id ?? 'default', name: activeWorkspace?.name ?? 'Workspace' };
+
+  const sendTo = (path: string, idea: any) => {
+    navigate(`/dashboard/${path}`, { state: { ideaId: idea.id, ideaTitle: idea.title } });
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,6 +145,26 @@ export function IdeaStudio() {
                   >
                     {expandingId === idea.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronDown className="h-3 w-3 mr-1" />}
                     Expand
+                  </Button>
+                </div>
+
+                {/* Send To actions */}
+                <div className="flex gap-1.5 mt-3 pt-3 border-t border-white/[0.05]">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => sendTo('hook-engine', idea)}
+                    className="flex-1 h-7 text-[11px] text-[#71717A] hover:text-primary hover:bg-primary/10 rounded-[8px] gap-1"
+                  >
+                    <Zap className="h-3 w-3" /> Hook Engine
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => sendTo('caption-os', idea)}
+                    className="flex-1 h-7 text-[11px] text-[#71717A] hover:text-[#FAFAFA] hover:bg-white/[0.06] rounded-[8px] gap-1"
+                  >
+                    <Type className="h-3 w-3" /> Caption OS
                   </Button>
                 </div>
                 {expanded[idea.id] && (

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useHooks } from '@/hooks/useHooks';
 import { useAI } from '@/hooks/useAI';
@@ -11,9 +12,17 @@ import { Input } from '@/components/ui/input';
 import { Plus, Loader2, Sparkles, Star, BarChart2, CheckCircle2 } from 'lucide-react';
 
 export function HookEngine() {
+  const location = useLocation();
   const { data: ideas } = useClipIdeas();
-  const latestIdea = ideas?.[0];
   const { activeWorkspace } = useWorkspaceStore();
+
+  // Prefer idea passed from Idea Studio, fall back to latest
+  const passedId = (location.state as any)?.ideaId;
+  const selectedIdea = passedId
+    ? ideas?.find(i => i.id === passedId) ?? ideas?.[0]
+    : ideas?.[0];
+  const latestIdea = selectedIdea;
+
   const { data: hooks, isLoading, createHook, updateHookStatus } = useHooks(latestIdea?.id);
   const { generateJSON, isGenerating, error, clearError } = useAI();
   const [newHook, setNewHook] = useState('');
