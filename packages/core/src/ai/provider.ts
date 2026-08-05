@@ -23,8 +23,8 @@ export class OpenRouterProvider implements IAIProvider {
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://clipperlaunch.com', // Required for OpenRouter
-        'X-Title': 'Clipper Launch OS',
+        'HTTP-Referer': 'https://creatoros.com', // Required for OpenRouter
+        'X-Title': 'Creator OS',
       },
       body: JSON.stringify({
         model,
@@ -60,8 +60,8 @@ export class OpenRouterProvider implements IAIProvider {
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://clipperlaunch.com',
-        'X-Title': 'Clipper Launch OS',
+        'HTTP-Referer': 'https://creatoros.com',
+        'X-Title': 'Creator OS',
       },
       body: JSON.stringify({
         model,

@@ -23,7 +23,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       setWorkspaces: (workspaces) => set({ workspaces }),
     }),
     {
-      name: 'clipper-workspace-storage',
+      name: 'creator-workspace-storage',
     }
   )
 );

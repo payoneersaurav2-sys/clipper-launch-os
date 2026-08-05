@@ -47,14 +47,14 @@ export default function DashboardLayout() {
           {!collapsed && (
             <div className="flex items-center gap-3">
               <div className="h-7 w-7 rounded-[10px] bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-                <span className="font-bold text-white text-[11px] tracking-tighter">CL</span>
+                <span className="font-bold text-white text-[11px] tracking-tighter">CR</span>
               </div>
               <span className="font-semibold tracking-tight text-[15px]">Creator OS</span>
             </div>
           )}
           {collapsed && (
             <div className="h-7 w-7 mx-auto rounded-[10px] bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-               <span className="font-bold text-white text-[11px] tracking-tighter">CL</span>
+               <span className="font-bold text-white text-[11px] tracking-tighter">CR</span>
             </div>
           )}
         </div>

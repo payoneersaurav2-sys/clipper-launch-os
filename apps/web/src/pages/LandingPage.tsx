@@ -19,7 +19,7 @@ export default function LandingPage() {
           className="inline-flex items-center rounded-full border border-white/[0.06] bg-[#111111] px-3 py-1 text-[13px] font-medium mb-8 backdrop-blur-md"
         >
           <Sparkles className="h-[14px] w-[14px] mr-2 text-primary" />
-          <span className="text-[#A1A1AA]">The definitive clipping OS is here</span>
+          <span className="text-[#A1A1AA]">The operating system for modern creators.</span>
         </motion.div>
         
         <motion.h1 
@@ -28,9 +28,9 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
           className="text-[48px] md:text-[72px] lg:text-[84px] font-semibold tracking-tighter max-w-5xl mb-6 text-[#FAFAFA] leading-[1.05]"
         >
-          Don't just edit clips.<br />
+          Build your audience.<br />
           <span className="text-primary">
-            Orchestrate them.
+            Engineer your growth.
           </span>
         </motion.h1>
         
@@ -40,8 +40,8 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
           className="text-[17px] md:text-[19px] text-[#A1A1AA] max-w-2xl mb-10 leading-relaxed tracking-tight"
         >
-          Creator OS is the premium workspace for creators entering the clipping economy. 
-          Stop copy-pasting between random AI tools and start using a cohesive workflow engine.
+          Creator OS is the definitive workspace for digital empires. 
+          Stop juggling disconnected tools and start operating from a single source of truth.
         </motion.p>
         
         <motion.div 
