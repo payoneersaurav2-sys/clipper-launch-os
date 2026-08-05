@@ -1,61 +1,88 @@
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import LandingLayout from './layouts/LandingLayout';
+
+// ---- Eager imports (auth-critical, must be fast) ------------
+import LandingLayout   from './layouts/LandingLayout';
 import DashboardLayout from './layouts/DashboardLayout';
-import AuthLayout from './layouts/AuthLayout';
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import AuthCallback from './pages/AuthCallback';
-import AuthIframe from './pages/AuthIframe';
-import ExpiredPage from './pages/ExpiredPage';
-import DashboardHome from './pages/DashboardHome';
-import TermsPage from './pages/TermsPage';
-import FAQPage from './pages/FAQPage';
-import ProtectedRoute from './components/ProtectedRoute';
-import AISettingsPage from './pages/AISettingsPage';
-import CampaignOSPage from './pages/CampaignOSPage';
-import ClipPipelinePage from './pages/ClipPipelinePage';
-import AnalyticsDashboard from './pages/AnalyticsDashboard';
-import { 
-  IdeaStudio, HookEngine, CaptionOS, LaunchCenter, 
-  KnowledgeVault, PromptLibrary
-} from './components/ModulePlaceholders';
+import AuthLayout      from './layouts/AuthLayout';
+import ProtectedRoute  from './components/ProtectedRoute';
+import LandingPage     from './pages/LandingPage';
+import LoginPage       from './pages/LoginPage';
+import AuthCallback    from './pages/AuthCallback';
+import AuthIframe      from './pages/AuthIframe';
+import ExpiredPage     from './pages/ExpiredPage';
+import { NotFoundPage, ServerErrorPage } from './pages/ErrorPages';
+
+// ---- Lazy dashboard pages -----------------------------------
+const DashboardHome    = lazy(() => import('./pages/DashboardHome'));
+const CampaignOSPage   = lazy(() => import('./pages/CampaignOSPage'));
+const ClipPipelinePage = lazy(() => import('./pages/ClipPipelinePage'));
+const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
+const AISettingsPage   = lazy(() => import('./pages/AISettingsPage'));
+const SettingsPage     = lazy(() => import('./pages/SettingsPage'));
+const OnboardingPage   = lazy(() => import('./pages/OnboardingPage'));
+const SignupPage        = lazy(() => import('./pages/SignupPage'));
+const TermsPage         = lazy(() => import('./pages/TermsPage'));
+const FAQPage           = lazy(() => import('./pages/FAQPage'));
+
+// ---- Lazy modules -------------------------------------------
+const IdeaStudio    = lazy(() => import('./components/modules/IdeaStudio').then(m => ({ default: m.IdeaStudio })));
+const HookEngine    = lazy(() => import('./components/modules/HookEngine').then(m => ({ default: m.HookEngine })));
+const CaptionOS     = lazy(() => import('./components/modules/CaptionOS').then(m => ({ default: m.CaptionOS })));
+const LaunchCenter  = lazy(() => import('./components/modules/LaunchCenter').then(m => ({ default: m.LaunchCenter })));
+const KnowledgeVault = lazy(() => import('./components/modules/KnowledgeVault').then(m => ({ default: m.KnowledgeVault })));
+const PromptLibrary = lazy(() => import('./components/modules/StubModules').then(m => ({ default: m.PromptLibrary })));
+
+// ---- Page loading fallback ----------------------------------
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[300px]">
+      <div className="h-8 w-8 rounded-full border-b-2 border-primary animate-spin" />
+    </div>
+  );
+}
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingLayout><LandingPage /></LandingLayout>} />
-        <Route path="/faq" element={<LandingLayout><FAQPage /></LandingLayout>} />
-        <Route path="/terms" element={<LandingLayout><TermsPage /></LandingLayout>} />
-        
-        {/* Authentication */}
-        <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/auth/iframe" element={<AuthIframe />} />
-        <Route path="/expired" element={<ExpiredPage />} />
-        
-        {/* Dashboard OS */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<DashboardHome />} />
-            <Route path="idea-studio"   element={<IdeaStudio />} />
-            <Route path="hook-engine"   element={<HookEngine />} />
-            <Route path="caption-os"    element={<CaptionOS />} />
-            <Route path="launch-center" element={<LaunchCenter />} />
-            <Route path="campaign-os"   element={<CampaignOSPage />} />
-            <Route path="clip-pipeline" element={<ClipPipelinePage />} />
-            <Route path="knowledge-vault" element={<KnowledgeVault />} />
-            <Route path="prompt-library"  element={<PromptLibrary />} />
-            <Route path="analytics"     element={<AnalyticsDashboard />} />
-            <Route path="ai-settings"   element={<AISettingsPage />} />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
-        </Route>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Public */}
+          <Route path="/"       element={<LandingLayout><LandingPage /></LandingLayout>} />
+          <Route path="/faq"    element={<LandingLayout><FAQPage /></LandingLayout>} />
+          <Route path="/terms"  element={<LandingLayout><TermsPage /></LandingLayout>} />
+          <Route path="/500"    element={<ServerErrorPage />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Auth */}
+          <Route path="/login"         element={<AuthLayout><LoginPage /></AuthLayout>} />
+          <Route path="/signup"        element={<SignupPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/iframe"   element={<AuthIframe />} />
+          <Route path="/expired"       element={<ExpiredPage />} />
+          <Route path="/onboarding"    element={<OnboardingPage />} />
+
+          {/* Protected dashboard */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index                element={<DashboardHome />} />
+              <Route path="idea-studio"   element={<IdeaStudio />} />
+              <Route path="hook-engine"   element={<HookEngine />} />
+              <Route path="caption-os"    element={<CaptionOS />} />
+              <Route path="launch-center" element={<LaunchCenter />} />
+              <Route path="campaign-os"   element={<CampaignOSPage />} />
+              <Route path="clip-pipeline" element={<ClipPipelinePage />} />
+              <Route path="analytics"     element={<AnalyticsDashboard />} />
+              <Route path="knowledge-vault" element={<KnowledgeVault />} />
+              <Route path="prompt-library"  element={<PromptLibrary />} />
+              <Route path="ai-settings"   element={<AISettingsPage />} />
+              <Route path="settings"      element={<SettingsPage />} />
+              <Route path="*"             element={<NotFoundPage />} />
+            </Route>
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

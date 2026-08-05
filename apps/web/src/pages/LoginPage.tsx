@@ -1,49 +1,163 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Link, useSearchParams } from 'react-router-dom';
-import { AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const errorMsg = searchParams.get('error');
 
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [success, setSuccess] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+    setLoading(true);
+    setErr('');
+    setSuccess('');
+
+    if (mode === 'signup') {
+      // 1. Create the Supabase auth user
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+      if (signUpErr) { setErr(signUpErr.message); setLoading(false); return; }
+
+      // 2. Upsert into public.users with active membership
+      if (signUpData.user) {
+        await supabase.from('users').upsert({
+          id: signUpData.user.id,
+          membership_status: 'active',
+          full_name: email.split('@')[0],
+        });
+      }
+
+      // 3. Auto sign-in immediately (works when email confirm is disabled)
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInErr) {
+        // Email confirmation required — tell user
+        setSuccess('Account created! Check your inbox and confirm your email, then sign in.');
+        setMode('login');
+        setLoading(false);
+        return;
+      }
+      setLoading(false);
+      navigate('/dashboard');
+      return;
+    }
+
+    // Login
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setErr(error.message);
+      setLoading(false);
+      return;
+    }
+    setLoading(false);
+    navigate('/dashboard');
+  };
+
   const handleWhopLogin = () => {
-    // This will redirect to the Whop OAuth screen
-    // The exact CLIENT_ID must be provided in the .env file in production
     const clientId = import.meta.env.VITE_WHOP_CLIENT_ID || 'dummy_client_id';
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     window.location.href = `https://whop.com/oauth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
   };
 
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in zoom-in-95 duration-500 font-sans text-[#FAFAFA] w-full max-w-[360px] mx-auto p-8 rounded-[20px] bg-[#111111] border border-white/[0.06] shadow-xl">
+    <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500 font-sans text-[#FAFAFA] w-full max-w-[380px] mx-auto p-8 rounded-[20px] bg-[#111111] border border-white/[0.06] shadow-xl">
+      {/* Header */}
       <div className="flex flex-col items-center text-center">
-        <div className="h-10 w-10 mb-6 rounded-[12px] bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(124,58,237,0.3)]">
-          <span className="font-bold text-white text-[14px] tracking-tighter">CR</span>
+        <div className="h-10 w-10 mb-5 rounded-[12px] bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(124,58,237,0.3)]">
+          <span className="font-bold text-white text-[14px] tracking-tighter">CO</span>
         </div>
-        <h1 className="text-[24px] font-semibold tracking-tight text-[#FAFAFA]">Creator OS</h1>
-        <p className="text-[14px] text-[#A1A1AA] mt-2 tracking-tight">
-          Sign in to your workspace.
+        <h1 className="text-[22px] font-semibold tracking-tight text-[#FAFAFA]">Creator OS</h1>
+        <p className="text-[13px] text-[#A1A1AA] mt-1.5">
+          {mode === 'login' ? 'Sign in to your workspace.' : 'Create your Creator OS account.'}
         </p>
       </div>
-      
-      {errorMsg && (
+
+      {/* Alerts */}
+      {(errorMsg || err) && (
         <div className="flex items-center gap-2 p-3 text-[13px] font-medium text-red-400 bg-red-400/10 border border-red-400/20 rounded-[12px]">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <p>{errorMsg}</p>
+          <p>{errorMsg || err}</p>
+        </div>
+      )}
+      {success && (
+        <div className="p-3 text-[13px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-[12px] text-center">
+          {success}
         </div>
       )}
 
-      <Button onClick={handleWhopLogin} className="w-full h-12 rounded-[12px] bg-[#FF6243] hover:bg-[#FF6243]/90 text-white font-medium text-[15px] border-0 transition-all duration-300">
-        <img src="https://whop.com/favicon.ico" alt="Whop" className="w-[16px] h-[16px] mr-2 filter brightness-0 invert" />
+      {/* Email / Password Form */}
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="relative">
+          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+          <Input
+            type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="Email address" required
+            className="h-11 pl-10 rounded-[12px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50 focus:ring-primary/20"
+          />
+        </div>
+        <div className="relative">
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+          <Input
+            type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+            placeholder="Password" required minLength={6}
+            className="h-11 pl-10 pr-10 rounded-[12px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50"
+          />
+          <button type="button" onClick={() => setShowPw(v => !v)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#71717A] hover:text-[#FAFAFA] transition-colors">
+            {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
+        <Button type="submit" disabled={loading || !email || !password}
+          className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
+          {loading
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : mode === 'login' ? 'Sign In' : 'Create Account'
+          }
+        </Button>
+      </form>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-white/[0.06]" />
+        <span className="text-[12px] text-[#71717A]">or</span>
+        <div className="flex-1 h-px bg-white/[0.06]" />
+      </div>
+
+      {/* Whop OAuth */}
+      <Button onClick={handleWhopLogin} variant="outline"
+        className="w-full h-11 rounded-[12px] border-white/[0.08] bg-[#0D0D0D] text-[#FAFAFA] hover:bg-white/[0.05] font-medium text-[14px]">
+        <img src="https://whop.com/favicon.ico" alt="Whop" className="w-4 h-4 mr-2 filter brightness-0 invert" />
         Continue with Whop
       </Button>
 
+      {/* Toggle login/signup */}
       <div className="text-center text-[13px] text-[#71717A]">
-        New to Creator OS?{' '}
-        <Link to="/signup" className="font-medium text-[#FAFAFA] hover:text-primary transition-colors">
-          Get access
-        </Link>
+        {mode === 'login' ? (
+          <>Don't have an account?{' '}
+            <button onClick={() => { setMode('signup'); setErr(''); }}
+              className="font-medium text-[#FAFAFA] hover:text-primary transition-colors">
+              Create one
+            </button>
+          </>
+        ) : (
+          <>Already have an account?{' '}
+            <button onClick={() => { setMode('login'); setErr(''); }}
+              className="font-medium text-[#FAFAFA] hover:text-primary transition-colors">
+              Sign in
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

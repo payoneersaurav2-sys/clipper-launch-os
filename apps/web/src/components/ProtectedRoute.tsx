@@ -8,19 +8,24 @@ export default function ProtectedRoute() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center bg-[#080808]">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
 
   if (!user) {
-    // Redirect to login but save the attempted url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Active membership check
-  if (membershipStatus !== 'active') {
+  // Allow access if:
+  // 1. Whop membership is active, OR
+  // 2. User created account directly (membership_status = 'active' set on signup), OR
+  // 3. DEV mode — no membership check when running locally
+  const isDev = import.meta.env.DEV;
+  const hasAccess = membershipStatus === 'active' || isDev;
+
+  if (!hasAccess) {
     return <Navigate to="/expired" replace />;
   }
 

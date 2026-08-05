@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Lightbulb, PenTool, Type, Rocket, 
   Video, Library, TerminalSquare, LineChart, Settings,
-  Bell, Search, LogOut, ChevronLeft, ChevronRight
+  Search, LogOut, ChevronLeft, ChevronRight, UserCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import Wordmark from '@/components/Wordmark';
 import { CommandPalette } from '@/components/CommandPalette';
+import { NotificationCenter } from '@/components/NotificationCenter';
 
 // ---- Nav groups ---------------------------------------------
 const navGroups = [
@@ -44,6 +45,7 @@ const navGroups = [
     label: 'System',
     items: [
       { name: 'AI Settings',    href: '/dashboard/ai-settings',    icon: Settings },
+      { name: 'Settings',        href: '/dashboard/settings',        icon: UserCircle },
     ],
   },
 ];
@@ -178,11 +180,7 @@ export default function DashboardLayout() {
             {navGroups.flatMap(g => g.items).find(i => isActive(i.href))?.name ?? 'Dashboard'}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon"
-              className="relative h-8 w-8 rounded-[8px] text-[#71717A] hover:text-[#FAFAFA] hover:bg-white/[0.05]">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-            </Button>
+            <NotificationCenter />
           </div>
         </header>
 
