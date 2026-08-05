@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import Wordmark from '@/components/Wordmark';
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: '⌘D' },
@@ -43,18 +44,14 @@ export default function DashboardLayout() {
         "flex flex-col border-r border-white/[0.06] bg-[#080808] transition-all duration-300 z-20",
         collapsed ? "w-[80px]" : "w-[260px]"
       )}>
-        <div className="flex h-20 items-center justify-between px-6 border-b border-transparent">
-          {!collapsed && (
-            <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-[10px] bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-                <span className="font-bold text-white text-[11px] tracking-tighter">CR</span>
-              </div>
-              <span className="font-semibold tracking-tight text-[15px]">Creator OS</span>
-            </div>
-          )}
-          {collapsed && (
-            <div className="h-7 w-7 mx-auto rounded-[10px] bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.3)]">
-               <span className="font-bold text-white text-[11px] tracking-tighter">CR</span>
+        <div className="flex h-20 items-center px-6">
+          {!collapsed ? (
+            <Wordmark size="md" href="/dashboard" />
+          ) : (
+            <div className="w-full flex justify-center">
+              <span className="font-semibold tracking-[-0.04em] text-[13px] leading-none">
+                <span className="text-[#FAFAFA]">C</span><span className="text-primary">O</span>
+              </span>
             </div>
           )}
         </div>

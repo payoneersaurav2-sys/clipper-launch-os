@@ -9,6 +9,8 @@ import AuthCallback from './pages/AuthCallback';
 import AuthIframe from './pages/AuthIframe';
 import ExpiredPage from './pages/ExpiredPage';
 import DashboardHome from './pages/DashboardHome';
+import TermsPage from './pages/TermsPage';
+import FAQPage from './pages/FAQPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { 
   IdeaStudio, HookEngine, CaptionOS, LaunchCenter, 
@@ -20,6 +22,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingLayout><LandingPage /></LandingLayout>} />
+        <Route path="/faq" element={<LandingLayout><FAQPage /></LandingLayout>} />
+        <Route path="/terms" element={<LandingLayout><TermsPage /></LandingLayout>} />
         
         {/* Authentication */}
         <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
