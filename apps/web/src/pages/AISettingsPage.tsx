@@ -67,14 +67,14 @@ export default function AISettingsPage() {
   const clearMemory  = useMemoryStore(s => s.clearAll);
 
   return (
-    <div className="space-y-8 max-w-3xl animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 sm:space-y-8 max-w-3xl animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">AI Settings</h2>
-          <p className="text-[14px] text-[#71717A] mt-1">Configure how Creator OS AI behaves.</p>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">AI Settings</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Configure how Creator OS AI behaves.</p>
         </div>
         <Button onClick={resetSettings} variant="outline"
-          className="h-9 rounded-[10px] border-white/[0.06] bg-[#111111] text-[#A1A1AA] hover:text-[#FAFAFA] text-[13px]">
+          className="h-9 rounded-[10px] border-white/[0.06] bg-[#111111] text-[#A1A1AA] hover:text-[#FAFAFA] text-[13px] self-start sm:self-auto shrink-0">
           <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
           Reset Defaults
         </Button>
@@ -135,7 +135,7 @@ export default function AISettingsPage() {
 
       {/* Usage stats */}
       <Section icon={Database} title="Usage & Data">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
             { label: 'Generations', value: recordCount },
             { label: 'Favorites', value: favCount },

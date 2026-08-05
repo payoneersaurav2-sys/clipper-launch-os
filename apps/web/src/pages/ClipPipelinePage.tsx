@@ -142,19 +142,19 @@ export default function ClipPipelinePage() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Clip Pipeline</h2>
-          <p className="text-[14px] text-[#71717A] mt-1">Kanban board from idea to published and analyzed.</p>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Clip Pipeline</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Kanban board from idea to published and analyzed.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <select value={selectedCampaign ?? ''} onChange={e => setSelectedCampaign(e.target.value || undefined)}
-            className="h-10 px-4 rounded-[10px] bg-[#111111] border border-white/[0.06] text-[#A1A1AA] text-[13px] focus:outline-none focus:border-primary/50">
+            className="h-10 px-3 sm:px-4 rounded-[10px] bg-[#111111] border border-white/[0.06] text-[#A1A1AA] text-[13px] focus:outline-none focus:border-primary/50 flex-1 sm:flex-initial min-w-0">
             <option value="">All Campaigns</option>
             {campaigns?.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
           </select>
-          <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px]">
-            <Plus className="h-4 w-4 mr-1.5" />Add Clip
+          <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-4 sm:px-5 bg-primary text-white hover:bg-primary/90 text-[13px] shrink-0">
+            <Plus className="h-4 w-4 sm:mr-1.5" /><span className="hidden sm:inline">Add Clip</span>
           </Button>
         </div>
       </div>

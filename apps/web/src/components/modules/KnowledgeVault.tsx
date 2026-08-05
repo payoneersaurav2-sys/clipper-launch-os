@@ -94,11 +94,8 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96 }}
-        className="w-full max-w-md bg-[#111111] border border-white/[0.08] rounded-[20px] p-7 shadow-2xl">
+        className="w-full max-w-md bg-[#111111] border border-white/[0.08] rounded-t-[20px] sm:rounded-[20px] p-5 sm:p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-[16px] font-semibold text-[#FAFAFA]">Add Knowledge</h3>
           <button onClick={onClose} className="text-[#71717A] hover:text-[#FAFAFA]"><X className="h-4 w-4" /></button>
@@ -182,12 +179,12 @@ export function KnowledgeVault() {
 
   return (
     <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Knowledge Vault</h2>
-          <p className="text-[14px] text-[#71717A] mt-1">Your AI's long-term memory. Upload resources, brand guides, or notes.</p>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Knowledge Vault</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Your AI's long-term memory. Upload resources, brand guides, or notes.</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px]">
+        <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px] self-start sm:self-auto shrink-0">
           <Plus className="h-4 w-4 mr-1.5" />Add Knowledge
         </Button>
       </div>
@@ -198,7 +195,7 @@ export function KnowledgeVault() {
           <p className="text-[13px] font-medium text-primary flex items-center gap-2">
             <Sparkles className="h-4 w-4" />Ask your knowledge base
           </p>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
             <Input value={question} onChange={e => setQuestion(e.target.value)}
               placeholder="e.g. What is my brand tone?" onKeyDown={e => e.key === 'Enter' && handleAsk()}
               className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] flex-1" />
@@ -227,7 +224,7 @@ export function KnowledgeVault() {
 
       {/* Items grid */}
       {isLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[...Array(3)].map((_, i) => <div key={i} className="h-40 rounded-[16px] bg-[#111111] animate-pulse" />)}
         </div>
       ) : !filtered?.length ? (
@@ -246,7 +243,7 @@ export function KnowledgeVault() {
           )}
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <AnimatePresence>
             {filtered.map(item => (
               <motion.div key={item.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
