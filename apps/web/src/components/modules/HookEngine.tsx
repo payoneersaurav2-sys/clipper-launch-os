@@ -79,12 +79,12 @@ export function HookEngine() {
 
   return (
     <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Hook Engine</h2>
-          <p className="text-[13px] text-[#71717A] mt-1">Context: <span className="text-[#A1A1AA]">{latestIdea.title}</span></p>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div className="min-w-0">
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Hook Engine</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1 truncate">Context: <span className="text-[#A1A1AA]">{latestIdea.title}</span></p>
         </div>
-        <Button onClick={handleGenerate} disabled={isGenerating} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+        <Button onClick={handleGenerate} disabled={isGenerating} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] self-start sm:self-auto shrink-0 text-[13px]">
           {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Generate Hooks
         </Button>

@@ -68,15 +68,15 @@ export function IdeaStudio() {
 
   return (
     <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Idea Studio</h2>
-          <p className="text-[14px] text-[#71717A] mt-1">Generate, capture and expand content ideas.</p>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Idea Studio</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Generate, capture and expand content ideas.</p>
         </div>
         <Button
           onClick={handleAIGenerate}
           disabled={isGenerating}
-          className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all"
+          className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all self-start sm:self-auto shrink-0 text-[13px]"
         >
           {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
           Generate Ideas
