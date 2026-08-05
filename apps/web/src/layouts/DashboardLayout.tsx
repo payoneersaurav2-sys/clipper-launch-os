@@ -4,15 +4,16 @@ import { AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Lightbulb, PenTool, Type, Rocket, 
   Video, Library, TerminalSquare, LineChart, Settings,
-  Search, LogOut, ChevronLeft, ChevronRight, UserCircle
+  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import Wordmark from '@/components/Wordmark';
 import { CommandPalette } from '@/components/CommandPalette';
 import { NotificationCenter } from '@/components/NotificationCenter';
+import { ProductTour, useTour } from '@/components/ProductTour';
+import { FeedbackWidget } from '@/components/FeedbackWidget';
 
 // ---- Nav groups ---------------------------------------------
 const navGroups = [
@@ -44,19 +45,22 @@ const navGroups = [
   {
     label: 'System',
     items: [
-      { name: 'AI Settings',    href: '/dashboard/ai-settings',    icon: Settings },
-      { name: 'Settings',        href: '/dashboard/settings',        icon: UserCircle },
+      { name: 'AI Settings', href: '/dashboard/ai-settings', icon: Settings },
+      { name: 'Settings',    href: '/dashboard/settings',    icon: UserCircle },
+      { name: 'Help',        href: '/dashboard/help',        icon: HelpCircle },
+      { name: 'Changelog',   href: '/dashboard/changelog',   icon: Tag },
     ],
   },
 ];
 
 export default function DashboardLayout() {
-  const [collapsed, setCollapsed]         = useState(false);
-  const [cmdOpen, setCmdOpen]             = useState(false);
+  const [collapsed, setCollapsed]  = useState(false);
+  const [cmdOpen, setCmdOpen]      = useState(false);
+  const { showTour, completeTour } = useTour();
   const location  = useLocation();
   const navigate  = useNavigate();
   const { signOut, user } = useAuthStore();
-  useWorkspaces(); // initialise workspace on mount
+  useWorkspaces();
 
   // ⌘K listener
   useEffect(() => {
@@ -193,6 +197,12 @@ export default function DashboardLayout() {
       <AnimatePresence>
         {cmdOpen && <CommandPalette onClose={() => setCmdOpen(false)} />}
       </AnimatePresence>
+
+      {/* ---- Product Tour ---------------------------------- */}
+      {showTour && <ProductTour onComplete={completeTour} />}
+
+      {/* ---- Feedback Widget ------------------------------- */}
+      <FeedbackWidget />
     </div>
   );
 }

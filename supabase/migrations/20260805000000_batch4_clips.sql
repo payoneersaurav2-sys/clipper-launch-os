@@ -14,7 +14,7 @@ ALTER TABLE public.campaigns
 
 -- Clips table (production pipeline)
 CREATE TABLE IF NOT EXISTS public.clips (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE NOT NULL,
   campaign_id UUID REFERENCES public.campaigns(id) ON DELETE CASCADE,
   clip_idea_id UUID REFERENCES public.clip_ideas(id) ON DELETE SET NULL,

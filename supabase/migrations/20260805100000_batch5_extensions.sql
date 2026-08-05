@@ -12,7 +12,7 @@ ALTER TABLE public.users
 
 -- 2. Notifications
 CREATE TABLE IF NOT EXISTS public.notifications (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE,
   type TEXT NOT NULL DEFAULT 'system', -- 'ai','campaign','system','billing','team'
@@ -39,7 +39,7 @@ END $$;
 
 -- 3. Knowledge Vault items
 CREATE TABLE IF NOT EXISTS public.knowledge_items (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   workspace_id UUID REFERENCES public.workspaces(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   content TEXT,             -- extracted text
