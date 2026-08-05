@@ -9,22 +9,24 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-8 animate-in fade-in zoom-in-95 duration-500 font-sans text-[#FAFAFA] w-full max-w-[360px] mx-auto p-8 rounded-[20px] bg-[#111111] border border-white/[0.06] shadow-xl">
       <div className="flex flex-col items-center text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Access Clipper Launch OS</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          The premium creator workspace. Purchase a license to get instant access.
+        <div className="h-10 w-10 mb-6 rounded-[12px] bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(124,58,237,0.3)]">
+          <span className="font-bold text-white text-[14px] tracking-tighter">CL</span>
+        </div>
+        <h1 className="text-[24px] font-semibold tracking-tight text-[#FAFAFA]">Get Access</h1>
+        <p className="text-[14px] text-[#A1A1AA] mt-2 tracking-tight">
+          Purchase a license to enter Creator OS.
         </p>
       </div>
       
-      <Button onClick={handleWhopCheckout} className="w-full h-12 bg-[#FF6243] hover:bg-[#FF6243]/90 text-white font-medium border-0">
-        <img src="https://whop.com/favicon.ico" alt="Whop" className="w-4 h-4 mr-2 filter brightness-0 invert" />
-        Purchase on Whop
+      <Button onClick={handleWhopCheckout} className="w-full h-12 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[15px] border-0 transition-all duration-300 shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)]">
+        Start Free Trial
       </Button>
 
-      <div className="text-center text-sm">
+      <div className="text-center text-[13px] text-[#71717A]">
         Already have access?{' '}
-        <Link to="/login" className="underline underline-offset-4 font-medium text-primary hover:text-primary/80">
+        <Link to="/login" className="font-medium text-[#FAFAFA] hover:text-primary transition-colors">
           Sign in
         </Link>
       </div>

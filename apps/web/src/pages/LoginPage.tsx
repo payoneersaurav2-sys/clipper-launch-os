@@ -16,30 +16,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="flex flex-col gap-8 animate-in fade-in zoom-in-95 duration-500 font-sans text-[#FAFAFA] w-full max-w-[360px] mx-auto p-8 rounded-[20px] bg-[#111111] border border-white/[0.06] shadow-xl">
       <div className="flex flex-col items-center text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Authenticate with your Whop account to access the OS.
+        <div className="h-10 w-10 mb-6 rounded-[12px] bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(124,58,237,0.3)]">
+          <span className="font-bold text-white text-[14px] tracking-tighter">CL</span>
+        </div>
+        <h1 className="text-[24px] font-semibold tracking-tight text-[#FAFAFA]">Creator OS</h1>
+        <p className="text-[14px] text-[#A1A1AA] mt-2 tracking-tight">
+          Sign in to your workspace.
         </p>
       </div>
       
       {errorMsg && (
-        <div className="flex items-center gap-2 p-3 text-sm font-medium text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
+        <div className="flex items-center gap-2 p-3 text-[13px] font-medium text-red-400 bg-red-400/10 border border-red-400/20 rounded-[12px]">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <p>{errorMsg}</p>
         </div>
       )}
 
-      <Button onClick={handleWhopLogin} className="w-full h-12 bg-[#FF6243] hover:bg-[#FF6243]/90 text-white font-medium border-0">
-        <img src="https://whop.com/favicon.ico" alt="Whop" className="w-4 h-4 mr-2 filter brightness-0 invert" />
+      <Button onClick={handleWhopLogin} className="w-full h-12 rounded-[12px] bg-[#FF6243] hover:bg-[#FF6243]/90 text-white font-medium text-[15px] border-0 transition-all duration-300">
+        <img src="https://whop.com/favicon.ico" alt="Whop" className="w-[16px] h-[16px] mr-2 filter brightness-0 invert" />
         Continue with Whop
       </Button>
 
-      <div className="text-center text-sm">
-        Don't have a membership?{' '}
-        <Link to="/signup" className="underline underline-offset-4 font-medium text-primary hover:text-primary/80">
-          Purchase access
+      <div className="text-center text-[13px] text-[#71717A]">
+        New to Creator OS?{' '}
+        <Link to="/signup" className="font-medium text-[#FAFAFA] hover:text-primary transition-colors">
+          Get access
         </Link>
       </div>
     </div>
