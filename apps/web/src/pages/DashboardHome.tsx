@@ -4,12 +4,12 @@ import { CheckCircle2, Circle } from 'lucide-react';
 
 export default function DashboardHome() {
   return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out pb-20">
+    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out pb-20 font-sans text-[#FAFAFA]">
       
       {/* Header */}
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-white">Good Evening, Creator 👋</h1>
-        <p className="text-muted-foreground text-base tracking-wide">Let's build something viral today.</p>
+        <h1 className="text-[28px] font-semibold tracking-tight leading-none text-[#FAFAFA]">Good Evening, Creator 👋</h1>
+        <p className="text-[#A1A1AA] text-[15px] tracking-tight mt-1">Let's build something viral today.</p>
       </div>
 
       {/* Stats Row */}
@@ -20,15 +20,15 @@ export default function DashboardHome() {
           { title: "Clips Produced", value: "42", trend: "up" },
           { title: "Est. Earnings", value: "$1,240", trend: "up" },
         ].map((stat, i) => (
-          <Card key={i} className="bg-[#111111] border-border/40 hover:bg-[#151515] transition-colors rounded-2xl shadow-xl shadow-black/50">
+          <Card key={i} className="bg-[#111111] border border-white/[0.06] hover:bg-[#161616] transition-colors rounded-[16px] shadow-sm">
             <CardHeader className="pb-2 pt-6 px-6">
-              <CardTitle className="text-[13px] font-medium text-muted-foreground tracking-wide">{stat.title}</CardTitle>
+              <CardTitle className="text-[13px] font-medium text-[#71717A] tracking-tight">{stat.title}</CardTitle>
             </CardHeader>
             <CardContent className="px-6 pb-6">
-              <div className="text-4xl font-bold tracking-tighter text-white mb-6">{stat.value}</div>
+              <div className="text-[32px] font-semibold tracking-tight text-[#FAFAFA] mb-6 leading-none mt-1">{stat.value}</div>
               {/* Sparkline Mock */}
-              <svg className="w-full h-8" viewBox="0 0 100 20" preserveAspectRatio="none">
-                <path d="M0,20 Q10,5 20,15 T40,10 T60,18 T80,5 T100,2" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary opacity-80" strokeLinecap="round" />
+              <svg className="w-full h-6" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,20 Q10,5 20,15 T40,10 T60,18 T80,5 T100,2" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary" strokeLinecap="round" />
               </svg>
             </CardContent>
           </Card>
@@ -39,13 +39,13 @@ export default function DashboardHome() {
       <div className="grid md:grid-cols-3 gap-6">
         
         {/* Today's Mission */}
-        <Card className="md:col-span-2 bg-[#111111] border-border/40 rounded-3xl shadow-xl shadow-black/50 overflow-hidden">
+        <Card className="md:col-span-2 bg-[#111111] border border-white/[0.06] rounded-[16px] shadow-sm overflow-hidden">
           <CardHeader className="px-8 pt-8 pb-4">
-            <CardTitle className="text-lg font-medium text-white tracking-wide">Today's Mission</CardTitle>
+            <CardTitle className="text-[16px] font-semibold text-[#FAFAFA] tracking-tight">Today's Mission</CardTitle>
           </CardHeader>
-          <CardContent className="px-8 pb-8 flex flex-col md:flex-row items-center gap-10">
+          <CardContent className="px-8 pb-8 flex flex-col md:flex-row items-center gap-12">
             
-            <div className="flex-1 space-y-6 w-full">
+            <div className="flex-1 space-y-5 w-full mt-2">
               {[
                 { title: "Review 8 hook suggestions", desc: "High engagement potential", done: true },
                 { title: "Create 5 captions", desc: "For your trending clips", done: false },
@@ -53,27 +53,27 @@ export default function DashboardHome() {
               ].map((task, i) => (
                 <div key={i} className="flex items-start gap-4 group cursor-pointer">
                   {task.done ? (
-                    <CheckCircle2 className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-[20px] w-[20px] text-primary shrink-0 mt-0.5" strokeWidth={2.5} />
                   ) : (
-                    <Circle className="h-6 w-6 text-muted-foreground/50 group-hover:text-primary/50 transition-colors shrink-0 mt-0.5" />
+                    <Circle className="h-[20px] w-[20px] text-[#71717A] group-hover:text-primary transition-colors shrink-0 mt-0.5" strokeWidth={2} />
                   )}
                   <div>
-                    <h4 className={`text-base font-medium tracking-wide ${task.done ? 'text-foreground' : 'text-foreground/80'}`}>{task.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-0.5">{task.desc}</p>
+                    <h4 className={`text-[14px] font-medium tracking-tight ${task.done ? 'text-[#FAFAFA]' : 'text-[#A1A1AA]'}`}>{task.title}</h4>
+                    <p className="text-[13px] text-[#71717A] mt-0.5">{task.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Circular Progress */}
-            <div className="relative h-40 w-40 shrink-0 flex items-center justify-center">
+            <div className="relative h-[140px] w-[140px] shrink-0 flex items-center justify-center">
               <svg className="transform -rotate-90 w-full h-full">
-                <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="440" strokeDashoffset="110" className="text-primary transition-all duration-1000 ease-out" />
+                <circle cx="70" cy="70" r="62" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-white/[0.04]" />
+                <circle cx="70" cy="70" r="62" stroke="currentColor" strokeWidth="6" fill="transparent" strokeDasharray="390" strokeDashoffset="97" className="text-primary transition-all duration-1000 ease-out" />
               </svg>
               <div className="absolute flex flex-col items-center justify-center text-center">
-                <span className="text-3xl font-bold tracking-tighter text-white">75%</span>
-                <span className="text-xs text-muted-foreground font-medium tracking-widest uppercase mt-1">Progress</span>
+                <span className="text-[28px] font-semibold tracking-tight text-[#FAFAFA] leading-none">75%</span>
+                <span className="text-[11px] text-[#71717A] font-medium tracking-wide mt-1">PROGRESS</span>
               </div>
             </div>
             
@@ -86,51 +86,44 @@ export default function DashboardHome() {
       <div className="grid md:grid-cols-3 gap-6">
         
         {/* Recent Project */}
-        <Card className="md:col-span-2 bg-[#111111] border-border/40 rounded-3xl shadow-xl shadow-black/50 overflow-hidden">
+        <Card className="md:col-span-2 bg-[#111111] border border-white/[0.06] rounded-[16px] shadow-sm overflow-hidden">
           <CardHeader className="px-8 pt-8 pb-4">
-            <CardTitle className="text-[13px] font-medium text-muted-foreground tracking-widest uppercase">Recent Project</CardTitle>
+            <CardTitle className="text-[13px] font-medium text-[#71717A] tracking-tight">Recent Project</CardTitle>
           </CardHeader>
-          <CardContent className="px-8 pb-8 flex items-end justify-between gap-6">
-            <div className="flex items-center gap-5">
-              <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/5 overflow-hidden flex items-center justify-center relative shadow-inner">
-                <div className="absolute inset-0 bg-primary/20 opacity-50 mix-blend-overlay" />
-                <div className="w-8 h-10 bg-white/10 rounded border border-white/20 shadow-xl" />
+          <CardContent className="px-8 pb-8 flex items-center justify-between gap-6">
+            <div className="flex items-center gap-5 mt-2">
+              <div className="h-[72px] w-[72px] rounded-[12px] bg-[#161616] border border-white/[0.06] overflow-hidden flex items-center justify-center relative shadow-inner">
+                <div className="w-[30px] h-[40px] bg-white/[0.08] rounded border border-white/[0.1] shadow-sm" />
               </div>
               <div className="flex flex-col justify-center">
-                <h4 className="text-lg font-semibold text-white tracking-wide">Faceless Finance Niche</h4>
-                <p className="text-sm text-muted-foreground mt-1">Last edited 2h ago</p>
+                <h4 className="text-[15px] font-medium text-[#FAFAFA] tracking-tight">Faceless Finance Niche</h4>
+                <p className="text-[13px] text-[#71717A] mt-1">Last edited 2h ago</p>
               </div>
             </div>
             
-            <div className="flex-1 max-w-xs flex items-center gap-4">
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <div className="flex-1 max-w-[200px] flex items-center gap-4 mt-2">
+              <div className="h-1.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
                 <div className="h-full bg-primary rounded-full w-[68%]" />
               </div>
-              <span className="text-xs font-medium text-muted-foreground tracking-wider">68%</span>
+              <span className="text-[12px] font-medium text-[#A1A1AA] tracking-tight">68%</span>
             </div>
           </CardContent>
         </Card>
 
         {/* Active Campaigns */}
-        <Card className="bg-[#111111] border-border/40 rounded-3xl shadow-xl shadow-black/50 overflow-hidden flex flex-col justify-between">
+        <Card className="bg-[#111111] border border-white/[0.06] rounded-[16px] shadow-sm overflow-hidden flex flex-col justify-between">
           <CardHeader className="px-8 pt-8 pb-2">
-            <CardTitle className="text-lg font-medium text-white tracking-wide">Active Campaigns</CardTitle>
+            <CardTitle className="text-[16px] font-semibold text-[#FAFAFA] tracking-tight">Active Campaigns</CardTitle>
           </CardHeader>
           <CardContent className="px-8 pb-8 flex flex-col justify-end h-full">
-            <div className="flex items-baseline gap-3 mb-8">
-              <span className="text-5xl font-bold tracking-tighter text-white">3</span>
-              <span className="text-sm font-medium text-emerald-400">+32%</span>
+            <div className="flex items-baseline gap-3 mb-6 mt-4">
+              <span className="text-[40px] font-semibold tracking-tight text-[#FAFAFA] leading-none">3</span>
+              <span className="text-[13px] font-medium text-emerald-500">+32%</span>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">vs last 7 days</p>
-            {/* Sparkline Mock */}
-            <svg className="w-full h-12" viewBox="0 0 100 30" preserveAspectRatio="none">
-              <path d="M0,30 Q20,10 40,25 T70,5 T100,10" fill="none" stroke="url(#purple-gradient)" strokeWidth="3" strokeLinecap="round" />
-              <defs>
-                <linearGradient id="purple-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.3" />
-                  <stop offset="100%" stopColor="#7C3AED" stopOpacity="1" />
-                </linearGradient>
-              </defs>
+            <p className="text-[12px] text-[#71717A] mb-4">vs last 7 days</p>
+            {/* Minimal Sparkline */}
+            <svg className="w-full h-8" viewBox="0 0 100 20" preserveAspectRatio="none">
+              <path d="M0,20 Q20,10 40,15 T70,5 T100,8" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary" strokeLinecap="round" />
             </svg>
           </CardContent>
         </Card>

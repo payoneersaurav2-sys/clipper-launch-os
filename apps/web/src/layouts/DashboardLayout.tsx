@@ -37,30 +37,30 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background font-sans text-foreground">
+    <div className="flex h-screen overflow-hidden bg-[#080808] font-sans text-[#FAFAFA]">
       {/* Sidebar */}
       <aside className={cn(
-        "flex flex-col border-r border-border/40 bg-background/95 backdrop-blur-md transition-all duration-300 z-20",
-        collapsed ? "w-[80px]" : "w-[280px]"
+        "flex flex-col border-r border-white/[0.06] bg-[#080808] transition-all duration-300 z-20",
+        collapsed ? "w-[80px]" : "w-[260px]"
       )}>
-        <div className="flex h-20 items-center justify-between px-6">
+        <div className="flex h-20 items-center justify-between px-6 border-b border-transparent">
           {!collapsed && (
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center shadow-lg shadow-primary/20">
-                <span className="font-bold text-white text-sm tracking-tighter">CL</span>
+              <div className="h-7 w-7 rounded-[10px] bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+                <span className="font-bold text-white text-[11px] tracking-tighter">CL</span>
               </div>
-              <span className="font-bold tracking-widest text-lg">CREATOR <span className="text-primary">OS</span></span>
+              <span className="font-semibold tracking-tight text-[15px]">Creator OS</span>
             </div>
           )}
           {collapsed && (
-            <div className="h-8 w-8 mx-auto rounded-lg bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center shadow-lg shadow-primary/20">
-               <span className="font-bold text-white text-sm tracking-tighter">CL</span>
+            <div className="h-7 w-7 mx-auto rounded-[10px] bg-primary flex items-center justify-center shadow-[0_0_15px_rgba(124,58,237,0.3)]">
+               <span className="font-bold text-white text-[11px] tracking-tighter">CL</span>
             </div>
           )}
         </div>
         
         <div className="flex-1 overflow-auto py-6 px-4">
-          <nav className="grid gap-2">
+          <nav className="grid gap-1.5">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -68,18 +68,18 @@ export default function DashboardLayout() {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 group",
+                    "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group",
                     isActive 
-                      ? "bg-primary/10 text-primary" 
-                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                      ? "bg-primary/[0.08] text-primary" 
+                      : "text-[#A1A1AA] hover:bg-white/[0.03] hover:text-[#FAFAFA]",
                     collapsed ? "justify-center px-0" : ""
                   )}
                   title={collapsed ? item.name : undefined}
                 >
-                  <item.icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform group-hover:scale-110", isActive ? "text-primary" : "text-muted-foreground")} />
+                  <item.icon className={cn("h-[16px] w-[16px] shrink-0 transition-transform duration-200 group-hover:scale-110", isActive ? "text-primary" : "text-[#71717A]")} />
                   {!collapsed && (
                     <div className="flex flex-1 items-center justify-between">
-                      <span className="tracking-wide">{item.name}</span>
+                      <span className="tracking-tight">{item.name}</span>
                     </div>
                   )}
                 </Link>
@@ -88,45 +88,45 @@ export default function DashboardLayout() {
           </nav>
         </div>
         
-        <div className="p-6 flex flex-col gap-2">
+        <div className="p-4 flex flex-col gap-2">
           <Link
             to="/settings"
             className={cn(
-              "flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all hover:bg-white/5 hover:text-foreground text-muted-foreground",
+              "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium transition-all hover:bg-white/[0.03] hover:text-[#FAFAFA] text-[#A1A1AA]",
               collapsed ? "justify-center px-0" : ""
             )}
             title={collapsed ? "Settings" : undefined}
           >
-            <Settings className="h-[18px] w-[18px] shrink-0" />
-            {!collapsed && <span className="tracking-wide">Settings</span>}
+            <Settings className="h-[16px] w-[16px] shrink-0 text-[#71717A]" />
+            {!collapsed && <span className="tracking-tight">Settings</span>}
           </Link>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#070707]">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#080808]">
         {/* Top Navigation */}
-        <header className="flex h-20 items-center justify-end gap-6 px-8 lg:px-12 bg-transparent z-10">
+        <header className="flex h-20 items-center justify-end gap-6 px-8 lg:px-12 bg-transparent z-10 border-b border-white/[0.02]">
           <div className="flex items-center gap-6">
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-full h-10 w-10">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(124,58,237,0.8)]" />
+            <Button variant="ghost" size="icon" className="relative text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-white/[0.03] rounded-full h-9 w-9 transition-colors">
+              <Bell className="h-4 w-4" />
+              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(124,58,237,0.8)]" />
             </Button>
-            <div className="flex items-center gap-3 pl-6 border-l border-border/40 cursor-pointer group">
+            <div className="flex items-center gap-3 pl-6 border-l border-white/[0.06] cursor-pointer group">
               <div className="flex flex-col items-end hidden sm:flex">
-                <span className="text-sm font-semibold tracking-wide text-foreground group-hover:text-primary transition-colors">
+                <span className="text-[13px] font-medium tracking-tight text-[#FAFAFA] group-hover:text-primary transition-colors">
                   {user?.email?.split('@')[0] || 'Creator'}
                 </span>
-                <span className="text-xs text-muted-foreground">Pro Plan</span>
+                <span className="text-[11px] text-[#71717A] tracking-wide">Workspace</span>
               </div>
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-sm font-semibold text-primary overflow-hidden">
+              <div className="h-8 w-8 rounded-full bg-[#111111] border border-white/[0.06] flex items-center justify-center text-[13px] font-medium text-[#FAFAFA] overflow-hidden group-hover:border-primary/50 transition-colors">
                 {user?.email?.charAt(0).toUpperCase() || 'C'}
               </div>
             </div>
           </div>
         </header>
         
-        <main className="flex-1 overflow-auto p-8 lg:p-12 relative">
+        <main className="flex-1 overflow-auto p-8 lg:p-12 relative selection:bg-primary/30">
           <Outlet />
         </main>
       </div>

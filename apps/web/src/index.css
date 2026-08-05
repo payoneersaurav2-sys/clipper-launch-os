@@ -6,10 +6,10 @@
  
 @layer base {
   :root {
-    --background: 0 0% 3%;
-    --foreground: 0 0% 98%;
+    --background: 0 0% 3%; /* #080808 */
+    --foreground: 0 0% 98%; /* #FAFAFA */
 
-    --card: 0 0% 7%;
+    --card: 0 0% 7%; /* #111111 */
     --card-foreground: 0 0% 98%;
  
     --popover: 0 0% 7%;
@@ -18,11 +18,11 @@
     --primary: 262 80% 50%; /* Deep Purple #7C3AED */
     --primary-foreground: 0 0% 100%;
  
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 0 0% 9%; /* #161616 */
+    --secondary-foreground: 240 5% 64.9%; /* #A1A1AA */
  
-    --muted: 0 0% 12%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 0 0% 9%;
+    --muted-foreground: 240 5% 44.9%; /* #71717A */
  
     --accent: 262 80% 50%;
     --accent-foreground: 0 0% 100%;
@@ -30,11 +30,11 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
  
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
+    --border: 0 0% 15%; /* Will use border-white/5 mostly */
+    --input: 0 0% 15%;
     --ring: 262 80% 50%;
  
-    --radius: 1rem;
+    --radius: 1rem; /* 16px */
   }
 }
  
