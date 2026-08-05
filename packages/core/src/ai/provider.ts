@@ -1,110 +1,262 @@
-import { IAIProvider, AIProviderConfig, AIPromptContext, AIResponse } from './types';
+// ============================================================
+// CREATOR OS — AI PROVIDER LAYER
+// Provider-agnostic abstraction. Switching providers = 1 line.
+// Currently: OpenRouter (routes to Claude, GPT, Gemini, etc.)
+// ============================================================
+
+import {
+  IAIProvider,
+  AIProviderConfig,
+  AIPromptContext,
+  AIResponse,
+  StreamChunk,
+  AIError,
+  TokenUsage,
+} from './types';
 import { PromptEngine } from './prompt-engine';
+
+// ---- Cost table (per 1M tokens, USD) -----------------------
+const COST_PER_1M: Record<string, { prompt: number; completion: number }> = {
+  'anthropic/claude-3.5-sonnet': { prompt: 3.0,  completion: 15.0 },
+  'anthropic/claude-3-haiku':    { prompt: 0.25, completion: 1.25 },
+  'openai/gpt-4o':               { prompt: 5.0,  completion: 15.0 },
+  'openai/gpt-4o-mini':          { prompt: 0.15, completion: 0.6  },
+  'meta-llama/llama-3.1-70b-instruct': { prompt: 0.52, completion: 0.75 },
+  'google/gemini-flash-1.5':     { prompt: 0.075, completion: 0.3  },
+  'deepseek/deepseek-chat':      { prompt: 0.14, completion: 0.28  },
+};
+
+function estimateCost(model: string, usage: TokenUsage): number {
+  const costs = COST_PER_1M[model];
+  if (!costs) return 0;
+  return (
+    (usage.promptTokens     / 1_000_000) * costs.prompt +
+    (usage.completionTokens / 1_000_000) * costs.completion
+  );
+}
+
+// ---- Retry utility ------------------------------------------
+
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries: number,
+  retryDelayMs = 1000,
+  isRetryable?: (err: unknown) => boolean,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      const shouldRetry = isRetryable ? isRetryable(err) : true;
+      if (!shouldRetry || attempt === maxRetries) throw err;
+      await new Promise(r => setTimeout(r, retryDelayMs * Math.pow(2, attempt)));
+    }
+  }
+  throw lastError;
+}
+
+// ---- OpenRouter Provider ------------------------------------
 
 export class OpenRouterProvider implements IAIProvider {
   name = 'openrouter' as const;
-  private config: AIProviderConfig;
+  config: AIProviderConfig;
 
   constructor(config: AIProviderConfig) {
     this.config = config;
   }
 
-  private buildMessages(context: AIPromptContext) {
-    const builder = new PromptEngine(context);
-    return builder.buildOpenAIMessages();
-  }
-
-  async generate(context: AIPromptContext): Promise<AIResponse> {
-    const messages = this.buildMessages(context);
-    const model = context.model || this.config.defaultModel;
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://creatoros.com', // Required for OpenRouter
-        'X-Title': 'Creator OS',
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: context.temperature ?? 0.7,
-        response_format: context.expectedJsonSchema ? { type: 'json_object' } : undefined,
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`OpenRouter API error: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    
+  private get headers(): Record<string, string> {
     return {
-      content: data.choices[0].message.content,
-      usage: {
-        promptTokens: data.usage.prompt_tokens,
-        completionTokens: data.usage.completion_tokens,
-        totalTokens: data.usage.total_tokens,
-      },
-      model: data.model,
+      'Authorization': `Bearer ${this.config.apiKey}`,
+      'Content-Type':  'application/json',
+      'HTTP-Referer':  'https://creatoros.com',
+      'X-Title':       'Creator OS',
     };
   }
 
-  async stream(context: AIPromptContext, onChunk: (chunk: string) => void): Promise<AIResponse> {
-    const messages = this.buildMessages(context);
-    const model = context.model || this.config.defaultModel;
+  async isAvailable(): Promise<boolean> {
+    try {
+      const r = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: this.headers,
+        signal: AbortSignal.timeout(5000),
+      });
+      return r.ok;
+    } catch {
+      return false;
+    }
+  }
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+  async generate(ctx: AIPromptContext): Promise<AIResponse> {
+    const start = Date.now();
+    const compressed = PromptEngine.compress(ctx);
+    const built = PromptEngine.build(compressed);
+    const model = built.model;
+
+    const fn = async () => {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify({
+          model,
+          messages: built.messages,
+          temperature: built.temperature,
+          max_tokens: ctx.maxTokens,
+          response_format: ctx.expectedJsonSchema ? { type: 'json_object' } : undefined,
+        }),
+        signal: AbortSignal.timeout(this.config.timeout ?? 30_000),
+      });
+
+      if (res.status === 429) throw new AIError('Rate limited', 'RATE_LIMITED', true);
+      if (res.status === 401) throw new AIError('Auth failed', 'AUTH_FAILED', false);
+      if (!res.ok) {
+        const body = await res.text().catch(() => res.statusText);
+        throw new AIError(`Provider error: ${body}`, 'PROVIDER_OFFLINE', true);
+      }
+
+      const data = await res.json();
+      const content = data.choices?.[0]?.message?.content ?? '';
+
+      // Validate JSON if schema expected
+      if (ctx.expectedJsonSchema) {
+        try { JSON.parse(content); } catch {
+          throw new AIError('Invalid JSON from provider', 'INVALID_JSON', true, content.slice(0, 200));
+        }
+      }
+
+      const usage: TokenUsage = {
+        promptTokens:     data.usage?.prompt_tokens ?? 0,
+        completionTokens: data.usage?.completion_tokens ?? 0,
+        totalTokens:      data.usage?.total_tokens ?? 0,
+        estimatedCostUsd: estimateCost(model, {
+          promptTokens:     data.usage?.prompt_tokens ?? 0,
+          completionTokens: data.usage?.completion_tokens ?? 0,
+          totalTokens:      data.usage?.total_tokens ?? 0,
+        }),
+      };
+
+      return {
+        content,
+        usage,
+        model,
+        latencyMs: Date.now() - start,
+        generationId: data.id,
+      } satisfies AIResponse;
+    };
+
+    return withRetry(fn, this.config.maxRetries ?? 2, 1000, (e) => {
+      return e instanceof AIError && e.retryable;
+    });
+  }
+
+  async stream(
+    ctx: AIPromptContext,
+    onChunk: (chunk: StreamChunk) => void,
+    signal?: AbortSignal
+  ): Promise<AIResponse> {
+    const start = Date.now();
+    const compressed = PromptEngine.compress(ctx);
+    const built = PromptEngine.build(compressed);
+    const model = built.model;
+
+    const abortCtrl = new AbortController();
+    // If caller provides a signal, link them
+    signal?.addEventListener('abort', () => abortCtrl.abort());
+
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.config.apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://creatoros.com',
-        'X-Title': 'Creator OS',
-      },
+      headers: this.headers,
       body: JSON.stringify({
         model,
-        messages,
-        temperature: context.temperature ?? 0.7,
+        messages: built.messages,
+        temperature: built.temperature,
+        max_tokens: ctx.maxTokens,
         stream: true,
-      })
+      }),
+      signal: abortCtrl.signal,
     });
 
-    if (!response.ok || !response.body) {
-      throw new Error(`OpenRouter streaming error: ${response.statusText}`);
+    if (!res.ok || !res.body) {
+      throw new AIError(`Streaming failed: ${res.statusText}`, 'STREAM_INTERRUPTED', true);
     }
 
-    const reader = response.body.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n').filter(line => line.trim().startsWith('data: '));
-      
-      for (const line of lines) {
-        const dataStr = line.replace('data: ', '').trim();
-        if (dataStr === '[DONE]') continue;
-        
-        try {
-          const data = JSON.parse(dataStr);
-          const text = data.choices[0]?.delta?.content || '';
-          fullContent += text;
-          onChunk(text);
-        } catch (e) {
-          console.error('Error parsing SSE:', e);
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const raw = decoder.decode(value, { stream: true });
+        const lines = raw.split('\n').filter(l => l.trimStart().startsWith('data: '));
+
+        for (const line of lines) {
+          const dataStr = line.replace(/^data:\s*/, '').trim();
+          if (dataStr === '[DONE]') {
+            onChunk({ text: '', done: true });
+            continue;
+          }
+          try {
+            const parsed = JSON.parse(dataStr);
+            const text = parsed.choices?.[0]?.delta?.content ?? '';
+            if (text) {
+              fullContent += text;
+              onChunk({ text, done: false });
+            }
+          } catch {
+            // skip malformed SSE lines
+          }
         }
+      }
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') {
+        onChunk({ text: '', done: true, error: 'Cancelled' });
+      } else {
+        throw new AIError('Stream interrupted', 'STREAM_INTERRUPTED', true);
       }
     }
 
     return {
       content: fullContent,
-      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }, // Streaming often hides exact usage
+      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
       model,
+      latencyMs: Date.now() - start,
     };
   }
+}
+
+// ---- Provider Registry ---------------------------------------
+
+type ProviderFactory = (config: AIProviderConfig) => IAIProvider;
+
+const REGISTRY: Record<string, ProviderFactory> = {
+  openrouter: (cfg) => new OpenRouterProvider(cfg),
+  // future: 'openai': (cfg) => new OpenAIProvider(cfg),
+  // future: 'anthropic': (cfg) => new AnthropicProvider(cfg),
+};
+
+/**
+ * The single entry point for creating any AI provider.
+ * Switching providers = change one config value.
+ */
+export function createProvider(config: AIProviderConfig): IAIProvider {
+  const factory = REGISTRY[config.name] ?? REGISTRY['openrouter'];
+  return factory(config);
+}
+
+/**
+ * Creates the default Creator OS provider from env.
+ * Used by all hooks — never import directly in components.
+ */
+export function createDefaultProvider(): IAIProvider {
+  return createProvider({
+    name: 'openrouter',
+    apiKey: import.meta.env?.VITE_OPENROUTER_API_KEY ?? '',
+    defaultModel: 'anthropic/claude-3.5-sonnet',
+    timeout: 30_000,
+    maxRetries: 2,
+  });
 }

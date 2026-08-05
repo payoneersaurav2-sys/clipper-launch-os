@@ -1,59 +1,225 @@
-import { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { AIPromptContext, AIResponse } from '@clipper/core/src/ai/types';
+// ============================================================
+// CREATOR OS — useAI HOOK v2
+// The single gateway for all AI operations in the UI.
+// Handles: generate, stream, cancel, retry, history, memory.
+// ============================================================
 
-export const useAI = () => {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+import { useState, useRef, useCallback } from 'react';
+import { createDefaultProvider } from '@clipper/core/src/ai/provider';
+import { AIPromptContext, AIResponse, AIError, GenerationCategory } from '@clipper/core/src/ai/types';
+import { useHistoryStore } from '@/stores/useHistoryStore';
+import { useMemoryStore } from '@/stores/useMemoryStore';
+import { useAISettingsStore } from '@/stores/useAISettingsStore';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
-  const generate = async (promptContext: AIPromptContext): Promise<AIResponse> => {
-    setIsGenerating(true);
-    setError(null);
+// Singleton provider — created once, reused across hook instances
+let _provider = createDefaultProvider();
+
+export function refreshProvider() {
+  _provider = createDefaultProvider();
+}
+
+// ---- Types --------------------------------------------------
+
+interface UseAIState {
+  isGenerating: boolean;
+  isStreaming: boolean;
+  streamedText: string;
+  error: string | null;
+  lastResponse: AIResponse | null;
+}
+
+interface GenerateOptions {
+  category?: GenerationCategory;
+  projectId?: string;
+  promptSummary?: string;
+  onStream?: (text: string) => void;
+  skipHistory?: boolean;
+  skipMemory?: boolean;
+}
+
+// ---- Hook ---------------------------------------------------
+
+export function useAI() {
+  const [state, setState] = useState<UseAIState>({
+    isGenerating: false,
+    isStreaming: false,
+    streamedText: '',
+    error: null,
+    lastResponse: null,
+  });
+
+  const abortRef = useRef<AbortController | null>(null);
+  const addRecord  = useHistoryStore(s => s.addRecord);
+  const getForCtx  = useMemoryStore(s => s.getForContext);
+  const { settings, getTemperatureForCreativity, getMaxTokensForLength } = useAISettingsStore();
+  const { activeWorkspace } = useWorkspaceStore();
+
+  // ---- Cancel -----------------------------------------------
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+    setState(s => ({ ...s, isGenerating: false, isStreaming: false }));
+  }, []);
+
+  // ---- Core generate (non-streaming) ------------------------
+  const generate = useCallback(async (
+    ctx: AIPromptContext,
+    opts: GenerateOptions = {}
+  ): Promise<AIResponse> => {
+    setState({ isGenerating: true, isStreaming: false, streamedText: '', error: null, lastResponse: null });
+
+    // Inject memory + settings into context
+    const memory = opts.skipMemory ? [] : getForCtx(activeWorkspace?.id, 15);
+    const enrichedCtx: AIPromptContext = {
+      ...ctx,
+      temperature: ctx.temperature ?? getTemperatureForCreativity(),
+      maxTokens:   ctx.maxTokens  ?? getMaxTokensForLength(),
+      model:       ctx.model      ?? settings.defaultModel,
+      taskContext: {
+        ...ctx.taskContext,
+        memory: [...(ctx.taskContext.memory ?? []), ...memory],
+        userPreferences: {
+          ...settings,
+          ...ctx.taskContext.userPreferences,
+        },
+        workspace: ctx.taskContext.workspace ?? {
+          id:   activeWorkspace?.id   ?? 'default',
+          name: activeWorkspace?.name ?? 'Workspace',
+        },
+      },
+    };
+
+    const start = Date.now();
     try {
-      const { data, error } = await supabase.functions.invoke('ai-router', {
-        body: promptContext,
-      });
+      const response = await _provider.generate(enrichedCtx);
 
-      if (error) throw new Error(error.message);
-      if (data.error) throw new Error(data.error);
+      if (!opts.skipHistory) {
+        addRecord({
+          workspaceId:   activeWorkspace?.id ?? 'default',
+          projectId:     opts.projectId,
+          category:      opts.category ?? 'custom',
+          model:         response.model,
+          temperature:   enrichedCtx.temperature!,
+          promptSummary: opts.promptSummary ?? ctx.systemPrompt.slice(0, 120),
+          response:      response.content,
+          usage:         { ...response.usage, estimatedCostUsd: response.usage.estimatedCostUsd },
+          latencyMs:     Date.now() - start,
+          tags:          [],
+        });
+      }
 
-      return data as AIResponse;
+      setState(s => ({ ...s, isGenerating: false, lastResponse: response }));
+      return response;
+
     } catch (err: any) {
-      setError(err.message);
+      const msg = err instanceof AIError ? `[${err.code}] ${err.message}` : String(err.message ?? err);
+      setState(s => ({ ...s, isGenerating: false, error: msg }));
       throw err;
-    } finally {
-      setIsGenerating(false);
     }
+  }, [settings, activeWorkspace, getForCtx, getTemperatureForCreativity, getMaxTokensForLength, addRecord]);
+
+  // ---- Streaming generate -----------------------------------
+  const generateStream = useCallback(async (
+    ctx: AIPromptContext,
+    opts: GenerateOptions = {}
+  ): Promise<AIResponse> => {
+    setState({ isGenerating: true, isStreaming: true, streamedText: '', error: null, lastResponse: null });
+
+    const abort = new AbortController();
+    abortRef.current = abort;
+
+    const memory = opts.skipMemory ? [] : getForCtx(activeWorkspace?.id, 15);
+    const enrichedCtx: AIPromptContext = {
+      ...ctx,
+      stream:      true,
+      temperature: ctx.temperature ?? getTemperatureForCreativity(),
+      maxTokens:   ctx.maxTokens  ?? getMaxTokensForLength(),
+      model:       ctx.model      ?? settings.defaultModel,
+      taskContext: {
+        ...ctx.taskContext,
+        memory: [...(ctx.taskContext.memory ?? []), ...memory],
+        userPreferences: { ...settings, ...ctx.taskContext.userPreferences },
+        workspace: ctx.taskContext.workspace ?? {
+          id:   activeWorkspace?.id   ?? 'default',
+          name: activeWorkspace?.name ?? 'Workspace',
+        },
+      },
+    };
+
+    const start = Date.now();
+    try {
+      const response = await _provider.stream(
+        enrichedCtx,
+        (chunk) => {
+          if (!chunk.done) {
+            setState(s => ({ ...s, streamedText: s.streamedText + chunk.text }));
+            opts.onStream?.(chunk.text);
+          }
+        },
+        abort.signal
+      );
+
+      if (!opts.skipHistory && !abort.signal.aborted) {
+        addRecord({
+          workspaceId:   activeWorkspace?.id ?? 'default',
+          projectId:     opts.projectId,
+          category:      opts.category ?? 'custom',
+          model:         response.model,
+          temperature:   enrichedCtx.temperature!,
+          promptSummary: opts.promptSummary ?? ctx.systemPrompt.slice(0, 120),
+          response:      response.content,
+          usage:         response.usage,
+          latencyMs:     Date.now() - start,
+          tags:          [],
+        });
+      }
+
+      setState(s => ({ ...s, isGenerating: false, isStreaming: false, lastResponse: response }));
+      return response;
+
+    } catch (err: any) {
+      if (!abort.signal.aborted) {
+        const msg = err instanceof AIError ? `[${err.code}] ${err.message}` : String(err.message ?? err);
+        setState(s => ({ ...s, isGenerating: false, isStreaming: false, error: msg }));
+      } else {
+        setState(s => ({ ...s, isGenerating: false, isStreaming: false }));
+      }
+      throw err;
+    }
+  }, [settings, activeWorkspace, getForCtx, getTemperatureForCreativity, getMaxTokensForLength, addRecord]);
+
+  // ---- JSON generate helper (auto-parse + validate) ---------
+  const generateJSON = useCallback(async <T>(
+    ctx: AIPromptContext,
+    opts: GenerateOptions = {}
+  ): Promise<T> => {
+    const response = await generate(ctx, opts);
+    try {
+      return JSON.parse(response.content) as T;
+    } catch {
+      throw new AIError(
+        `AI returned invalid JSON: ${response.content.slice(0, 200)}`,
+        'INVALID_JSON',
+        true
+      );
+    }
+  }, [generate]);
+
+  return {
+    // State
+    isGenerating: state.isGenerating,
+    isStreaming:  state.isStreaming,
+    streamedText: state.streamedText,
+    error:        state.error,
+    lastResponse: state.lastResponse,
+
+    // Actions
+    generate,
+    generateStream,
+    generateJSON,
+    cancel,
+
+    // Helpers
+    clearError: () => setState(s => ({ ...s, error: null })),
   };
-
-  // Note: True streaming via supabase functions requires consuming the ReadableStream manually.
-  // Implementing a basic mocked timeout for the UI experience if the edge function is offline.
-  const generateMock = async (promptContext: AIPromptContext): Promise<AIResponse> => {
-      setIsGenerating(true);
-      setError(null);
-      return new Promise((resolve) => {
-          setTimeout(() => {
-              setIsGenerating(false);
-              let mockResponse = "Generated content";
-              
-              if (promptContext.expectedJsonSchema) {
-                 if (promptContext.expectedJsonSchema.properties.ideas) {
-                     mockResponse = JSON.stringify({ ideas: [{ title: "AI Generated Idea", context: "AI context" }]});
-                 } else if (promptContext.expectedJsonSchema.properties.hooks) {
-                     mockResponse = JSON.stringify({ hooks: [{ content: "AI Generated Hook", explanation: "AI explanation" }]});
-                 } else if (promptContext.expectedJsonSchema.properties.caption) {
-                     mockResponse = JSON.stringify({ caption: "AI Caption", hashtags: ["#ai"], cta: "Click here" });
-                 }
-              }
-
-              resolve({
-                  content: mockResponse,
-                  usage: { promptTokens: 10, completionTokens: 20, totalTokens: 30 },
-                  model: 'mock-model'
-              });
-          }, 1500);
-      });
-  };
-
-  return { generate: generateMock, isGenerating, error };
-};
+}

@@ -22,6 +22,7 @@ const navItems = [
   { name: 'Knowledge Vault', href: '/dashboard/knowledge-vault', icon: Library, shortcut: '⇧K' },
   { name: 'Prompt Library', href: '/dashboard/prompt-library', icon: TerminalSquare, shortcut: '⇧P' },
   { name: 'Analytics', href: '/dashboard/analytics', icon: LineChart, shortcut: '⇧A' },
+  { name: 'AI Settings', href: '/dashboard/ai-settings', icon: Settings, shortcut: '⇧S' },
 ];
 
 export default function DashboardLayout() {

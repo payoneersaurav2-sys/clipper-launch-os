@@ -12,6 +12,7 @@ import DashboardHome from './pages/DashboardHome';
 import TermsPage from './pages/TermsPage';
 import FAQPage from './pages/FAQPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AISettingsPage from './pages/AISettingsPage';
 import { 
   IdeaStudio, HookEngine, CaptionOS, LaunchCenter, 
   ClipTracker, KnowledgeVault, PromptLibrary, Analytics 
@@ -44,6 +45,7 @@ function App() {
              <Route path="knowledge-vault" element={<KnowledgeVault />} />
              <Route path="prompt-library" element={<PromptLibrary />} />
              <Route path="analytics" element={<Analytics />} />
+             <Route path="ai-settings" element={<AISettingsPage />} />
              <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Route>
