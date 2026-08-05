@@ -90,30 +90,36 @@ export default function OnboardingPage() {
     if (!user) return;
     setSaving(true);
     try {
-      // Create workspace
-      await createWorkspace.mutateAsync(form.workspaceName || 'My Workspace');
-      // Save onboarding data
-      const { error } = await supabase.from('users').update({
+      // Step 1: Guarantee the public.users row exists before anything else.
+      // This prevents the FK violation for users who came through Whop OAuth
+      // or any path that didn't explicitly insert into public.users.
+      const { error: upsertErr } = await supabase.from('users').upsert({
+        id: user.id,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Creator',
+        membership_status: 'active',
         onboarding_complete: true,
         niche: form.niche,
         platform: form.platform,
         posting_frequency: form.frequency,
         experience_level: form.experience,
         goals: form.goals,
-      }).eq('id', user.id);
-      
-      if (error) {
-        console.error("Failed to update user:", error);
-        alert("Failed to save onboarding data. Please try again.");
+      }, { onConflict: 'id' });
+
+      if (upsertErr) {
+        console.error("Failed to upsert user:", upsertErr);
+        alert("Failed to save your profile. Please try again.");
         setSaving(false);
         return;
       }
-      
+
+      // Step 2: Now that the user row exists, create the workspace safely
+      await createWorkspace.mutateAsync(form.workspaceName || 'My Workspace');
+
       useAuthStore.setState({ onboardingComplete: true });
       navigate('/dashboard');
     } catch (err: any) {
       console.error("Failed to finish onboarding:", err);
-      alert(err.message || "Something went wrong creating your workspace.");
+      alert(err.message || "Something went wrong. Please try again.");
       setSaving(false);
     }
   };
