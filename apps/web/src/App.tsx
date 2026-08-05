@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import AuthCallback from './pages/AuthCallback';
+import AuthIframe from './pages/AuthIframe';
 import ExpiredPage from './pages/ExpiredPage';
 import DashboardHome from './pages/DashboardHome';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -22,8 +23,9 @@ function App() {
         
         {/* Authentication */}
         <Route path="/login" element={<AuthLayout><LoginPage /></AuthLayout>} />
-        <Route path="/signup" element={<AuthLayout><SignupPage /></AuthLayout>} />
+        <Route path="/signup" element={<SignupPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/auth/iframe" element={<AuthIframe />} />
         <Route path="/expired" element={<ExpiredPage />} />
         
         {/* Dashboard OS */}
