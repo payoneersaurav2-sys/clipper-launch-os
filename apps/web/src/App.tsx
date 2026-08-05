@@ -13,9 +13,12 @@ import TermsPage from './pages/TermsPage';
 import FAQPage from './pages/FAQPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import AISettingsPage from './pages/AISettingsPage';
+import CampaignOSPage from './pages/CampaignOSPage';
+import ClipPipelinePage from './pages/ClipPipelinePage';
+import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import { 
   IdeaStudio, HookEngine, CaptionOS, LaunchCenter, 
-  ClipTracker, KnowledgeVault, PromptLibrary, Analytics 
+  KnowledgeVault, PromptLibrary
 } from './components/ModulePlaceholders';
 
 function App() {
@@ -36,17 +39,18 @@ function App() {
         {/* Dashboard OS */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<DashboardLayout />}>
-             <Route index element={<DashboardHome />} />
-             <Route path="idea-studio" element={<IdeaStudio />} />
-             <Route path="hook-engine" element={<HookEngine />} />
-             <Route path="caption-os" element={<CaptionOS />} />
-             <Route path="launch-center" element={<LaunchCenter />} />
-             <Route path="clip-tracker" element={<ClipTracker />} />
-             <Route path="knowledge-vault" element={<KnowledgeVault />} />
-             <Route path="prompt-library" element={<PromptLibrary />} />
-             <Route path="analytics" element={<Analytics />} />
-             <Route path="ai-settings" element={<AISettingsPage />} />
-             <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route index element={<DashboardHome />} />
+            <Route path="idea-studio"   element={<IdeaStudio />} />
+            <Route path="hook-engine"   element={<HookEngine />} />
+            <Route path="caption-os"    element={<CaptionOS />} />
+            <Route path="launch-center" element={<LaunchCenter />} />
+            <Route path="campaign-os"   element={<CampaignOSPage />} />
+            <Route path="clip-pipeline" element={<ClipPipelinePage />} />
+            <Route path="knowledge-vault" element={<KnowledgeVault />} />
+            <Route path="prompt-library"  element={<PromptLibrary />} />
+            <Route path="analytics"     element={<AnalyticsDashboard />} />
+            <Route path="ai-settings"   element={<AISettingsPage />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Route>
 

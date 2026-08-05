@@ -1,133 +1,200 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { 
   LayoutDashboard, Lightbulb, PenTool, Type, Rocket, 
-  ListTodo, Library, TerminalSquare, LineChart, Settings,
-  Bell, Search, Menu, LogOut, ChevronDown
+  Video, Library, TerminalSquare, LineChart, Settings,
+  Bell, Search, LogOut, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import Wordmark from '@/components/Wordmark';
+import { CommandPalette } from '@/components/CommandPalette';
 
-const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, shortcut: '⌘D' },
-  { name: 'Idea Studio', href: '/dashboard/idea-studio', icon: Lightbulb, shortcut: '⇧I' },
-  { name: 'Hook Engine', href: '/dashboard/hook-engine', icon: PenTool, shortcut: '⇧H' },
-  { name: 'Caption OS', href: '/dashboard/caption-os', icon: Type, shortcut: '⇧C' },
-  { name: 'Launch Center', href: '/dashboard/launch-center', icon: Rocket, shortcut: '⇧L' },
-  { name: 'Clip Tracker', href: '/dashboard/clip-tracker', icon: ListTodo, shortcut: '⇧T' },
-  { name: 'Knowledge Vault', href: '/dashboard/knowledge-vault', icon: Library, shortcut: '⇧K' },
-  { name: 'Prompt Library', href: '/dashboard/prompt-library', icon: TerminalSquare, shortcut: '⇧P' },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: LineChart, shortcut: '⇧A' },
-  { name: 'AI Settings', href: '/dashboard/ai-settings', icon: Settings, shortcut: '⇧S' },
+// ---- Nav groups ---------------------------------------------
+const navGroups = [
+  {
+    label: 'Workspace',
+    items: [
+      { name: 'Dashboard',      href: '/dashboard',                icon: LayoutDashboard },
+      { name: 'Idea Studio',    href: '/dashboard/idea-studio',    icon: Lightbulb },
+      { name: 'Hook Engine',    href: '/dashboard/hook-engine',    icon: PenTool },
+      { name: 'Caption OS',     href: '/dashboard/caption-os',     icon: Type },
+    ],
+  },
+  {
+    label: 'Production',
+    items: [
+      { name: 'Campaign OS',    href: '/dashboard/campaign-os',    icon: Rocket },
+      { name: 'Clip Pipeline',  href: '/dashboard/clip-pipeline',  icon: Video },
+      { name: 'Launch Center',  href: '/dashboard/launch-center',  icon: Rocket },
+    ],
+  },
+  {
+    label: 'Intelligence',
+    items: [
+      { name: 'Analytics',      href: '/dashboard/analytics',      icon: LineChart },
+      { name: 'Knowledge Vault',href: '/dashboard/knowledge-vault',icon: Library },
+      { name: 'Prompt Library', href: '/dashboard/prompt-library', icon: TerminalSquare },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { name: 'AI Settings',    href: '/dashboard/ai-settings',    icon: Settings },
+    ],
+  },
 ];
 
 export default function DashboardLayout() {
-  const [collapsed, setCollapsed] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [collapsed, setCollapsed]         = useState(false);
+  const [cmdOpen, setCmdOpen]             = useState(false);
+  const location  = useLocation();
+  const navigate  = useNavigate();
   const { signOut, user } = useAuthStore();
-  const { data: workspaces, isLoading } = useWorkspaces();
-  const { activeWorkspace } = useWorkspaceStore();
+  useWorkspaces(); // initialise workspace on mount
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/');
-  };
+  // ⌘K listener
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdOpen(v => !v);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  const handleLogout = async () => { await signOut(); navigate('/'); };
+
+  const isActive = (href: string) =>
+    href === '/dashboard' ? location.pathname === href : location.pathname.startsWith(href);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#080808] font-sans text-[#FAFAFA]">
-      {/* Sidebar */}
+
+      {/* ---- Sidebar ---------------------------------------- */}
       <aside className={cn(
-        "flex flex-col border-r border-white/[0.06] bg-[#080808] transition-all duration-300 z-20",
-        collapsed ? "w-[80px]" : "w-[260px]"
+        'flex flex-col border-r border-white/[0.06] bg-[#080808] transition-all duration-300 z-20 shrink-0',
+        collapsed ? 'w-[68px]' : 'w-[240px]'
       )}>
-        <div className="flex h-20 items-center px-6">
-          {!collapsed ? (
-            <Wordmark size="md" href="/dashboard" />
-          ) : (
-            <div className="w-full flex justify-center">
-              <span className="font-semibold tracking-[-0.04em] text-[13px] leading-none">
-                <span className="text-[#FAFAFA]">C</span><span className="text-primary">O</span>
-              </span>
-            </div>
+        {/* Logo + collapse toggle */}
+        <div className="flex h-16 items-center justify-between px-4">
+          {!collapsed && <Wordmark size="md" href="/dashboard" />}
+          {collapsed && (
+            <span className="w-full flex justify-center font-bold text-[13px] tracking-[-0.04em]">
+              <span className="text-[#FAFAFA]">C</span><span className="text-primary">O</span>
+            </span>
           )}
+          <button onClick={() => setCollapsed(v => !v)}
+            className="shrink-0 text-[#71717A] hover:text-[#FAFAFA] transition-colors p-1 rounded-[6px] hover:bg-white/[0.05]">
+            {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          </button>
         </div>
-        
-        <div className="flex-1 overflow-auto py-6 px-4">
-          <nav className="grid gap-1.5">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium transition-all duration-200 group",
-                    isActive 
-                      ? "bg-primary/[0.08] text-primary" 
-                      : "text-[#A1A1AA] hover:bg-white/[0.03] hover:text-[#FAFAFA]",
-                    collapsed ? "justify-center px-0" : ""
-                  )}
-                  title={collapsed ? item.name : undefined}
-                >
-                  <item.icon className={cn("h-[16px] w-[16px] shrink-0 transition-transform duration-200 group-hover:scale-110", isActive ? "text-primary" : "text-[#71717A]")} />
-                  {!collapsed && (
-                    <div className="flex flex-1 items-center justify-between">
-                      <span className="tracking-tight">{item.name}</span>
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+
+        {/* Search shortcut */}
+        {!collapsed && (
+          <div className="px-4 mb-2">
+            <button onClick={() => setCmdOpen(true)}
+              className="w-full flex items-center gap-2.5 h-9 px-3 rounded-[10px] bg-white/[0.04] border border-white/[0.05] text-[#71717A] text-[13px] hover:bg-white/[0.06] transition-colors">
+              <Search className="h-3.5 w-3.5 shrink-0" />
+              <span className="flex-1 text-left">Search…</span>
+              <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] font-mono">⌘K</kbd>
+            </button>
+          </div>
+        )}
+        {collapsed && (
+          <div className="px-3 mb-2">
+            <button onClick={() => setCmdOpen(true)}
+              className="w-full flex justify-center p-2 rounded-[10px] hover:bg-white/[0.05] transition-colors text-[#71717A] hover:text-[#FAFAFA]">
+              <Search className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Nav groups */}
+        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5">
+          {navGroups.map(group => (
+            <div key={group.label}>
+              {!collapsed && (
+                <p className="text-[10px] font-semibold text-[#71717A] uppercase tracking-widest px-2 mb-1.5">
+                  {group.label}
+                </p>
+              )}
+              <nav className="space-y-0.5">
+                {group.items.map(item => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link key={item.name} to={item.href}
+                      title={collapsed ? item.name : undefined}
+                      className={cn(
+                        'flex items-center gap-3 rounded-[10px] px-2.5 py-2 text-[13px] font-medium transition-all duration-150 group',
+                        active
+                          ? 'bg-primary/[0.10] text-primary'
+                          : 'text-[#71717A] hover:bg-white/[0.04] hover:text-[#FAFAFA]',
+                        collapsed && 'justify-center px-0 py-2.5'
+                      )}>
+                      <item.icon className={cn('h-4 w-4 shrink-0 transition-transform group-hover:scale-105', active ? 'text-primary' : 'text-[#71717A]')} />
+                      {!collapsed && <span className="tracking-tight">{item.name}</span>}
+                      {!collapsed && active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
+          ))}
         </div>
-        
-        <div className="p-4 flex flex-col gap-2">
-          <Link
-            to="/settings"
-            className={cn(
-              "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium transition-all hover:bg-white/[0.03] hover:text-[#FAFAFA] text-[#A1A1AA]",
-              collapsed ? "justify-center px-0" : ""
+
+        {/* User / logout */}
+        <div className="p-3 border-t border-white/[0.06]">
+          <div className={cn('flex items-center gap-3 p-2 rounded-[10px] hover:bg-white/[0.04] transition-colors cursor-pointer group', collapsed && 'justify-center')}>
+            <div className="h-7 w-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[12px] font-medium text-primary shrink-0">
+              {user?.email?.charAt(0).toUpperCase() || 'C'}
+            </div>
+            {!collapsed && (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[12px] font-medium text-[#FAFAFA] truncate">{user?.email?.split('@')[0] || 'Creator'}</p>
+                  <p className="text-[10px] text-[#71717A]">Active</p>
+                </div>
+                <button onClick={handleLogout}
+                  className="text-[#71717A] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-[6px] hover:bg-red-400/10">
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              </>
             )}
-            title={collapsed ? "Settings" : undefined}
-          >
-            <Settings className="h-[16px] w-[16px] shrink-0 text-[#71717A]" />
-            {!collapsed && <span className="tracking-tight">Settings</span>}
-          </Link>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#080808]">
-        {/* Top Navigation */}
-        <header className="flex h-20 items-center justify-end gap-6 px-8 lg:px-12 bg-transparent z-10 border-b border-white/[0.02]">
-          <div className="flex items-center gap-6">
-            <Button variant="ghost" size="icon" className="relative text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-white/[0.03] rounded-full h-9 w-9 transition-colors">
+      {/* ---- Main ------------------------------------------ */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="flex h-16 items-center justify-between px-8 border-b border-white/[0.04] shrink-0">
+          <div className="text-[13px] text-[#71717A]">
+            {navGroups.flatMap(g => g.items).find(i => isActive(i.href))?.name ?? 'Dashboard'}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon"
+              className="relative h-8 w-8 rounded-[8px] text-[#71717A] hover:text-[#FAFAFA] hover:bg-white/[0.05]">
               <Bell className="h-4 w-4" />
-              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(124,58,237,0.8)]" />
+              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
             </Button>
-            <div className="flex items-center gap-3 pl-6 border-l border-white/[0.06] cursor-pointer group">
-              <div className="flex flex-col items-end hidden sm:flex">
-                <span className="text-[13px] font-medium tracking-tight text-[#FAFAFA] group-hover:text-primary transition-colors">
-                  {user?.email?.split('@')[0] || 'Creator'}
-                </span>
-                <span className="text-[11px] text-[#71717A] tracking-wide">Workspace</span>
-              </div>
-              <div className="h-8 w-8 rounded-full bg-[#111111] border border-white/[0.06] flex items-center justify-center text-[13px] font-medium text-[#FAFAFA] overflow-hidden group-hover:border-primary/50 transition-colors">
-                {user?.email?.charAt(0).toUpperCase() || 'C'}
-              </div>
-            </div>
           </div>
         </header>
-        
-        <main className="flex-1 overflow-auto p-8 lg:p-12 relative selection:bg-primary/30">
+
+        <main className="flex-1 overflow-auto p-8 lg:p-10 selection:bg-primary/30">
           <Outlet />
         </main>
       </div>
+
+      {/* ---- Command Palette -------------------------------- */}
+      <AnimatePresence>
+        {cmdOpen && <CommandPalette onClose={() => setCmdOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
