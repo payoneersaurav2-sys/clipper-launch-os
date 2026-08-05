@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function ProtectedRoute() {
-  const { user, membershipStatus, isLoading } = useAuthStore();
+  const { user, membershipStatus, onboardingComplete, isLoading } = useAuthStore();
   const location = useLocation();
 
   if (isLoading) {
