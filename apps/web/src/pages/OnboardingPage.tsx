@@ -46,7 +46,7 @@ function OptionGrid({ options, value, onChange, multi }: { options: string[]; va
     }
   };
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
       {options.map(opt => (
         <button key={opt} onClick={() => toggle(opt)}
           className={`relative flex items-center gap-3 p-3.5 rounded-[12px] border text-left text-[13px] font-medium transition-all ${isSelected(opt) ? 'border-primary bg-primary/[0.08] text-[#FAFAFA]' : 'border-white/[0.06] bg-[#111111] text-[#A1A1AA] hover:border-white/[0.15] hover:text-[#FAFAFA]'}`}>
@@ -125,8 +125,8 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] flex items-center justify-center p-6 font-sans">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-[#080808] flex items-start sm:items-center justify-center p-4 sm:p-6 font-sans overflow-y-auto">
+      <div className="w-full max-w-lg py-8 sm:py-0">
         {/* Logo */}
         <div className="text-center mb-10">
           <span className="text-[18px] font-bold tracking-[-0.04em]">
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
 
         <AnimatePresence mode="wait">
           <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
-            className="bg-[#111111] border border-white/[0.06] rounded-[24px] p-8 space-y-6">
+            className="bg-[#111111] border border-white/[0.06] rounded-[20px] sm:rounded-[24px] p-5 sm:p-8 space-y-5 sm:space-y-6">
 
             {/* Progress */}
             <ProgressBar step={step} total={STEPS.length} />

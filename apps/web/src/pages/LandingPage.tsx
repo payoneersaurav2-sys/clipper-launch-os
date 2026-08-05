@@ -11,7 +11,7 @@ export default function LandingPage() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
       
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center text-center px-4 pt-40 pb-32">
+      <section className="relative flex flex-col items-center justify-center text-center px-4 pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24 md:pb-32">
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -26,7 +26,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-          className="text-[48px] md:text-[72px] lg:text-[84px] font-semibold tracking-tighter max-w-5xl mb-6 text-[#FAFAFA] leading-[1.05]"
+          className="text-[36px] sm:text-[52px] md:text-[72px] lg:text-[84px] font-semibold tracking-tighter max-w-5xl mb-6 text-[#FAFAFA] leading-[1.05]"
         >
           Build your audience.<br />
           <span className="text-primary">
@@ -38,7 +38,7 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-          className="text-[17px] md:text-[19px] text-[#A1A1AA] max-w-2xl mb-10 leading-relaxed tracking-tight"
+          className="text-[15px] sm:text-[17px] md:text-[19px] text-[#A1A1AA] max-w-2xl mb-8 sm:mb-10 leading-relaxed tracking-tight"
         >
           Creator OS is the definitive workspace for digital empires. 
           Stop juggling disconnected tools and start operating from a single source of truth.
@@ -64,17 +64,17 @@ export default function LandingPage() {
       </section>
 
       {/* Workflow Bento Grid */}
-      <section className="py-24 px-4 bg-[#080808] relative z-10">
+      <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-[#080808] relative z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-20">
-            <h2 className="text-[32px] md:text-[48px] font-semibold tracking-tight mb-4 text-[#FAFAFA] leading-none">A seamless workflow engine.</h2>
+          <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+            <h2 className="text-[26px] sm:text-[36px] md:text-[48px] font-semibold tracking-tight mb-4 text-[#FAFAFA] leading-none">A seamless workflow engine.</h2>
             <p className="text-[#A1A1AA] max-w-2xl mx-auto text-[17px] tracking-tight">Outputs automatically become inputs. No manual transfer. Everything is connected.</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
             <motion.div 
               whileHover={{ scale: 0.99, y: -2 }}
-              className="md:col-span-2 p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              className="sm:col-span-2 p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
             >
               <Workflow className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">1. Idea Studio</h3>
@@ -83,7 +83,7 @@ export default function LandingPage() {
 
             <motion.div 
               whileHover={{ scale: 0.99, y: -2 }}
-              className="p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              className="p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
             >
               <Zap className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[20px] font-semibold mb-3 tracking-tight">2. Hook Engine</h3>
@@ -92,7 +92,7 @@ export default function LandingPage() {
 
             <motion.div 
               whileHover={{ scale: 0.99, y: -2 }}
-              className="p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              className="p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
             >
               <PenTool className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[20px] font-semibold mb-3 tracking-tight">3. Caption OS</h3>

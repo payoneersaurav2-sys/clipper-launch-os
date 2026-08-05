@@ -66,34 +66,34 @@ export default function DashboardHome() {
   const missionPct      = Math.round((completedCount / MISSIONS.length) * 100);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-20 animate-in fade-in slide-in-from-bottom-6 duration-500 font-sans text-[#FAFAFA]">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20 animate-in fade-in slide-in-from-bottom-6 duration-500 font-sans text-[#FAFAFA]">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-[28px] font-semibold tracking-tight leading-none text-[#FAFAFA]">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-[22px] sm:text-[28px] font-semibold tracking-tight leading-none text-[#FAFAFA]">
             {getGreeting()} 👋
           </h1>
-          <p className="text-[#71717A] text-[14px] tracking-tight mt-2">{todayDate}</p>
+          <p className="text-[#71717A] text-[13px] sm:text-[14px] tracking-tight mt-2">{todayDate}</p>
         </div>
-        <div className="flex items-center gap-3 mt-1">
+        <div className="flex items-center gap-3 mt-1 shrink-0">
           <div className="text-right">
-            <p className="text-[13px] text-[#71717A]">AI Generations Today</p>
-            <p className="text-[20px] font-semibold text-[#FAFAFA] leading-tight">{genCount}</p>
+            <p className="text-[11px] sm:text-[13px] text-[#71717A]">AI Generations</p>
+            <p className="text-[18px] sm:text-[20px] font-semibold text-[#FAFAFA] leading-tight">{genCount}</p>
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         {QUICK_ACTIONS.map(a => (
           <Link key={a.href} to={a.href}>
             <motion.div whileHover={{ y: -2 }} transition={{ duration: 0.15 }}
-              className="flex items-center gap-3 p-4 rounded-[14px] bg-[#111111] border border-white/[0.06] hover:border-white/[0.12] transition-colors cursor-pointer group">
+              className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-[12px] sm:rounded-[14px] bg-[#111111] border border-white/[0.06] hover:border-white/[0.12] transition-colors cursor-pointer group">
               <div className={`h-8 w-8 rounded-[10px] flex items-center justify-center shrink-0 ${a.color}`}>
                 <a.icon className="h-4 w-4" />
               </div>
-              <span className="text-[13px] font-medium text-[#A1A1AA] group-hover:text-[#FAFAFA] transition-colors">{a.label}</span>
+              <span className="text-[11px] sm:text-[13px] font-medium text-[#A1A1AA] group-hover:text-[#FAFAFA] transition-colors leading-tight">{a.label}</span>
               <ArrowRight className="h-3.5 w-3.5 text-[#71717A] ml-auto opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1 group-hover:translate-x-0 transition-transform" />
             </motion.div>
           </Link>
@@ -101,9 +101,9 @@ export default function DashboardHome() {
       </div>
 
       {/* Today's Mission + Recent Campaigns */}
-      <div className="grid md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* Mission */}
-        <div className="md:col-span-2 bg-[#111111] border border-white/[0.06] rounded-[18px] p-7 overflow-hidden">
+        <div className="md:col-span-2 bg-[#111111] border border-white/[0.06] rounded-[18px] p-4 sm:p-6 lg:p-7 overflow-hidden">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-[16px] font-semibold text-[#FAFAFA] tracking-tight">Today's Mission</h3>
@@ -134,9 +134,9 @@ export default function DashboardHome() {
                     <p className={`text-[13px] font-medium tracking-tight transition-colors ${done ? 'text-[#71717A] line-through' : 'text-[#FAFAFA]'}`}>{m.title}</p>
                     <p className="text-[11px] text-[#71717A] mt-0.5">{m.desc}</p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border capitalize ${PRIORITY_COLOR[m.priority]}`}>{m.priority}</span>
-                    <span className="text-[11px] text-[#71717A] flex items-center gap-1">
+                    <span className="text-[11px] text-[#71717A] hidden sm:flex items-center gap-1">
                       <Clock className="h-3 w-3" />{m.time}
                     </span>
                     <Link to={m.href} onClick={e => e.stopPropagation()}>
@@ -183,7 +183,7 @@ export default function DashboardHome() {
       </div>
 
       {/* Recent Ideas + AI Activity */}
-      <div className="grid md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
         {/* Recent Ideas */}
         <div className="bg-[#111111] border border-white/[0.06] rounded-[18px] p-6">
           <div className="flex items-center justify-between mb-5">
