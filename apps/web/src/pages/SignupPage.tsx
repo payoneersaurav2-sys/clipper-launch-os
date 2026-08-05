@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 export default function SignupPage() {
   const handleWhopCheckout = () => {
     // Redirect user to the Whop product checkout page
-    window.location.href = 'https://whop.com/checkout/plan_xxx'; // Replace with actual Whop checkout URL
+    window.location.href = 'https://whop.com/clipper-launch-os-53ae/clipper-launch-os-9b/';
   };
 
   return (

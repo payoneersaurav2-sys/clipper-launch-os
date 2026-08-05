@@ -50,11 +50,11 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
         >
-          <Link to="/signup" className="w-full sm:w-auto">
+          <a href="https://whop.com/clipper-launch-os-53ae/clipper-launch-os-9b/" className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
             <Button size="lg" className="w-full h-12 px-8 text-base shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] transition-all">
               Start Free Trial <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
-          </Link>
+          </a>
           <Link to="/login" className="w-full sm:w-auto">
             <Button variant="outline" size="lg" className="w-full h-12 px-8 text-base bg-background/50 backdrop-blur-md">
               Sign In
