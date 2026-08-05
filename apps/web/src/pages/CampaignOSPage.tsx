@@ -39,10 +39,10 @@ function CreateModal({ onClose }: { onClose: () => void }) {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
       onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
-        className="w-full max-w-md bg-[#111111] border border-white/[0.08] rounded-[20px] p-7 shadow-2xl">
+        className="w-full max-w-md bg-[#111111] border border-white/[0.08] rounded-t-[20px] sm:rounded-[20px] p-5 sm:p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-[17px] font-semibold text-[#FAFAFA] tracking-tight">New Campaign</h3>
           <button onClick={onClose} className="text-[#71717A] hover:text-[#FAFAFA] transition-colors"><X className="h-4 w-4" /></button>
@@ -180,13 +180,13 @@ export default function CampaignOSPage() {
 
   return (
     <div className="space-y-8 max-w-6xl animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 justify-between">
         <div>
-          <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Campaign OS</h2>
-          <p className="text-[14px] text-[#71717A] mt-1">Manage every campaign from research to growth.</p>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Campaign OS</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Manage every campaign from research to growth.</p>
         </div>
         <Button onClick={() => setShowCreate(true)}
-          className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] text-[13px]">
+          className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] text-[13px] self-start sm:self-auto">
           <Plus className="h-4 w-4 mr-1.5" />New Campaign
         </Button>
       </div>
@@ -207,7 +207,7 @@ export default function CampaignOSPage() {
 
       {/* Campaign grid */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="h-56 rounded-[16px] bg-[#111111] border border-white/[0.06] animate-pulse" />
           ))}
@@ -224,7 +224,7 @@ export default function CampaignOSPage() {
           </Button>
         </div>
       ) : (
-        <motion.div layout className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <AnimatePresence>
             {visible?.map(c => <CampaignCard key={c.id} campaign={c} />)}
           </AnimatePresence>

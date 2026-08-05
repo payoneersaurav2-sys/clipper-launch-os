@@ -158,7 +158,7 @@ function SecurityTab() {
       </Section>
 
       <Section title="Danger Zone">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
             <p className="text-[13px] font-medium text-red-400">Delete Account</p>
             <p className="text-[12px] text-[#71717A]">Permanently delete your account and all data.</p>
@@ -183,14 +183,16 @@ export default function SettingsPage() {
         <p className="text-[14px] text-[#71717A] mt-1">Manage your account and workspace.</p>
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 p-1 rounded-[12px] bg-[#111111] border border-white/[0.06] w-fit">
+      {/* Tab bar — scrollable on mobile */}
+      <div className="overflow-x-auto -mx-1 px-1">
+        <div className="flex gap-1 p-1 rounded-[12px] bg-[#111111] border border-white/[0.06] w-fit min-w-0">
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-[10px] text-[13px] font-medium transition-all ${activeTab === tab.id ? 'bg-primary/10 text-primary' : 'text-[#71717A] hover:text-[#FAFAFA]'}`}>
-            <tab.icon className="h-4 w-4" />{tab.label}
+            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-[10px] text-[12px] sm:text-[13px] font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-primary/10 text-primary' : 'text-[#71717A] hover:text-[#FAFAFA]'}`}>
+            <tab.icon className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
+        </div>
       </div>
 
       {/* Tab content */}

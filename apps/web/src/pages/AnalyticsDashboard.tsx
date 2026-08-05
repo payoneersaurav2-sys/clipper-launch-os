@@ -97,28 +97,28 @@ export default function AnalyticsDashboard() {
   const sparkData  = Object.values(usageByDay).slice(-7).map(v => v / 1000);
 
   return (
-    <div className="space-y-10 max-w-6xl animate-in fade-in duration-500">
+    <div className="space-y-6 sm:space-y-8 lg:space-y-10 max-w-6xl animate-in fade-in duration-500">
       <div>
         <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Analytics</h2>
         <p className="text-[14px] text-[#71717A] mt-1">Workspace performance at a glance.</p>
       </div>
 
       {/* Top stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard icon={Layers}   label="Active Campaigns"  value={activeCampaigns}  trend="+2" sparkValues={[1,2,1,3,2,3,activeCampaigns]} />
         <StatCard icon={Zap}      label="Ideas Generated"   value={totalIdeas}       trend={`+${Math.max(0, totalIdeas - 5)}`} sparkValues={[0,2,5,8,10,totalIdeas]} />
         <StatCard icon={Activity} label="AI Generations"    value={genCount}         sparkValues={sparkData.length ? sparkData : [0,1,2,3,4,5,genCount]} />
         <StatCard icon={Star}     label="Favourited"         value={favCount}         sparkValues={[0,1,1,2,3,favCount]} />
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         <StatCard icon={Eye}      label="Total Views"       value={stats?.totalViews ?? 0}   prefix=""  suffix="" trend="+12%" sparkValues={[100,200,180,400,350,600,stats?.totalViews ?? 0]} />
         <StatCard icon={TrendingUp} label="Total Likes"     value={stats?.totalLikes ?? 0}   trend="+8%" />
         <StatCard icon={DollarSign} label="Total Revenue"   value={parseFloat((stats?.totalRevenue ?? 0).toFixed(2))} prefix="$" />
       </div>
 
       {/* AI usage section */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         <div className="p-6 rounded-[18px] bg-[#111111] border border-white/[0.06]">
           <div className="flex items-center gap-2 mb-5">
             <BarChart2 className="h-4 w-4 text-primary" />
