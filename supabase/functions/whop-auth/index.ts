@@ -29,7 +29,7 @@ serve(async (req) => {
     const REQUIRED_PRODUCT_ID = Deno.env.get('WHOP_REQUIRED_PRODUCT_ID') ?? '';
 
     // 2. Exchange code for Whop Access Token
-    const tokenResponse = await fetch('https://whop.com/oauth/token', {
+    const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
