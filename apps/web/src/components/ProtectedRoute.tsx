@@ -29,5 +29,10 @@ export default function ProtectedRoute() {
     return <Navigate to="/expired" replace />;
   }
 
+  // Force onboarding if they haven't done it yet
+  if (onboardingComplete !== true) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
   return <Outlet />;
 }

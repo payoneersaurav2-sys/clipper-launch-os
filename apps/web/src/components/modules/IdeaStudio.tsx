@@ -33,7 +33,12 @@ export function IdeaStudio() {
   const handleAIGenerate = async () => {
     clearError();
     const data = await generateJSON<{ ideas: any[] }>(
-      buildGenerateIdeasPrompt({ workspaceId: ws.id, workspaceName: ws.name }),
+      buildGenerateIdeasPrompt({ 
+        workspaceId: ws.id, 
+        workspaceName: ws.name,
+        niche: activeWorkspace?.niche,
+        platform: activeWorkspace?.platform,
+      }),
       { category: 'idea', promptSummary: 'Generate viral ideas' }
     );
     for (const idea of data.ideas ?? []) {
@@ -44,7 +49,12 @@ export function IdeaStudio() {
   const handleExpand = async (idea: any) => {
     setExpandingId(idea.id);
     const data = await generateJSON<any>(
-      buildExpandIdeaPrompt({ workspaceId: ws.id, workspaceName: ws.name, ideaTitle: idea.title }),
+      buildExpandIdeaPrompt({ 
+        workspaceId: ws.id, 
+        workspaceName: ws.name, 
+        ideaTitle: idea.title,
+        platform: activeWorkspace?.platform 
+      }),
       { category: 'idea', promptSummary: `Expand: ${idea.title}` }
     );
     setExpanded(prev => ({ ...prev, [idea.id]: data }));

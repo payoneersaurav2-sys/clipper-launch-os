@@ -208,7 +208,7 @@ export class PromptEngine {
     return {
       messages,
       version: { version: ENGINE_VERSION, createdAt: new Date().toISOString() },
-      model: ctx.model || 'anthropic/claude-3.5-sonnet',
+      model: ctx.model || 'openai/gpt-4o-mini',
       temperature: ctx.temperature ?? 0.7,
       expectedSchema: ctx.expectedJsonSchema,
     };

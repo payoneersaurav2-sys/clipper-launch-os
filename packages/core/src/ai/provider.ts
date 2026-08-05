@@ -255,7 +255,7 @@ export function createDefaultProvider(): IAIProvider {
   return createProvider({
     name: 'openrouter',
     apiKey: import.meta.env?.VITE_OPENROUTER_API_KEY ?? '',
-    defaultModel: 'anthropic/claude-3.5-sonnet',
+    defaultModel: 'openai/gpt-4o-mini',
     timeout: 30_000,
     maxRetries: 2,
   });

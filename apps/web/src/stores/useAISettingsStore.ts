@@ -8,7 +8,7 @@ import { persist } from 'zustand/middleware';
 import { AISettings, AIModelId } from '@clipper/core/src/ai/types';
 
 const DEFAULTS: AISettings = {
-  defaultModel: 'anthropic/claude-3.5-sonnet',
+  defaultModel: 'openai/gpt-4o-mini',
   temperature: 0.7,
   creativity: 'medium',
   streaming: true,

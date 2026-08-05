@@ -100,6 +100,7 @@ export default function OnboardingPage() {
       experience_level: form.experience,
       goals: form.goals,
     }).eq('id', user.id);
+    useAuthStore.setState({ onboardingComplete: true });
     navigate('/dashboard');
   };
 
@@ -172,7 +173,18 @@ export default function OnboardingPage() {
         </AnimatePresence>
 
         <p className="text-center text-[12px] text-[#71717A] mt-6">
-          <button onClick={() => navigate('/dashboard')} className="hover:text-[#FAFAFA] transition-colors">
+          <button 
+            disabled={saving}
+            onClick={async () => {
+              if (!user) return;
+              setSaving(true);
+              await supabase.from('users').update({ onboarding_complete: true }).eq('id', user.id);
+              // Force local state update so ProtectedRoute sees it
+              useAuthStore.setState({ onboardingComplete: true });
+              navigate('/dashboard');
+            }} 
+            className="hover:text-[#FAFAFA] transition-colors"
+          >
             Skip for now →
           </button>
         </p>
