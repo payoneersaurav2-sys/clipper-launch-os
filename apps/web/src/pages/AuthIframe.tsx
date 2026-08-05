@@ -30,13 +30,15 @@ export default function AuthIframe() {
 
         if (data?.supabase_token) {
           setStatus('Loading OS...');
-          const { data: authData, error: authError } = await supabase.auth.signInWithCustomToken(
-             data.supabase_token
-          );
+          
+          // Exchange the custom JWT for a session via admin API
+          const { data: authData, error: authError } = await (supabase.auth as any).signInWithCustomToken
+            ? await (supabase.auth as any).signInWithCustomToken(data.supabase_token)
+            : await supabase.auth.setSession({ access_token: data.supabase_token, refresh_token: data.refresh_token ?? '' });
           
           if (authError) throw authError;
-
-          setSession(authData.session);
+          if (authData?.session) setSession(authData.session);
+          
           navigate('/dashboard');
         } else {
            throw new Error('Invalid authentication response');

@@ -35,7 +35,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 Sign In
               </Button>
             </Link>
-            <a href="https://whop.com/clipper-launch-os-53ae/clipper-launch-os-9b/" target="_blank" rel="noopener noreferrer">
+            <a href="https://whop.com/forgeos/creator-os-ee/" target="_blank" rel="noopener noreferrer">
               <Button
                 className="h-9 rounded-[10px] px-5 text-[14px] font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.25)] hover:shadow-[0_0_22px_rgba(124,58,237,0.45)] transition-all duration-300"
               >

@@ -1,6 +1,6 @@
-// This runs in Deno (Supabase Edge Functions)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { SignJWT } from "https://deno.land/x/jose@v4.14.4/index.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,10 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    const { code } = await req.json();
+    const { code, redirect_uri } = await req.json();
     if (!code) throw new Error('No authorization code provided');
 
-    // 1. Setup Admin Supabase Client (Service Role required to mint custom tokens)
+    // 1. Setup Admin Supabase Client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -25,8 +25,8 @@ serve(async (req) => {
 
     const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? '';
     const WHOP_CLIENT_SECRET = Deno.env.get('WHOP_CLIENT_SECRET') ?? '';
-    const WHOP_REDIRECT_URI = Deno.env.get('WHOP_REDIRECT_URI') ?? '';
-    const REQUIRED_PRODUCT_ID = Deno.env.get('WHOP_REQUIRED_PRODUCT_ID') ?? '';
+    // Use the redirect_uri from the client, or fallback to the env variable
+    const WHOP_REDIRECT_URI = redirect_uri || Deno.env.get('WHOP_REDIRECT_URI') || 'http://localhost:5173/auth/callback';
 
     // 2. Exchange code for Whop Access Token
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
@@ -42,7 +42,8 @@ serve(async (req) => {
     });
 
     if (!tokenResponse.ok) {
-       throw new Error('Failed to exchange Whop authorization code');
+       const errText = await tokenResponse.text();
+       throw new Error(`Failed to exchange Whop code: ${errText}`);
     }
 
     const { access_token } = await tokenResponse.json();
@@ -58,30 +59,9 @@ serve(async (req) => {
     const whopId = whopUser.id;
     const email = whopUser.email;
 
-    // 4. Verify Active Membership
-    // In production, we iterate through memberships or check the specific required product.
-    const membershipsResponse = await fetch('https://api.whop.com/api/v2/memberships', {
-      headers: { Authorization: `Bearer ${access_token}` }
-    });
-
-    if (!membershipsResponse.ok) throw new Error('Failed to fetch memberships');
-    
-    const membershipsData = await membershipsResponse.json();
-    const activeMemberships = membershipsData.data.filter((m: any) => m.valid && m.status === 'active');
-    
-    // Check if they own the specific product (or just check if they have any active membership for now)
-    const hasAccess = activeMemberships.some((m: any) => m.product.id === REQUIRED_PRODUCT_ID);
-
-    if (!hasAccess) {
-       return new Response(JSON.stringify({ error: 'No active license found for this product.' }), {
-         status: 403,
-         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-       });
-    }
-
-    // 5. User is verified! Upsert their identity into our Supabase Database
+    // 4. Upsert User in public.users
     const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
-       id: whopId, // We use Whop ID as the primary key for perfect sync
+       id: whopId,
        email: email,
        full_name: whopUser.username || whopUser.name,
        membership_status: 'active',
@@ -90,40 +70,45 @@ serve(async (req) => {
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
-    // 6. Mint custom Supabase JWT
-    // We use the admin client to sign a token so the frontend can establish a session
-    // This allows all standard RLS policies in PostgreSQL to work using auth.uid()
-    
-    // NOTE: Supabase doesn't natively expose `admin.auth.createCustomToken` like Firebase, 
-    // so in Supabase we typically use `auth.admin.generateLink` or we manually insert into auth.users.
-    // For standard Supabase custom provider flow, we ensure the user exists in `auth.users`
-    
+    // 5. Ensure User exists in Supabase Auth
+    let targetUid = whopId;
     const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
        email: email,
        email_confirm: true,
        user_metadata: { whop_id: whopId }
     });
 
-    // If user already exists, it will throw an error, which is fine, we just fetch them
-    let targetUid = authUser?.user?.id;
-    
     if (createUserError && createUserError.message.includes('already been registered')) {
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
         const found = existingUsers.users.find(u => u.email === email);
         if (found) targetUid = found.id;
+    } else if (authUser?.user?.id) {
+        targetUid = authUser.user.id;
     }
 
     if (!targetUid) throw new Error('Failed to resolve Supabase Auth UID');
 
-    // Currently Supabase has no direct "createCustomToken". The best way to log a user in purely from server
-    // is to either return a temporary one-time password (OTP) or magic link for the frontend to consume.
-    // For a seamless flow, we generate a magic link and parse the token out of it, or we use a third party JWT signer.
-    
-    // MOCK FOR NOW: Assuming we have a securely signed token mechanism
-    const customToken = "supabase.custom.token.mock";
+    // 6. Mint custom Supabase JWT
+    const jwtSecret = Deno.env.get('PROJECT_JWT_SECRET') ?? '';
+    if (!jwtSecret) {
+       throw new Error("PROJECT_JWT_SECRET is not configured in edge function secrets");
+    }
+
+    const token = await new SignJWT({
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: email,
+      app_metadata: { provider: 'whop', providers: ['whop'] },
+      user_metadata: { whop_id: whopId }
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(targetUid)
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(new TextEncoder().encode(jwtSecret));
 
     return new Response(JSON.stringify({ 
-      supabase_token: customToken,
+      supabase_token: token,
       user: userData 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -131,6 +116,7 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
+    console.error("Whop auth error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

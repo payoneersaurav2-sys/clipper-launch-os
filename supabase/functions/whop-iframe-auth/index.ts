@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 import { WhopAPI } from 'npm:@whop-apps/sdk';
+import { SignJWT } from "https://deno.land/x/jose@v4.14.4/index.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,8 +24,10 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // 2. Initialize Whop SDK
-    const whopApi = new WhopAPI({ apiKey: Deno.env.get('WHOP_API_KEY') || '' });
+    // 2. Initialize Whop SDK with API Key
+    const whopApiKey = Deno.env.get('WHOP_API_KEY');
+    if (!whopApiKey) throw new Error('WHOP_API_KEY is missing');
+    const whopApi = new WhopAPI({ apiKey: whopApiKey });
 
     // 3. Verify the iFrame Token securely
     const { userId } = await whopApi.verifyUserToken({ 'x-whop-user-token': token });
@@ -35,15 +38,12 @@ serve(async (req) => {
 
     // 4. Get User Profile from Whop
     const userProfile = await whopApi.user.retrieve({ id: userId });
+    const email = userProfile.email;
     
-    // 5. Verify Active Membership
-    // (For an iframe app, we usually just let them in if they loaded it, but we can verify)
-    const REQUIRED_PRODUCT_ID = Deno.env.get('WHOP_REQUIRED_PRODUCT_ID') ?? '';
-    
-    // 6. Upsert User in Supabase
+    // 5. Upsert User in Supabase
     const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
        id: userId,
-       email: userProfile.email,
+       email: email,
        full_name: userProfile.username || userProfile.name || 'Whop User',
        membership_status: 'active',
        updated_at: new Date().toISOString()
@@ -51,23 +51,40 @@ serve(async (req) => {
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
-    // 7. Mint custom Supabase Auth User
+    // 6. Ensure User exists in Supabase Auth
+    let targetUid = userId;
     const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-       email: userProfile.email,
+       email: email,
        email_confirm: true,
        user_metadata: { whop_id: userId }
     });
 
-    let targetUid = authUser?.user?.id;
-    
     if (createUserError && createUserError.message.includes('already been registered')) {
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const found = existingUsers.users.find(u => u.email === userProfile.email);
+        const found = existingUsers.users.find(u => u.email === email);
         if (found) targetUid = found.id;
+    } else if (authUser?.user?.id) {
+        targetUid = authUser.user.id;
     }
 
-    // MOCK FOR NOW: Assuming we have a securely signed token mechanism
-    const customToken = "supabase.custom.token.mock";
+    // 7. Mint custom Supabase Auth JWT
+    const jwtSecret = Deno.env.get('PROJECT_JWT_SECRET') ?? '';
+    if (!jwtSecret) {
+       throw new Error("PROJECT_JWT_SECRET is not configured in edge function secrets");
+    }
+
+    const customToken = await new SignJWT({
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: email,
+      app_metadata: { provider: 'whop-iframe', providers: ['whop-iframe'] },
+      user_metadata: { whop_id: userId }
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(targetUid)
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(new TextEncoder().encode(jwtSecret));
 
     return new Response(JSON.stringify({ 
       supabase_token: customToken,
@@ -78,6 +95,7 @@ serve(async (req) => {
     });
 
   } catch (error: any) {
+    console.error("Iframe Auth Error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

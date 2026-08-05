@@ -22,7 +22,10 @@ export default function AuthCallback() {
       try {
         // We call our Supabase Edge Function to securely exchange the Whop code
         const { data, error } = await supabase.functions.invoke('whop-auth', {
-          body: { code },
+          body: { 
+            code,
+            redirect_uri: `${window.location.origin}/auth/callback`
+          },
         });
 
         if (error) throw new Error(error.message);
