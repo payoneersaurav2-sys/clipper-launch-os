@@ -37,107 +37,96 @@ export default function DashboardLayout() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-screen overflow-hidden bg-background font-sans text-foreground">
       {/* Sidebar */}
       <aside className={cn(
-        "flex flex-col border-r bg-card transition-all duration-300",
-        collapsed ? "w-16" : "w-64"
+        "flex flex-col border-r border-border/40 bg-background/95 backdrop-blur-md transition-all duration-300 z-20",
+        collapsed ? "w-[80px]" : "w-[280px]"
       )}>
-        <div className="flex h-14 items-center justify-between px-4 border-b">
+        <div className="flex h-20 items-center justify-between px-6">
           {!collapsed && (
-            <div className="flex items-center gap-2 overflow-hidden truncate">
-               <span className="font-bold tracking-tight truncate">
-                 {isLoading ? 'Loading...' : activeWorkspace?.name || 'Workspace'}
-               </span>
-               <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center shadow-lg shadow-primary/20">
+                <span className="font-bold text-white text-sm tracking-tighter">CL</span>
+              </div>
+              <span className="font-bold tracking-widest text-lg">CREATOR <span className="text-primary">OS</span></span>
             </div>
           )}
-          <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="ml-auto shrink-0">
-            <Menu className="h-4 w-4" />
-          </Button>
+          {collapsed && (
+            <div className="h-8 w-8 mx-auto rounded-lg bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center shadow-lg shadow-primary/20">
+               <span className="font-bold text-white text-sm tracking-tighter">CL</span>
+            </div>
+          )}
         </div>
         
-        <div className="flex-1 overflow-auto py-4">
-          <nav className="grid gap-1 px-3">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all group",
-                  location.pathname === item.href 
-                    ? "bg-accent/50 text-accent-foreground" 
-                    : "text-muted-foreground hover:bg-accent/30 hover:text-accent-foreground",
-                  collapsed ? "justify-center" : ""
-                )}
-                title={collapsed ? item.name : undefined}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && (
-                  <div className="flex flex-1 items-center justify-between">
-                    <span>{item.name}</span>
-                    <span className="text-[10px] font-mono tracking-widest text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      {item.shortcut}
-                    </span>
-                  </div>
-                )}
-              </Link>
-            ))}
+        <div className="flex-1 overflow-auto py-6 px-4">
+          <nav className="grid gap-2">
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 group",
+                    isActive 
+                      ? "bg-primary/10 text-primary" 
+                      : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                    collapsed ? "justify-center px-0" : ""
+                  )}
+                  title={collapsed ? item.name : undefined}
+                >
+                  <item.icon className={cn("h-[18px] w-[18px] shrink-0 transition-transform group-hover:scale-110", isActive ? "text-primary" : "text-muted-foreground")} />
+                  {!collapsed && (
+                    <div className="flex flex-1 items-center justify-between">
+                      <span className="tracking-wide">{item.name}</span>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
           </nav>
         </div>
         
-        <div className="p-4 border-t flex flex-col gap-2">
+        <div className="p-6 flex flex-col gap-2">
           <Link
             to="/settings"
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent hover:text-accent-foreground text-muted-foreground",
-              collapsed ? "justify-center" : ""
+              "flex items-center gap-4 rounded-xl px-4 py-3 text-sm font-medium transition-all hover:bg-white/5 hover:text-foreground text-muted-foreground",
+              collapsed ? "justify-center px-0" : ""
             )}
             title={collapsed ? "Settings" : undefined}
           >
-            <Settings className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Settings</span>}
+            <Settings className="h-[18px] w-[18px] shrink-0" />
+            {!collapsed && <span className="tracking-wide">Settings</span>}
           </Link>
-          <button
-            onClick={handleLogout}
-            className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-destructive/10 hover:text-destructive text-muted-foreground w-full",
-              collapsed ? "justify-center" : ""
-            )}
-            title={collapsed ? "Log out" : undefined}
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Log out</span>}
-          </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#070707]">
         {/* Top Navigation */}
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-6 lg:px-8">
-          <div className="w-full flex-1">
-            <Button variant="outline" className="w-full justify-start text-muted-foreground max-w-sm sm:pr-12 md:w-64" onClick={() => {
-                // To be implemented: trigger CMD+K palette
-                console.log("Open CMD+K");
-            }}>
-              <Search className="mr-2 h-4 w-4" />
-              <span className="hidden lg:inline-flex">Search OS (CMD+K)...</span>
-              <span className="inline-flex lg:hidden">Search...</span>
+        <header className="flex h-20 items-center justify-end gap-6 px-8 lg:px-12 bg-transparent z-10">
+          <div className="flex items-center gap-6">
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-full h-10 w-10">
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-2.5 right-2.5 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(124,58,237,0.8)]" />
             </Button>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
-            </Button>
-            <div className="h-8 w-8 rounded-full bg-accent border flex items-center justify-center text-sm font-medium cursor-pointer overflow-hidden">
-              {user?.email?.charAt(0).toUpperCase() || 'U'}
+            <div className="flex items-center gap-3 pl-6 border-l border-border/40 cursor-pointer group">
+              <div className="flex flex-col items-end hidden sm:flex">
+                <span className="text-sm font-semibold tracking-wide text-foreground group-hover:text-primary transition-colors">
+                  {user?.email?.split('@')[0] || 'Creator'}
+                </span>
+                <span className="text-xs text-muted-foreground">Pro Plan</span>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center text-sm font-semibold text-primary overflow-hidden">
+                {user?.email?.charAt(0).toUpperCase() || 'C'}
+              </div>
             </div>
           </div>
         </header>
         
-        <main className="flex-1 overflow-auto p-6 lg:p-8">
+        <main className="flex-1 overflow-auto p-8 lg:p-12 relative">
           <Outlet />
         </main>
       </div>

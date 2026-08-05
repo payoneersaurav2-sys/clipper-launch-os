@@ -1,89 +1,141 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Lightbulb, PlayCircle, Plus } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle2, Circle } from 'lucide-react';
 
 export default function DashboardHome() {
   return (
-    <div className="max-w-5xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
+    <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out pb-20">
       
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Good Evening, John.</h1>
-          <p className="text-muted-foreground">Today's Mission. Here is your prioritized action plan.</p>
-        </div>
-        <Button className="shrink-0 shadow-sm shadow-primary/20 hover:shadow-primary/40 transition-shadow">
-          <Plus className="h-4 w-4 mr-2" /> New Project
-        </Button>
+      {/* Header */}
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-semibold tracking-tight text-white">Good Evening, Creator 👋</h1>
+        <p className="text-muted-foreground text-base tracking-wide">Let's build something viral today.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {/* Inbox / Continue Working */}
-        <Card className="col-span-2 border-primary/20 bg-gradient-to-br from-primary/10 to-transparent shadow-sm relative overflow-hidden group">
-          <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <PlayCircle className="h-5 w-5 text-primary" /> Continue Workflow
-            </CardTitle>
-            <CardDescription className="text-foreground/80">
-              Your AI has finished generating 12 hook variations for "The End of AI Wrappers".
-            </CardDescription>
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {[
+          { title: "Ideas Generated", value: "128", trend: "up" },
+          { title: "Hooks Created", value: "86", trend: "up" },
+          { title: "Clips Produced", value: "42", trend: "up" },
+          { title: "Est. Earnings", value: "$1,240", trend: "up" },
+        ].map((stat, i) => (
+          <Card key={i} className="bg-[#111111] border-border/40 hover:bg-[#151515] transition-colors rounded-2xl shadow-xl shadow-black/50">
+            <CardHeader className="pb-2 pt-6 px-6">
+              <CardTitle className="text-[13px] font-medium text-muted-foreground tracking-wide">{stat.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="px-6 pb-6">
+              <div className="text-4xl font-bold tracking-tighter text-white mb-6">{stat.value}</div>
+              {/* Sparkline Mock */}
+              <svg className="w-full h-8" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <path d="M0,20 Q10,5 20,15 T40,10 T60,18 T80,5 T100,2" fill="none" stroke="currentColor" strokeWidth="2" className="text-primary opacity-80" strokeLinecap="round" />
+              </svg>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Today's Mission & Analytics */}
+      <div className="grid md:grid-cols-3 gap-6">
+        
+        {/* Today's Mission */}
+        <Card className="md:col-span-2 bg-[#111111] border-border/40 rounded-3xl shadow-xl shadow-black/50 overflow-hidden">
+          <CardHeader className="px-8 pt-8 pb-4">
+            <CardTitle className="text-lg font-medium text-white tracking-wide">Today's Mission</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Button className="w-full sm:w-auto relative z-10" variant="default">
-              Review Hooks in Inbox <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+          <CardContent className="px-8 pb-8 flex flex-col md:flex-row items-center gap-10">
+            
+            <div className="flex-1 space-y-6 w-full">
+              {[
+                { title: "Review 8 hook suggestions", desc: "High engagement potential", done: true },
+                { title: "Create 5 captions", desc: "For your trending clips", done: false },
+                { title: "Launch 1 campaign", desc: "Automate and grow", done: false },
+              ].map((task, i) => (
+                <div key={i} className="flex items-start gap-4 group cursor-pointer">
+                  {task.done ? (
+                    <CheckCircle2 className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+                  ) : (
+                    <Circle className="h-6 w-6 text-muted-foreground/50 group-hover:text-primary/50 transition-colors shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <h4 className={`text-base font-medium tracking-wide ${task.done ? 'text-foreground' : 'text-foreground/80'}`}>{task.title}</h4>
+                    <p className="text-sm text-muted-foreground mt-0.5">{task.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Circular Progress */}
+            <div className="relative h-40 w-40 shrink-0 flex items-center justify-center">
+              <svg className="transform -rotate-90 w-full h-full">
+                <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="440" strokeDashoffset="110" className="text-primary transition-all duration-1000 ease-out" />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center text-center">
+                <span className="text-3xl font-bold tracking-tighter text-white">75%</span>
+                <span className="text-xs text-muted-foreground font-medium tracking-widest uppercase mt-1">Progress</span>
+              </div>
+            </div>
+            
           </CardContent>
         </Card>
 
-        {/* Weekly Goal */}
-        <Card className="shadow-sm border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Weekly Goal</CardTitle>
+      </div>
+
+      {/* Bottom Row */}
+      <div className="grid md:grid-cols-3 gap-6">
+        
+        {/* Recent Project */}
+        <Card className="md:col-span-2 bg-[#111111] border-border/40 rounded-3xl shadow-xl shadow-black/50 overflow-hidden">
+          <CardHeader className="px-8 pt-8 pb-4">
+            <CardTitle className="text-[13px] font-medium text-muted-foreground tracking-widest uppercase">Recent Project</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold tracking-tighter">4 / 7 Clips</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              On track to hit publishing quota.
-            </p>
-            <div className="mt-6 h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-              <div className="h-full bg-primary rounded-full w-[57%]" />
+          <CardContent className="px-8 pb-8 flex items-end justify-between gap-6">
+            <div className="flex items-center gap-5">
+              <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-white/10 to-transparent border border-white/5 overflow-hidden flex items-center justify-center relative shadow-inner">
+                <div className="absolute inset-0 bg-primary/20 opacity-50 mix-blend-overlay" />
+                <div className="w-8 h-10 bg-white/10 rounded border border-white/20 shadow-xl" />
+              </div>
+              <div className="flex flex-col justify-center">
+                <h4 className="text-lg font-semibold text-white tracking-wide">Faceless Finance Niche</h4>
+                <p className="text-sm text-muted-foreground mt-1">Last edited 2h ago</p>
+              </div>
+            </div>
+            
+            <div className="flex-1 max-w-xs flex items-center gap-4">
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full w-[68%]" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground tracking-wider">68%</span>
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="space-y-4">
-           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-1">Recent Projects</h3>
-           <div className="grid gap-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-card hover:bg-accent/50 transition-colors cursor-pointer group">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-secondary group-hover:bg-background transition-colors">
-                    <Lightbulb className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Why Stripe Wins</p>
-                    <p className="text-xs text-muted-foreground">Updated 2h ago</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">Open</Button>
-              </div>
-            ))}
-           </div>
-        </div>
-        
-        <div className="space-y-4">
-           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-1">AI Inbox</h3>
-           <div className="flex flex-col items-center justify-center py-12 rounded-xl border border-dashed border-border/50 text-center text-muted-foreground bg-card/50">
-              <Sparkles className="h-8 w-8 mb-3 opacity-20" />
-              <p className="text-sm font-medium">No pending tasks.</p>
-              <p className="text-xs mt-1">Your AI is resting.</p>
-           </div>
-        </div>
+        {/* Active Campaigns */}
+        <Card className="bg-[#111111] border-border/40 rounded-3xl shadow-xl shadow-black/50 overflow-hidden flex flex-col justify-between">
+          <CardHeader className="px-8 pt-8 pb-2">
+            <CardTitle className="text-lg font-medium text-white tracking-wide">Active Campaigns</CardTitle>
+          </CardHeader>
+          <CardContent className="px-8 pb-8 flex flex-col justify-end h-full">
+            <div className="flex items-baseline gap-3 mb-8">
+              <span className="text-5xl font-bold tracking-tighter text-white">3</span>
+              <span className="text-sm font-medium text-emerald-400">+32%</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">vs last 7 days</p>
+            {/* Sparkline Mock */}
+            <svg className="w-full h-12" viewBox="0 0 100 30" preserveAspectRatio="none">
+              <path d="M0,30 Q20,10 40,25 T70,5 T100,10" fill="none" stroke="url(#purple-gradient)" strokeWidth="3" strokeLinecap="round" />
+              <defs>
+                <linearGradient id="purple-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#7C3AED" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#7C3AED" stopOpacity="1" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </CardContent>
+        </Card>
+
       </div>
-      
     </div>
   );
 }
