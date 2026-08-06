@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useCaptions } from '@/hooks/useCaptions';
 import { useAI } from '@/hooks/useAI';
@@ -15,6 +15,7 @@ const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter'];
 
 export function CaptionOS() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { data: ideas } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
 
@@ -37,7 +38,7 @@ export function CaptionOS() {
   if (!latestIdea) return (
     <div className="space-y-4 animate-in fade-in duration-500">
       <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Caption OS</h2>
-      <EmptyState title="Awaiting Workflow Context" description="Create an idea first to start drafting captions." actionLabel="Go to Idea Studio" />
+      <EmptyState title="Awaiting Workflow Context" description="Create an idea first to start drafting captions." actionLabel="Go to Idea Studio" onAction={() => navigate('/dashboard/idea-studio')} />
     </div>
   );
 
@@ -126,7 +127,7 @@ export function CaptionOS() {
       {isLoading ? (
         <div className="flex h-32 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-[#71717A]" /></div>
       ) : captions?.length === 0 ? (
-        <EmptyState title="No captions yet" description="Generate platform-optimised captions from your winning hook." actionLabel="Generate Caption" />
+        <EmptyState title="No captions yet" description="Generate platform-optimised captions from your winning hook." actionLabel="Generate Caption" onAction={handleGenerate} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {captions?.map(cap => (

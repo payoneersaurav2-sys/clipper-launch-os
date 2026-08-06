@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useHooks } from '@/hooks/useHooks';
 import { useAI } from '@/hooks/useAI';
@@ -13,6 +13,7 @@ import { Plus, Loader2, Sparkles, Star, BarChart2, CheckCircle2 } from 'lucide-r
 
 export function HookEngine() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { data: ideas } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
 
@@ -36,7 +37,7 @@ export function HookEngine() {
     return (
       <div className="space-y-4 animate-in fade-in duration-500">
         <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Hook Engine</h2>
-        <EmptyState title="Awaiting Idea Context" description="Create an idea in Idea Studio first to start generating hooks." actionLabel="Go to Idea Studio" />
+        <EmptyState title="Awaiting Idea Context" description="Create an idea in Idea Studio first to start generating hooks." actionLabel="Go to Idea Studio" onAction={() => navigate('/dashboard/idea-studio')} />
       </div>
     );
   }
@@ -109,7 +110,7 @@ export function HookEngine() {
       {isLoading ? (
         <div className="flex h-32 items-center justify-center"><Loader2 className="h-5 w-5 animate-spin text-[#71717A]" /></div>
       ) : hooks?.length === 0 ? (
-        <EmptyState title="No hooks yet" description="Generate AI hooks or draft your own for this idea." actionLabel="Generate Hooks" />
+        <EmptyState title="No hooks yet" description="Generate AI hooks or draft your own for this idea." actionLabel="Generate Hooks" onAction={handleGenerate} />
       ) : (
         <div className="grid gap-3">
           {hooks?.map(hook => (

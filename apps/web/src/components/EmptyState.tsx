@@ -6,9 +6,10 @@ interface EmptyStateProps {
   title: string;
   description: string;
   actionLabel: string;
+  onAction?: () => void;
 }
 
-export default function EmptyState({ title, description, actionLabel }: EmptyStateProps) {
+export default function EmptyState({ title, description, actionLabel, onAction }: EmptyStateProps) {
   return (
     <div className="flex h-[450px] shrink-0 items-center justify-center rounded-xl border border-dashed bg-card animate-in fade-in duration-500">
       <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
@@ -19,7 +20,7 @@ export default function EmptyState({ title, description, actionLabel }: EmptySta
         <p className="mb-4 mt-2 text-sm text-muted-foreground">
           {description}
         </p>
-        <Button size="sm" className="relative">
+        <Button size="sm" className="relative" onClick={onAction}>
           {actionLabel}
         </Button>
       </div>
