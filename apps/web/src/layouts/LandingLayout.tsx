@@ -18,6 +18,12 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Debug: If we are in an iframe, alert the exact URL so we can see what Whop is passing
+    if (window !== window.top && !sessionStorage.getItem('iframe_alerted')) {
+      alert(`Iframe URL loaded by Whop: ${window.location.href}`);
+      sessionStorage.setItem('iframe_alerted', 'true');
+    }
+
     const token = searchParams.get('token');
     if (token) {
       navigate(`/auth/iframe?token=${token}`);
