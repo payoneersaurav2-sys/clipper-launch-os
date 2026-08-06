@@ -24,8 +24,23 @@ export default function AuthIframe() {
     const token = searchParams.get('token');
 
     if (!token) {
-      // No token in URL — show a friendly fallback with a manual sign-in option
-      setError('No session token received from Whop.');
+      // No token — auto-redirect to Whop OAuth immediately (no button click needed)
+      // Use window.top so the FULL Whop window navigates (not just the iframe)
+      const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
+      // IMPORTANT: Must be HARDCODED — window.location.host inside the Whop proxy
+      // iframe returns *.apps.whop.com, NOT our Vercel domain.
+      const redirectUrl = import.meta.env.VITE_APP_URL
+        ? `${import.meta.env.VITE_APP_URL}/auth/callback`
+        : 'https://creator-os999.vercel.app/auth/callback';
+      const redirectUri = encodeURIComponent(redirectUrl);
+      const oauthUrl = `https://whop.com/oauth?client_id=${WHOP_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code`;
+
+      // Navigate top-level window to bypass iframe restrictions
+      if (window.top && window.top !== window) {
+        window.top.location.href = oauthUrl;
+      } else {
+        window.location.href = oauthUrl;
+      }
       return;
     }
 
