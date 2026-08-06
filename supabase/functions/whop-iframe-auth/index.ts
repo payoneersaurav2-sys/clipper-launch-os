@@ -54,42 +54,33 @@ serve(async (req) => {
     }
 
     // 4. Create or retrieve the user in Supabase Auth
-    // We use a deterministic password so we can sign in programmatically.
-    // The password is derived from the userId + service role key (kept server-side only).
     const deterministicPassword = await derivePassword(userId, SERVICE_ROLE_KEY);
 
     let targetUid: string;
-    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserById(userId);
 
-    if (existingUser?.user?.id) {
-      // User already in auth (by whop_id stored as UUID) - update password
-      targetUid = existingUser.user.id;
+    // Search for existing user by email or whop_id metadata
+    const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const byEmail = listData?.users?.find(u => u.email === email);
+    const byWhopId = listData?.users?.find(u => u.user_metadata?.whop_id === userId);
+    const found = byEmail || byWhopId;
+
+    if (found) {
+      targetUid = found.id;
+      // Refresh the deterministic password in case it changed
       await supabaseAdmin.auth.admin.updateUserById(targetUid, {
         password: deterministicPassword,
+        user_metadata: { whop_id: userId },
       });
     } else {
-      // Try to find by email
-      const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
-      const byEmail = listData?.users?.find(u => u.email === email);
-      const byWhopId = listData?.users?.find(u => u.user_metadata?.whop_id === userId);
-      const found = byEmail || byWhopId;
-
-      if (found) {
-        targetUid = found.id;
-        await supabaseAdmin.auth.admin.updateUserById(targetUid, {
-          password: deterministicPassword,
-        });
-      } else {
-        // Create new user
-        const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password: deterministicPassword,
-          email_confirm: true,
-          user_metadata: { whop_id: userId }
-        });
-        if (createErr) throw new Error(`Failed to create user: ${createErr.message}`);
-        targetUid = newUser.user!.id;
-      }
+      // Create new user
+      const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: deterministicPassword,
+        email_confirm: true,
+        user_metadata: { whop_id: userId }
+      });
+      if (createErr) throw new Error(`Failed to create user: ${createErr.message}`);
+      targetUid = newUser.user!.id;
     }
 
     // 5. Upsert into public.users (schema: id UUID, whop_id TEXT, full_name TEXT, membership_status TEXT)
