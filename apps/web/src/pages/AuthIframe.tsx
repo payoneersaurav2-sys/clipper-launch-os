@@ -14,7 +14,24 @@ export default function AuthIframe() {
 
   useEffect(() => {
     const run = async () => {
-      const token = searchParams.get('token');
+      let token = searchParams.get('token');
+
+      // If we are behind the Whop App Proxy (e.g. qp5or...apps.whop.com), Whop injects 
+      // the token into the 'x-whop-user-token' HTTP header, NOT the URL. 
+      // We call our Vercel API route to extract it from the headers.
+      if (!token) {
+        try {
+          const res = await fetch('/api/get-whop-token');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.token) {
+              token = data.token;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch token from proxy headers:", e);
+        }
+      }
 
       // ── Path A: Whop URL template injected the token directly ──────────
       if (token) {
