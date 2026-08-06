@@ -57,6 +57,7 @@ serve(async (req) => {
     const deterministicPassword = await derivePassword(userId, SERVICE_ROLE_KEY);
 
     let targetUid: string;
+    let signInEmail: string = email; // track the correct email to sign in with
 
     // Search for existing user by email or whop_id metadata
     const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
@@ -66,11 +67,12 @@ serve(async (req) => {
 
     if (found) {
       targetUid = found.id;
-      // Refresh the deterministic password in case it changed
-      await supabaseAdmin.auth.admin.updateUserById(targetUid, {
+      signInEmail = found.email!; // CRITICAL: use their actual Supabase email
+      const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(targetUid, {
         password: deterministicPassword,
         user_metadata: { whop_id: userId },
       });
+      if (updateErr) throw new Error(`Failed to update user password: ${updateErr.message}`);
     } else {
       // Create new user
       const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
@@ -81,6 +83,7 @@ serve(async (req) => {
       });
       if (createErr) throw new Error(`Failed to create user: ${createErr.message}`);
       targetUid = newUser.user!.id;
+      signInEmail = email;
     }
 
     // 5. Upsert into public.users (schema: id UUID, whop_id TEXT, full_name TEXT, membership_status TEXT)
@@ -103,7 +106,7 @@ serve(async (req) => {
         'apikey': SERVICE_ROLE_KEY, // service role key works here too
         'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
       },
-      body: JSON.stringify({ email, password: deterministicPassword }),
+      body: JSON.stringify({ email: signInEmail, password: deterministicPassword }),
     });
 
     if (!signInRes.ok) {
