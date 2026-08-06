@@ -40,25 +40,17 @@ export default function AuthIframe() {
           }
         } catch (err: any) {
           console.error('Iframe token auth error:', err);
-          setStatus('Redirecting to Whop sign-in...');
-          const url = await buildWhopOAuthUrl();
-          if (window.top && window.top !== window) {
-            window.top.location.href = url;
-          } else {
-            window.location.href = url;
-          }
+          setError(err.message || 'Authentication failed');
+          setStatus('');
         }
         return;
       }
 
-      // ── Path B: No token — start PKCE OAuth via window.top ─────────────
-      setStatus('Redirecting to Whop sign-in...');
-      const url = await buildWhopOAuthUrl();
-      if (window.top && window.top !== window) {
-        window.top.location.href = url;
-      } else {
-        window.location.href = url;
-      }
+      // ── STRICT IFRAME MODE ──
+      // The user wants NO redirects. It must happen entirely inside the iframe.
+      // Therefore, Whop MUST pass the token via the URL template ?token={USER_TOKEN}
+      setError(`No token provided by Whop. Current URL: ${window.location.href}`);
+      setStatus('');
     };
 
     run();
