@@ -21,15 +21,16 @@ export default function AuthCallback() {
 
     const exchangeCode = async () => {
       try {
-        // Retrieve the PKCE code_verifier that was saved before the OAuth redirect
-        const codeVerifier = localStorage.getItem('whop_code_verifier');
-        localStorage.removeItem('whop_code_verifier'); // one-time use
+        // The code_verifier was passed via the OAuth `state` param and is echoed back by Whop.
+        // We use state instead of localStorage because the OAuth starts in a Whop proxy iframe
+        // (different origin) and localStorage doesn't cross domains.
+        const codeVerifier = searchParams.get('state') || undefined;
 
         const { data, error } = await supabase.functions.invoke('whop-auth', {
           body: {
             code,
             redirect_uri: WHOP_REDIRECT_URI,
-            code_verifier: codeVerifier ?? undefined,
+            code_verifier: codeVerifier,
           },
         });
 

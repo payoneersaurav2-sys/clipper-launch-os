@@ -1,6 +1,11 @@
 /**
  * PKCE (Proof Key for Code Exchange) utilities for Whop OAuth.
  * Whop requires PKCE for all OAuth flows.
+ *
+ * NOTE: We pass the code_verifier via the OAuth `state` parameter because
+ * the app runs inside a Whop proxy iframe (qp5or...apps.whop.com) but the
+ * callback loads on our Vercel domain. localStorage/sessionStorage don't
+ * cross origins, so we let Whop echo the verifier back via `state`.
  */
 
 export function generateCodeVerifier(): string {
@@ -30,12 +35,12 @@ export const WHOP_REDIRECT_URI = import.meta.env.VITE_APP_URL
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
 /**
- * Builds the Whop OAuth URL with PKCE and saves the verifier to localStorage.
- * Call this before redirecting to Whop.
+ * Builds the Whop OAuth URL with PKCE.
+ * The code_verifier is sent in the `state` param so Whop echoes it back
+ * in the redirect URL — no cross-origin storage needed.
  */
 export async function buildWhopOAuthUrl(): Promise<string> {
   const codeVerifier = generateCodeVerifier();
-  localStorage.setItem('whop_code_verifier', codeVerifier);
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
   const params = new URLSearchParams({
@@ -44,6 +49,7 @@ export async function buildWhopOAuthUrl(): Promise<string> {
     response_type: 'code',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
+    state: codeVerifier, // Whop echoes `state` back → callback reads it from URL
   });
 
   return `https://whop.com/oauth?${params.toString()}`;
