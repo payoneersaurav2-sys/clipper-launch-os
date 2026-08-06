@@ -10,6 +10,7 @@ export default function AuthIframe() {
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
   const [status, setStatus] = useState('Connecting to Whop...');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const run = async () => {
@@ -69,7 +70,13 @@ export default function AuthIframe() {
         </div>
         <div className="text-center">
           <p className="text-base font-semibold text-foreground">Creator OS</p>
-          <p className="text-sm text-muted-foreground mt-0.5">{status}</p>
+          {error ? (
+            <p className="text-sm text-destructive mt-2 max-w-md bg-destructive/10 p-4 rounded-md border border-destructive/20 break-all text-left">
+              <strong>Error:</strong> {error}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-0.5">{status}</p>
+          )}
         </div>
       </div>
     </div>
