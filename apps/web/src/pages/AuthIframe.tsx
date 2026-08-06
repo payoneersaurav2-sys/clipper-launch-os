@@ -49,14 +49,15 @@ export default function AuthIframe() {
           if (fnError) throw new Error(fnError.message);
           if (data?.error) throw new Error(data.error);
 
-          if (data?.supabase_token) {
+          if (data?.hashed_token) {
             setStatus('Loading your workspace...');
-            const { data: authData, error: authError } = await supabase.auth.setSession({
-              access_token: data.supabase_token,
-              refresh_token: data.refresh_token ?? '',
+            // Exchange the one-time hashed token for a real Supabase session
+            const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
+              token_hash: data.hashed_token,
+              type: 'magiclink',
             });
-            if (authError) throw authError;
-            if (authData?.session) setSession(authData.session);
+            if (otpError) throw otpError;
+            if (otpData?.session) setSession(otpData.session);
             navigate('/dashboard');
           } else {
             throw new Error('Invalid authentication response.');

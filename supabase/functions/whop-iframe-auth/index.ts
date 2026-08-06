@@ -92,19 +92,22 @@ serve(async (req) => {
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
-    // 6. Create a real Supabase session — returns proper access_token + refresh_token
-    //    We use admin.createSession instead of minting a custom JWT because
-    //    supabase.auth.setSession() on the frontend requires a real Supabase refresh token.
-    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
-      user_id: targetUid,
+    // 6. Generate a one-time magic link token the frontend can exchange for a real session.
+    //    admin.createSession does not exist in supabase-js; generateLink is the correct admin API.
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: email,
     });
 
-    if (sessionError) throw new Error(`Session creation failed: ${sessionError.message}`);
-    if (!sessionData?.session) throw new Error('No session returned from Supabase');
+    if (linkError) throw new Error(`Failed to generate auth link: ${linkError.message}`);
+
+    // The hashed_token inside properties lets the frontend call verifyOtp to get a real session
+    const hashedToken = linkData?.properties?.hashed_token;
+    if (!hashedToken) throw new Error('No hashed_token returned from generateLink');
 
     return new Response(JSON.stringify({
-      supabase_token: sessionData.session.access_token,
-      refresh_token: sessionData.session.refresh_token,
+      hashed_token: hashedToken,
+      email: email,
       user: userData
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
