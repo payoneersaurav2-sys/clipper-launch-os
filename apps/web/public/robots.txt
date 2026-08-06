@@ -5,4 +5,4 @@ Disallow: /admin/
 Disallow: /auth/
 Disallow: /api/
 
-Sitemap: https://creatorOS.app/sitemap.xml
+Sitemap: https://creator-os999.vercel.app/sitemap.xml
