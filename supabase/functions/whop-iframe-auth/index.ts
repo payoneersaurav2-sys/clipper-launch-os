@@ -92,25 +92,19 @@ serve(async (req) => {
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
-    // 6. Mint a custom Supabase Auth JWT for this user
-    const jwtSecret = Deno.env.get('PROJECT_JWT_SECRET') ?? '';
-    if (!jwtSecret) throw new Error('PROJECT_JWT_SECRET is not configured');
+    // 6. Create a real Supabase session — returns proper access_token + refresh_token
+    //    We use admin.createSession instead of minting a custom JWT because
+    //    supabase.auth.setSession() on the frontend requires a real Supabase refresh token.
+    const { data: sessionData, error: sessionError } = await supabaseAdmin.auth.admin.createSession({
+      user_id: targetUid,
+    });
 
-    const customToken = await new SignJWT({
-      aud: 'authenticated',
-      role: 'authenticated',
-      email: email,
-      app_metadata: { provider: 'whop-iframe', providers: ['whop-iframe'] },
-      user_metadata: { whop_id: userId }
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setSubject(targetUid)
-      .setIssuedAt()
-      .setExpirationTime('1h')
-      .sign(new TextEncoder().encode(jwtSecret));
+    if (sessionError) throw new Error(`Session creation failed: ${sessionError.message}`);
+    if (!sessionData?.session) throw new Error('No session returned from Supabase');
 
     return new Response(JSON.stringify({
-      supabase_token: customToken,
+      supabase_token: sessionData.session.access_token,
+      refresh_token: sessionData.session.refresh_token,
       user: userData
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
