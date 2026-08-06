@@ -15,21 +15,26 @@ export default function AuthIframe() {
   useEffect(() => {
     const run = async () => {
       let token = searchParams.get('token');
+      let debugLog = `URL Token: ${token || 'None'}\n`;
 
-      // If we are behind the Whop App Proxy (e.g. qp5or...apps.whop.com), Whop injects 
-      // the token into the 'x-whop-user-token' HTTP header, NOT the URL. 
-      // We call our Vercel API route to extract it from the headers.
       if (!token) {
         try {
+          debugLog += `Fetching /api/get-whop-token...\n`;
           const res = await fetch('/api/get-whop-token');
+          debugLog += `Response Status: ${res.status} ${res.statusText}\n`;
+          
           if (res.ok) {
             const data = await res.json();
+            debugLog += `Data received: ${JSON.stringify(data)}\n`;
             if (data.token) {
               token = data.token;
             }
+          } else {
+            const text = await res.text();
+            debugLog += `Response Body: ${text.slice(0, 100)}\n`;
           }
-        } catch (e) {
-          console.error("Failed to fetch token from proxy headers:", e);
+        } catch (e: any) {
+          debugLog += `Fetch Error: ${e.message}\n`;
         }
       }
 
@@ -66,8 +71,7 @@ export default function AuthIframe() {
 
       // ── STRICT IFRAME MODE ──
       // The user wants NO redirects. It must happen entirely inside the iframe.
-      // Therefore, Whop MUST pass the token via the URL template ?token={USER_TOKEN}
-      setError(`No token provided by Whop. Current URL: ${window.location.href}`);
+      setError(`No token provided by Whop.\n\nDebug Info:\n${debugLog}`);
       setStatus('');
     };
 
@@ -88,7 +92,7 @@ export default function AuthIframe() {
         <div className="text-center">
           <p className="text-base font-semibold text-foreground">Creator OS</p>
           {error ? (
-            <p className="text-sm text-destructive mt-2 max-w-md bg-destructive/10 p-4 rounded-md border border-destructive/20 break-all text-left">
+            <p className="text-sm text-destructive mt-2 max-w-md bg-destructive/10 p-4 rounded-md border border-destructive/20 break-all text-left whitespace-pre-wrap">
               <strong>Error:</strong> {error}
             </p>
           ) : (
