@@ -65,7 +65,7 @@ export default function LoginPage() {
   };
 
   const handleWhopLogin = () => {
-    const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_PqOy90pfZsoqzQ';
+    const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
     window.location.href = `https://whop.com/oauth?client_id=${WHOP_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code`;
   };
