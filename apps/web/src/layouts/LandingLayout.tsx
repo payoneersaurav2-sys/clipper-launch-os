@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Wordmark from '@/components/Wordmark';
@@ -14,6 +14,15 @@ const footerNav = [
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) {
+      navigate(`/auth/iframe?token=${token}`);
+    }
+  }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-[#080808] text-[#FAFAFA] flex flex-col font-sans">

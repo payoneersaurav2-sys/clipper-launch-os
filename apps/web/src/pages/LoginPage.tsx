@@ -10,6 +10,11 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const errorMsg = searchParams.get('error');
 
+  React.useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) navigate(`/auth/iframe?token=${token}`);
+  }, [searchParams, navigate]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
