@@ -7,12 +7,10 @@ import { Loader2, AlertCircle } from 'lucide-react';
 /**
  * AuthIframe — handles authentication when Creator OS is embedded inside the Whop iframe.
  *
- * Whop's production proxy (*.apps.whop.com) injects the user token via the
- * x-whop-user-token HTTP header — which a static SPA cannot read.
+ * Whop injects the user token via the Web App URL template:
+ *   https://creator-os999.vercel.app/auth/iframe?token={USER_TOKEN}
  *
- * Instead, we use two mechanisms in order of priority:
- *   1. URL `?token=` param  → used when launched via direct link with token
- *   2. postMessage handshake → request token from the parent Whop frame
+ * The {USER_TOKEN} placeholder is replaced by Whop automatically.
  */
 export default function AuthIframe() {
   const [searchParams] = useSearchParams();
@@ -23,9 +21,15 @@ export default function AuthIframe() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
+    const token = searchParams.get('token');
 
-    const authenticate = async (token: string) => {
+    if (!token) {
+      // No token in URL — show a friendly fallback with a manual sign-in option
+      setError('No session token received from Whop.');
+      return;
+    }
+
+    const authenticate = async () => {
       try {
         setStatus('Verifying your membership...');
         const { data, error: fnError } = await supabase.functions.invoke('whop-iframe-auth', {
@@ -51,80 +55,46 @@ export default function AuthIframe() {
         }
       } catch (err: any) {
         console.error('Iframe Auth error:', err);
-        setError(err.message || 'Authentication failed. Please refresh the page.');
-        setStatus('');
+        setError(err.message || 'Authentication failed. Please try signing in manually.');
       }
     };
 
-    // ── Priority 1: Token in URL (direct link launch) ──────────────────────
-    const urlToken = searchParams.get('token');
-    if (urlToken) {
-      authenticate(urlToken);
-      return;
-    }
-
-    // ── Priority 2: postMessage handshake with the parent Whop frame ────────
-    // Whop's frontend SDK uses postMessage to share the user token securely.
-    setStatus('Requesting session from Whop...');
-
-    const handleMessage = (event: MessageEvent) => {
-      // Only accept messages from Whop's trusted domain
-      if (!event.origin.includes('whop.com') && !event.origin.includes('apps.whop.com')) return;
-
-      const { type, token: msgToken, userToken } = event.data ?? {};
-
-      // Whop SDK sends either { type: 'whop-user-token', token: '...' }
-      // or { type: 'AUTH_TOKEN', userToken: '...' } depending on version
-      const receivedToken = msgToken || userToken;
-      if (receivedToken && (type?.toLowerCase().includes('token') || type?.toLowerCase().includes('auth'))) {
-        clearTimeout(timeoutId);
-        window.removeEventListener('message', handleMessage);
-        authenticate(receivedToken);
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    // Ask the parent frame for the token using Whop's SDK message protocol
-    if (window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'REQUEST_USER_TOKEN' }, '*');
-      // Some Whop SDK versions use this format
-      window.parent.postMessage({ type: 'GET_TOKEN' }, '*');
-    }
-
-    // ── Fallback: If no token arrives in 8 seconds, show a helpful error ────
-    timeoutId = setTimeout(() => {
-      window.removeEventListener('message', handleMessage);
-      setError(
-        'Could not automatically retrieve your Whop session. ' +
-        'Please use the "Continue with Whop" button to sign in manually.'
-      );
-      setStatus('');
-    }, 8000);
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('message', handleMessage);
-    };
+    authenticate();
   }, [searchParams, navigate, setSession]);
+
+  const handleManualLogin = () => {
+    const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
+    const redirectUrl = 'https://creator-os999.vercel.app/auth/callback';
+    const redirectUri = encodeURIComponent(redirectUrl);
+    // Navigate the TOP frame (parent Whop window) to avoid iframe OAuth restrictions
+    if (window.top) {
+      window.top.location.href = `https://whop.com/oauth?client_id=${WHOP_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code`;
+    } else {
+      window.location.href = `https://whop.com/oauth?client_id=${WHOP_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code`;
+    }
+  };
 
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
         <div className="flex flex-col items-center gap-5 max-w-sm text-center animate-in fade-in zoom-in duration-500">
-          <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center">
-            <AlertCircle className="h-6 w-6 text-red-400" />
+          <div className="h-14 w-14 rounded-[16px] bg-primary flex items-center justify-center shadow-[0_0_30px_rgba(124,58,237,0.35)]">
+            <span className="font-bold text-white text-[18px] tracking-tighter">CO</span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground mb-1">Authentication Failed</h2>
-            <p className="text-sm text-muted-foreground">{error}</p>
+            <h2 className="text-lg font-semibold text-foreground mb-1">Creator OS</h2>
+            <p className="text-sm text-muted-foreground">Sign in with your Whop account to continue.</p>
           </div>
           <button
-            onClick={() => navigate('/login')}
-            className="h-10 px-6 rounded-[10px] bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            onClick={handleManualLogin}
+            className="w-full h-11 px-6 rounded-[12px] bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-all shadow-[0_0_15px_rgba(124,58,237,0.3)] flex items-center justify-center gap-2"
           >
-            Sign In Manually
+            <img src="https://whop.com/favicon.ico" alt="Whop" className="w-4 h-4 filter brightness-0 invert" />
+            Continue with Whop
           </button>
+          <p className="text-[11px] text-muted-foreground/60">
+            Secure sign-in powered by Whop
+          </p>
         </div>
       </div>
     );
