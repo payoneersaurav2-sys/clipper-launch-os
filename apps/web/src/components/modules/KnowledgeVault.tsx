@@ -94,6 +94,9 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
   };
 
   return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96 }}
         className="w-full max-w-md bg-[#111111] border border-white/[0.08] rounded-t-[20px] sm:rounded-[20px] p-5 sm:p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
