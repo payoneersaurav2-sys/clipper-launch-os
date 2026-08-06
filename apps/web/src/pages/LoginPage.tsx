@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -69,16 +70,9 @@ export default function LoginPage() {
     navigate('/dashboard');
   };
 
-  const handleWhopLogin = () => {
-    const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
-    const redirectUrl = `${window.location.origin}/auth/callback`;
-    const redirectUri = encodeURIComponent(redirectUrl);
-    
-    // Help the user debug the Redirect URI mismatch
-    console.log("Attempting Whop Login with Redirect URI:", redirectUrl);
-    alert(`Please ensure EXACTLY this URL is added to your Whop OAuth settings:\n\n${redirectUrl}\n\nIf it doesn't match perfectly, Whop will block it.`);
-    
-    window.location.href = `https://whop.com/oauth?client_id=${WHOP_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code`;
+  const handleWhopLogin = async () => {
+    const url = await buildWhopOAuthUrl();
+    window.location.href = url;
   };
 
   return (

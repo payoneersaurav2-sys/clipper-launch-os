@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { code, redirect_uri } = await req.json();
+    const { code, redirect_uri, code_verifier } = await req.json();
     if (!code) throw new Error('No authorization code provided');
 
     // 1. Setup Admin Supabase Client
@@ -25,25 +25,32 @@ serve(async (req) => {
 
     const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? '';
     const WHOP_CLIENT_SECRET = Deno.env.get('WHOP_CLIENT_SECRET') ?? '';
-    // Use the redirect_uri from the client, or fallback to the env variable
-    const WHOP_REDIRECT_URI = redirect_uri || Deno.env.get('WHOP_REDIRECT_URI') || 'http://localhost:5173/auth/callback';
+    const WHOP_REDIRECT_URI = redirect_uri
+      || Deno.env.get('WHOP_REDIRECT_URI')
+      || 'https://creator-os999.vercel.app/auth/callback';
 
-    // 2. Exchange code for Whop Access Token
+    // 2. Exchange code for Whop Access Token (PKCE-compliant)
+    const tokenBody: Record<string, string> = {
+      client_id: WHOP_CLIENT_ID,
+      client_secret: WHOP_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: WHOP_REDIRECT_URI,
+    };
+    // Include code_verifier if the client sent one (required for PKCE flows)
+    if (code_verifier) {
+      tokenBody.code_verifier = code_verifier;
+    }
+
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: WHOP_CLIENT_ID,
-        client_secret: WHOP_CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: WHOP_REDIRECT_URI
-      })
+      body: JSON.stringify(tokenBody),
     });
 
     if (!tokenResponse.ok) {
-       const errText = await tokenResponse.text();
-       throw new Error(`Failed to exchange Whop code: ${errText}`);
+      const errText = await tokenResponse.text();
+      throw new Error(`Failed to exchange Whop code: ${errText}`);
     }
 
     const { access_token } = await tokenResponse.json();
@@ -52,20 +59,20 @@ serve(async (req) => {
     const userResponse = await fetch('https://api.whop.com/api/v2/me', {
       headers: { Authorization: `Bearer ${access_token}` }
     });
-    
+
     if (!userResponse.ok) throw new Error('Failed to fetch Whop user identity');
-    
+
     const whopUser = await userResponse.json();
     const whopId = whopUser.id;
     const email = whopUser.email;
 
     // 4. Upsert User in public.users
     const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
-       id: whopId,
-       email: email,
-       full_name: whopUser.username || whopUser.name,
-       membership_status: 'active',
-       updated_at: new Date().toISOString()
+      id: whopId,
+      email: email,
+      full_name: whopUser.username || whopUser.name,
+      membership_status: 'active',
+      updated_at: new Date().toISOString()
     }, { onConflict: 'id' }).select().single();
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
@@ -73,17 +80,17 @@ serve(async (req) => {
     // 5. Ensure User exists in Supabase Auth
     let targetUid = whopId;
     const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-       email: email,
-       email_confirm: true,
-       user_metadata: { whop_id: whopId }
+      email: email,
+      email_confirm: true,
+      user_metadata: { whop_id: whopId }
     });
 
     if (createUserError && createUserError.message.includes('already been registered')) {
-        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const found = existingUsers.users.find(u => u.email === email);
-        if (found) targetUid = found.id;
+      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const found = existingUsers.users.find(u => u.email === email);
+      if (found) targetUid = found.id;
     } else if (authUser?.user?.id) {
-        targetUid = authUser.user.id;
+      targetUid = authUser.user.id;
     }
 
     if (!targetUid) throw new Error('Failed to resolve Supabase Auth UID');
@@ -91,7 +98,7 @@ serve(async (req) => {
     // 6. Mint custom Supabase JWT
     const jwtSecret = Deno.env.get('PROJECT_JWT_SECRET') ?? '';
     if (!jwtSecret) {
-       throw new Error("PROJECT_JWT_SECRET is not configured in edge function secrets");
+      throw new Error("PROJECT_JWT_SECRET is not configured in edge function secrets");
     }
 
     const token = await new SignJWT({
@@ -107,9 +114,9 @@ serve(async (req) => {
       .setExpirationTime('1h')
       .sign(new TextEncoder().encode(jwtSecret));
 
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       supabase_token: token,
-      user: userData 
+      user: userData
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

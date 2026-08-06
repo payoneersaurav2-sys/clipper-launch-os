@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { WHOP_REDIRECT_URI } from '@/lib/whopPkce';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthCallback() {
@@ -12,7 +13,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const code = searchParams.get('code');
-    
+
     if (!code) {
       navigate('/login?error=No+authorization+code+provided');
       return;
@@ -20,36 +21,35 @@ export default function AuthCallback() {
 
     const exchangeCode = async () => {
       try {
-        // We call our Supabase Edge Function to securely exchange the Whop code
-        const redirectUri = import.meta.env.VITE_APP_URL
-          ? `${import.meta.env.VITE_APP_URL}/auth/callback`
-          : `${window.location.origin}/auth/callback`;
+        // Retrieve the PKCE code_verifier that was saved before the OAuth redirect
+        const codeVerifier = sessionStorage.getItem('whop_code_verifier');
+        sessionStorage.removeItem('whop_code_verifier'); // one-time use
 
         const { data, error } = await supabase.functions.invoke('whop-auth', {
-          body: { code, redirect_uri: redirectUri },
+          body: {
+            code,
+            redirect_uri: WHOP_REDIRECT_URI,
+            code_verifier: codeVerifier ?? undefined,
+          },
         });
 
         if (error) throw new Error(error.message);
         if (data?.error) throw new Error(data.error);
 
-        // The edge function will return a custom Supabase token if membership is valid
         if (data?.supabase_token) {
           setStatus('Authenticating OS...');
-          
-          // Exchange the custom JWT for a session via admin API
-          const { data: authData, error: authError } = await (supabase.auth as any).signInWithCustomToken
-            ? await (supabase.auth as any).signInWithCustomToken(data.supabase_token)
-            : await supabase.auth.setSession({ access_token: data.supabase_token, refresh_token: data.refresh_token ?? '' });
-          
+          const { data: authData, error: authError } = await supabase.auth.setSession({
+            access_token: data.supabase_token,
+            refresh_token: data.refresh_token ?? '',
+          });
           if (authError) throw authError;
           if (authData?.session) setSession(authData.session);
           navigate('/dashboard');
         } else {
-           throw new Error('Invalid authentication response');
+          throw new Error('Invalid authentication response');
         }
-
       } catch (error: any) {
-        console.error('Auth error:', error);
+        console.error('Auth callback error:', error);
         navigate(`/login?error=${encodeURIComponent(error.message || 'Authentication failed')}`);
       }
     };
@@ -60,8 +60,18 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-500">
-         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-         <p className="text-lg font-medium text-muted-foreground">{status}</p>
+        <div className="relative">
+          <div className="h-14 w-14 rounded-[16px] bg-primary flex items-center justify-center shadow-[0_0_30px_rgba(124,58,237,0.35)]">
+            <span className="font-bold text-white text-[18px] tracking-tighter">CO</span>
+          </div>
+          <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-background border-2 border-background flex items-center justify-center">
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+          </div>
+        </div>
+        <div className="text-center">
+          <p className="text-base font-semibold text-foreground">Creator OS</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{status}</p>
+        </div>
       </div>
     </div>
   );
