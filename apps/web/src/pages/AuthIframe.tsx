@@ -14,7 +14,9 @@ export default function AuthIframe() {
     const token = searchParams.get('token');
     
     if (!token) {
-      navigate('/login?error=No+Whop+Token+Found');
+      const allParams = Array.from(searchParams.entries()).map(([k,v]) => `${k}=${v}`).join('&');
+      const debugMsg = `No Whop Token Found. Params received: ${allParams || 'none'}`;
+      navigate(`/login?error=${encodeURIComponent(debugMsg)}`);
       return;
     }
 
