@@ -18,15 +18,17 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Debug: If we are in an iframe, alert the exact URL so we can see what Whop is passing
-    if (window !== window.top && !sessionStorage.getItem('iframe_alerted')) {
-      alert(`Iframe URL loaded by Whop: ${window.location.href}`);
-      sessionStorage.setItem('iframe_alerted', 'true');
-    }
-
+    // Priority 1: token in URL (e.g. from direct link)
     const token = searchParams.get('token');
     if (token) {
       navigate(`/auth/iframe?token=${token}`);
+      return;
+    }
+
+    // Priority 2: If inside Whop iframe, request token from parent frame via postMessage
+    if (window !== window.top) {
+      // Immediately redirect to the iframe auth handler which manages the postMessage flow
+      navigate('/auth/iframe');
     }
   }, [searchParams, navigate]);
 
