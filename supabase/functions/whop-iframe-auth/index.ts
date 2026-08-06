@@ -19,16 +19,15 @@ serve(async (req) => {
     const { token } = await req.json();
     if (!token) throw new Error('No Whop token provided');
 
-    // 1. Initialize Supabase Admin
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { autoRefreshToken: false, persistSession: false } }
-    );
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-    // 2. Verify the x-whop-user-token JWT using Whop's public JWKS
-    // This is a JWT signed by Whop — NOT a Bearer API token.
-    // We use jose to verify its signature and extract the userId from the payload.
+    // 1. Initialize Supabase Admin client
+    const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+
+    // 2. Verify x-whop-user-token as a JWT using Whop's JWKS public keys
     let userId: string;
     try {
       const { payload } = await jwtVerify(token, WHOP_JWKS);
@@ -38,77 +37,94 @@ serve(async (req) => {
       throw new Error(`JWT verification failed: ${jwtErr.message}`);
     }
 
-    // 3. Fetch user profile using our server-side WHOP_API_KEY (NOT the user token)
-    const whopApiKey = Deno.env.get('WHOP_API_KEY');
-    if (!whopApiKey) throw new Error('WHOP_API_KEY is missing');
+    // 3. Fetch user profile from Whop using our server API key
+    const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
+    let email = `whop_${userId}@creator-os.app`;
+    let fullName = 'Whop User';
 
-    const userRes = await fetch(`https://api.whop.com/api/v2/users/${userId}`, {
-      headers: { 'Authorization': `Bearer ${whopApiKey}` }
-    });
-
-    let email: string;
-    let fullName: string;
-
-    if (userRes.ok) {
-      const userProfile = await userRes.json();
-      email = userProfile.email || `${userId}@whop.user`;
-      fullName = userProfile.username || userProfile.name || 'Whop User';
-    } else {
-      // Fallback: use just the userId if profile fetch fails
-      email = `${userId}@whop.user`;
-      fullName = 'Whop User';
+    if (whopApiKey) {
+      const userRes = await fetch(`https://api.whop.com/api/v2/users/${userId}`, {
+        headers: { 'Authorization': `Bearer ${whopApiKey}` }
+      });
+      if (userRes.ok) {
+        const profile = await userRes.json();
+        if (profile.email) email = profile.email;
+        fullName = profile.username || profile.name || fullName;
+      }
     }
 
-    // 4. Ensure the user exists in Supabase Auth (email-based)
-    //    The public.users table links to auth.users via UUID — email is stored in auth, not public.users
+    // 4. Create or retrieve the user in Supabase Auth
+    // We use a deterministic password so we can sign in programmatically.
+    // The password is derived from the userId + service role key (kept server-side only).
+    const deterministicPassword = await derivePassword(userId, SERVICE_ROLE_KEY);
+
     let targetUid: string;
-    const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      email_confirm: true,
-      user_metadata: { whop_id: userId }
-    });
+    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserById(userId);
 
-    if (createUserError && createUserError.message.includes('already been registered')) {
-      // User exists — find them
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const found = existingUsers.users.find(u => u.email === email)
-        || existingUsers.users.find(u => u.user_metadata?.whop_id === userId);
-      if (!found) throw new Error('Could not find existing auth user');
-      targetUid = found.id;
-    } else if (authUser?.user?.id) {
-      targetUid = authUser.user.id;
+    if (existingUser?.user?.id) {
+      // User already in auth (by whop_id stored as UUID) - update password
+      targetUid = existingUser.user.id;
+      await supabaseAdmin.auth.admin.updateUserById(targetUid, {
+        password: deterministicPassword,
+      });
     } else {
-      throw new Error('Failed to create or find Supabase Auth user');
+      // Try to find by email
+      const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+      const byEmail = listData?.users?.find(u => u.email === email);
+      const byWhopId = listData?.users?.find(u => u.user_metadata?.whop_id === userId);
+      const found = byEmail || byWhopId;
+
+      if (found) {
+        targetUid = found.id;
+        await supabaseAdmin.auth.admin.updateUserById(targetUid, {
+          password: deterministicPassword,
+        });
+      } else {
+        // Create new user
+        const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password: deterministicPassword,
+          email_confirm: true,
+          user_metadata: { whop_id: userId }
+        });
+        if (createErr) throw new Error(`Failed to create user: ${createErr.message}`);
+        targetUid = newUser.user!.id;
+      }
     }
 
-    // 5. Upsert into public.users — schema has: id (UUID), whop_id, membership_status, full_name, avatar_url
-    const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
-      id: targetUid,               // UUID from auth.users
-      whop_id: userId,             // Whop's own user ID
+    // 5. Upsert into public.users (schema: id UUID, whop_id TEXT, full_name TEXT, membership_status TEXT)
+    const { error: dbError } = await supabaseAdmin.from('users').upsert({
+      id: targetUid,
+      whop_id: userId,
       full_name: fullName,
       membership_status: 'active',
       updated_at: new Date().toISOString()
-    }, { onConflict: 'id' }).select().single();
+    }, { onConflict: 'id' });
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
-    // 6. Generate a one-time magic link token the frontend can exchange for a real session.
-    //    admin.createSession does not exist in supabase-js; generateLink is the correct admin API.
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
-      email: email,
+    // 6. Sign in via the REST token endpoint to get a real access + refresh token pair
+    // SUPABASE_ANON_KEY is auto-injected by Supabase runtime into every Edge Function
+    const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SERVICE_ROLE_KEY, // service role key works here too
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ email, password: deterministicPassword }),
     });
 
-    if (linkError) throw new Error(`Failed to generate auth link: ${linkError.message}`);
+    if (!signInRes.ok) {
+      const errText = await signInRes.text();
+      throw new Error(`Sign-in failed: ${errText}`);
+    }
 
-    // The hashed_token inside properties lets the frontend call verifyOtp to get a real session
-    const hashedToken = linkData?.properties?.hashed_token;
-    if (!hashedToken) throw new Error('No hashed_token returned from generateLink');
+    const session = await signInRes.json();
 
     return new Response(JSON.stringify({
-      hashed_token: hashedToken,
-      email: email,
-      user: userData
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
@@ -116,10 +132,20 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Iframe Auth Error:', error);
-    // Always return 200 so supabase-js can parse the JSON error message
     return new Response(JSON.stringify({ error: `Edge Function Error: ${error.message}` }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
   }
 });
+
+// Derive a deterministic password from userId + secret using SHA-256
+async function derivePassword(userId: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const data = encoder.encode(`whop-auth-${userId}`);
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign('HMAC', key, data);
+  const hashArray = Array.from(new Uint8Array(signature));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32) + 'Aa1!';
+}
