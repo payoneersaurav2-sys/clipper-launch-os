@@ -30,12 +30,12 @@ export const WHOP_REDIRECT_URI = import.meta.env.VITE_APP_URL
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
 /**
- * Builds the Whop OAuth URL with PKCE and saves the verifier to sessionStorage.
+ * Builds the Whop OAuth URL with PKCE and saves the verifier to localStorage.
  * Call this before redirecting to Whop.
  */
 export async function buildWhopOAuthUrl(): Promise<string> {
   const codeVerifier = generateCodeVerifier();
-  sessionStorage.setItem('whop_code_verifier', codeVerifier);
+  localStorage.setItem('whop_code_verifier', codeVerifier);
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
   const params = new URLSearchParams({

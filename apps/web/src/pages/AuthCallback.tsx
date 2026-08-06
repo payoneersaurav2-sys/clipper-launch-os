@@ -22,8 +22,8 @@ export default function AuthCallback() {
     const exchangeCode = async () => {
       try {
         // Retrieve the PKCE code_verifier that was saved before the OAuth redirect
-        const codeVerifier = sessionStorage.getItem('whop_code_verifier');
-        sessionStorage.removeItem('whop_code_verifier'); // one-time use
+        const codeVerifier = localStorage.getItem('whop_code_verifier');
+        localStorage.removeItem('whop_code_verifier'); // one-time use
 
         const { data, error } = await supabase.functions.invoke('whop-auth', {
           body: {
