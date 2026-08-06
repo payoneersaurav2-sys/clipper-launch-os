@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
-import { WhopAPI } from 'npm:@whop-apps/sdk';
 import { SignJWT } from "https://deno.land/x/jose@v4.14.4/index.ts";
 
 const corsHeaders = {
@@ -24,20 +23,24 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // 2. Initialize Whop SDK with API Key
+    // 2. We don't use @whop-apps/sdk because Deno npm specifiers can cause edge runtime panics
     const whopApiKey = Deno.env.get('WHOP_API_KEY');
     if (!whopApiKey) throw new Error('WHOP_API_KEY is missing');
-    const whopApi = new WhopAPI({ apiKey: whopApiKey });
 
-    // 3. Verify the iFrame Token securely
-    const { userId } = await whopApi.verifyUserToken({ 'x-whop-user-token': token });
+    // 3. Verify the iFrame Token by hitting Whop's /me endpoint directly
+    const userRes = await fetch('https://api.whop.com/api/v2/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
 
-    if (!userId) {
-       throw new Error('Invalid Whop session token');
+    if (!userRes.ok) {
+       const err = await userRes.text();
+       throw new Error(`Invalid Whop session token: ${err}`);
     }
 
-    // 4. Get User Profile from Whop
-    const userProfile = await whopApi.user.retrieve({ id: userId });
+    const userProfile = await userRes.json();
+    const userId = userProfile.id;
     const email = userProfile.email;
     
     // 5. Upsert User in Supabase
@@ -96,9 +99,10 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error("Iframe Auth Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    // ALWAYS return 200 so Supabase-js parses the JSON error instead of throwing a CORS network error
+    return new Response(JSON.stringify({ error: `Edge Function Error: ${error.message}` }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 200,
     });
   }
 });
