@@ -59,19 +59,9 @@ serve(async (req) => {
       fullName = 'Whop User';
     }
 
-    // 4. Upsert User in public.users
-    const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
-      id: userId,
-      email: email,
-      full_name: fullName,
-      membership_status: 'active',
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' }).select().single();
-
-    if (dbError) throw new Error(`Database error: ${dbError.message}`);
-
-    // 5. Ensure User exists in Supabase Auth
-    let targetUid = userId;
+    // 4. Ensure the user exists in Supabase Auth (email-based)
+    //    The public.users table links to auth.users via UUID — email is stored in auth, not public.users
+    let targetUid: string;
     const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       email_confirm: true,
@@ -79,12 +69,28 @@ serve(async (req) => {
     });
 
     if (createUserError && createUserError.message.includes('already been registered')) {
+      // User exists — find them
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const found = existingUsers.users.find(u => u.email === email);
-      if (found) targetUid = found.id;
+      const found = existingUsers.users.find(u => u.email === email)
+        || existingUsers.users.find(u => u.user_metadata?.whop_id === userId);
+      if (!found) throw new Error('Could not find existing auth user');
+      targetUid = found.id;
     } else if (authUser?.user?.id) {
       targetUid = authUser.user.id;
+    } else {
+      throw new Error('Failed to create or find Supabase Auth user');
     }
+
+    // 5. Upsert into public.users — schema has: id (UUID), whop_id, membership_status, full_name, avatar_url
+    const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
+      id: targetUid,               // UUID from auth.users
+      whop_id: userId,             // Whop's own user ID
+      full_name: fullName,
+      membership_status: 'active',
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'id' }).select().single();
+
+    if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
     // 6. Mint a custom Supabase Auth JWT for this user
     const jwtSecret = Deno.env.get('PROJECT_JWT_SECRET') ?? '';
