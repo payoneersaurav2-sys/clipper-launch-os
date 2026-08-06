@@ -37,20 +37,25 @@ serve(async (req) => {
       throw new Error(`JWT verification failed: ${jwtErr.message}`);
     }
 
-    // 3. Fetch user profile from Whop using our server API key
+    // 3 & 4. Run Whop profile fetch + Supabase user lookup IN PARALLEL
     const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
+
+    const [profileRes, listData] = await Promise.all([
+      whopApiKey
+        ? fetch(`https://api.whop.com/api/v2/users/${userId}`, {
+            headers: { 'Authorization': `Bearer ${whopApiKey}` }
+          })
+        : Promise.resolve(null),
+      supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+        .then(r => r.data),
+    ]);
+
     let email = `whop_${userId}@creator-os.app`;
     let fullName = 'Whop User';
-
-    if (whopApiKey) {
-      const userRes = await fetch(`https://api.whop.com/api/v2/users/${userId}`, {
-        headers: { 'Authorization': `Bearer ${whopApiKey}` }
-      });
-      if (userRes.ok) {
-        const profile = await userRes.json();
-        if (profile.email) email = profile.email;
-        fullName = profile.username || profile.name || fullName;
-      }
+    if (profileRes?.ok) {
+      const profile = await profileRes.json();
+      if (profile.email) email = profile.email;
+      fullName = profile.username || profile.name || fullName;
     }
 
     // 4. Create or retrieve the user in Supabase Auth
@@ -59,8 +64,7 @@ serve(async (req) => {
     let targetUid: string;
     let signInEmail: string = email; // track the correct email to sign in with
 
-    // Search for existing user by email or whop_id metadata
-    const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    // Search for existing user by email or whop_id metadata (listData already fetched above)
     const byEmail = listData?.users?.find(u => u.email === email);
     const byWhopId = listData?.users?.find(u => u.user_metadata?.whop_id === userId);
     const found = byEmail || byWhopId;

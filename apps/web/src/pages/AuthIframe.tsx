@@ -14,6 +14,14 @@ export default function AuthIframe() {
 
   useEffect(() => {
     const run = async () => {
+      // ── Fast path: reuse existing Supabase session (repeat visits are instant) ──
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      if (existingSession) {
+        setSession(existingSession);
+        navigate('/dashboard');
+        return;
+      }
+
       let token = searchParams.get('token');
       let debugLog = `URL Token: ${token || 'None'}\n`;
 
