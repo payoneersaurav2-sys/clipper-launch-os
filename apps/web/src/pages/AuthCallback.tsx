@@ -21,11 +21,12 @@ export default function AuthCallback() {
     const exchangeCode = async () => {
       try {
         // We call our Supabase Edge Function to securely exchange the Whop code
+        const redirectUri = import.meta.env.VITE_APP_URL
+          ? `${import.meta.env.VITE_APP_URL}/auth/callback`
+          : `${window.location.origin}/auth/callback`;
+
         const { data, error } = await supabase.functions.invoke('whop-auth', {
-          body: { 
-            code,
-            redirect_uri: `${window.location.origin}/auth/callback`
-          },
+          body: { code, redirect_uri: redirectUri },
         });
 
         if (error) throw new Error(error.message);
