@@ -30,16 +30,18 @@ serve(async (req) => {
       || 'https://creator-os999.vercel.app/auth/callback';
 
     // 2. Exchange code for Whop Access Token with PKCE (required by Whop)
-    const tokenBody: Record<string, string> = {
-      grant_type: 'authorization_code',
-      code,
-      redirect_uri: WHOP_REDIRECT_URI,
-    };
+    // Using application/x-www-form-urlencoded as per strict OAuth 2.0 standards
+    const formParams = new URLSearchParams();
+    formParams.append('client_id', WHOP_CLIENT_ID);
+    formParams.append('client_secret', WHOP_CLIENT_SECRET);
+    formParams.append('grant_type', 'authorization_code');
+    formParams.append('code', code);
+    formParams.append('redirect_uri', WHOP_REDIRECT_URI);
     if (code_verifier) {
-      tokenBody.code_verifier = code_verifier;
+      formParams.append('code_verifier', code_verifier);
     }
 
-    // DIAGNOSTIC LOG — shows actual verifier prefix so we can compare with frontend log
+    // DIAGNOSTIC LOG
     console.log('TOKEN EXCHANGE:', JSON.stringify({
       redirect_uri: WHOP_REDIRECT_URI,
       code_prefix: code?.slice(0, 10),
@@ -52,10 +54,10 @@ serve(async (req) => {
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${basicAuth}`
       },
-      body: JSON.stringify(tokenBody),
+      body: formParams.toString(),
     });
 
     if (!tokenResponse.ok) {
