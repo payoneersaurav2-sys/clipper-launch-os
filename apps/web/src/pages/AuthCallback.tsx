@@ -25,43 +25,12 @@ export default function AuthCallback() {
       return;
     }
     hasExchanged = true;
-    console.log('[AUTH] Lock acquired. Executing token exchange for code:', code.slice(0, 5) + '...');
+    console.log('[AUTH] Lock acquired. Pausing for manual diagnostic test...');
 
-    const exchangeCode = async () => {
-      try {
-        // Read verifier from sessionStorage — stored before the OAuth redirect on the same origin
-        const codeVerifier = getStoredCodeVerifier() || searchParams.get('state') || undefined;
-
-        const { data, error } = await supabase.functions.invoke('whop-auth', {
-          body: {
-            code,
-            redirect_uri: WHOP_REDIRECT_URI,
-            code_verifier: codeVerifier,
-          },
-        });
-
-        if (error) throw new Error(error.message);
-        if (data?.error) throw new Error(data.error);
-
-        if (data?.access_token) {
-          setStatus('Authenticating OS...');
-          const { data: authData, error: authError } = await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-          });
-          if (authError) throw authError;
-          if (authData?.session) setSession(authData.session);
-          navigate('/dashboard');
-        } else {
-          throw new Error('Invalid authentication response');
-        }
-      } catch (error: any) {
-        console.error('Auth callback error:', error);
-        navigate(`/login?error=${encodeURIComponent(error.message || 'Authentication failed')}`);
-      }
-    };
-
-    exchangeCode();
+    // TEMPORARY DIAGNOSTIC PAUSE
+    // We are stopping the automatic exchange so the user can copy the code
+    setStatus(`PAUSED FOR DIAGNOSTICS. Your auth code is: ${code}`);
+    
   }, [searchParams, navigate, setSession]);
 
   return (
