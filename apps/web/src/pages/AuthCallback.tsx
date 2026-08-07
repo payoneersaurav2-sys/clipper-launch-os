@@ -4,13 +4,13 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { WHOP_REDIRECT_URI } from '@/lib/whopPkce';
 import { Loader2 } from 'lucide-react';
+let hasExchanged = false;
 
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
   const [status, setStatus] = useState('Verifying Whop Membership...');
-  const hasExchanged = React.useRef(false);
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -20,8 +20,8 @@ export default function AuthCallback() {
       return;
     }
     
-    if (hasExchanged.current) return;
-    hasExchanged.current = true;
+    if (hasExchanged) return;
+    hasExchanged = true;
 
     const exchangeCode = async () => {
       try {
