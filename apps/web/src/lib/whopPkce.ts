@@ -33,23 +33,36 @@ export const WHOP_REDIRECT_URI = import.meta.env.VITE_APP_URL
 
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
+const PKCE_STORAGE_KEY = 'whop_pkce_verifier';
+
 /**
- * Builds the Whop OAuth URL WITHOUT PKCE.
- * We use client_secret (confidential client flow) — Whop may reject
- * PKCE + client_secret together. No verifier storage needed.
+ * Builds the Whop OAuth URL WITH PKCE (required by Whop).
+ * Stores code_verifier in sessionStorage — same origin survives OAuth redirect.
  */
 export async function buildWhopOAuthUrl(): Promise<string> {
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+  // Store in sessionStorage — creator-os999.vercel.app persists through whop.com redirect
+  sessionStorage.setItem(PKCE_STORAGE_KEY, codeVerifier);
+  console.log('[PKCE] Stored verifier prefix:', codeVerifier.slice(0, 12));
+
   const params = new URLSearchParams({
     client_id: WHOP_CLIENT_ID,
     redirect_uri: WHOP_REDIRECT_URI,
     response_type: 'code',
+    code_challenge: codeChallenge,
+    code_challenge_method: 'S256',
     state: 'web_oauth',
   });
 
   return `https://whop.com/oauth?${params.toString()}`;
 }
 
-/** No-op kept for compatibility */
+/** Read the stored PKCE verifier after the OAuth redirect — single use */
 export function getStoredCodeVerifier(): string | null {
-  return null;
+  const v = sessionStorage.getItem(PKCE_STORAGE_KEY);
+  console.log('[PKCE] Read verifier from sessionStorage prefix:', v?.slice(0, 12) ?? 'NULL');
+  sessionStorage.removeItem(PKCE_STORAGE_KEY);
+  return v;
 }

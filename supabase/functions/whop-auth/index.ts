@@ -29,7 +29,7 @@ serve(async (req) => {
       || Deno.env.get('WHOP_REDIRECT_URI')
       || 'https://creator-os999.vercel.app/auth/callback';
 
-    // 2. Exchange code for Whop Access Token (confidential client: client_secret only, no PKCE)
+    // 2. Exchange code for Whop Access Token with PKCE (required by Whop)
     const tokenBody: Record<string, string> = {
       client_id: WHOP_CLIENT_ID,
       client_secret: WHOP_CLIENT_SECRET,
@@ -37,16 +37,16 @@ serve(async (req) => {
       code,
       redirect_uri: WHOP_REDIRECT_URI,
     };
+    if (code_verifier) {
+      tokenBody.code_verifier = code_verifier;
+    }
 
-    // DIAGNOSTIC LOG
-    console.log('TOKEN EXCHANGE PAYLOAD:', JSON.stringify({
-      client_id: WHOP_CLIENT_ID,
-      client_secret_length: WHOP_CLIENT_SECRET.length,
-      grant_type: 'authorization_code',
-      code_length: code?.length,
-      code_prefix: code?.slice(0, 10),
+    // DIAGNOSTIC LOG — shows actual verifier prefix so we can compare with frontend log
+    console.log('TOKEN EXCHANGE:', JSON.stringify({
       redirect_uri: WHOP_REDIRECT_URI,
-      pkce: 'DISABLED - confidential client uses client_secret only',
+      code_prefix: code?.slice(0, 10),
+      code_verifier_prefix: code_verifier?.slice(0, 12) ?? 'MISSING',
+      code_verifier_length: code_verifier?.length ?? 0,
     }));
 
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
@@ -57,8 +57,7 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errText = await tokenResponse.text();
-      // Return full diagnostic context in the error
-      throw new Error(`Failed to exchange Whop code: ${errText} | DIAGNOSTICS: redirect_uri="${WHOP_REDIRECT_URI}", code_verifier_present=${!!code_verifier}, client_id="${WHOP_CLIENT_ID}"`);
+      throw new Error(`Failed to exchange Whop code: ${errText} | DIAGNOSTICS: redirect_uri="${WHOP_REDIRECT_URI}", code_verifier_present=${!!code_verifier}, code_verifier_prefix="${code_verifier?.slice(0, 12)}", client_id="${WHOP_CLIENT_ID}"`);
     }
 
     const { access_token } = await tokenResponse.json();
