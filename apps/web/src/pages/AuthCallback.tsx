@@ -10,6 +10,7 @@ export default function AuthCallback() {
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
   const [status, setStatus] = useState('Verifying Whop Membership...');
+  const hasExchanged = React.useRef(false);
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -18,6 +19,9 @@ export default function AuthCallback() {
       navigate('/login?error=No+authorization+code+provided');
       return;
     }
+    
+    if (hasExchanged.current) return;
+    hasExchanged.current = true;
 
     const exchangeCode = async () => {
       try {
