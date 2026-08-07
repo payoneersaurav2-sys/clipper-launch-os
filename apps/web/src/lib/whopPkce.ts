@@ -2,10 +2,9 @@
  * PKCE (Proof Key for Code Exchange) utilities for Whop OAuth.
  * Whop requires PKCE for all OAuth flows.
  *
- * NOTE: We pass the code_verifier via the OAuth `state` parameter because
- * the app runs inside a Whop proxy iframe (qp5or...apps.whop.com) but the
- * callback loads on our Vercel domain. localStorage/sessionStorage don't
- * cross origins, so we let Whop echo the verifier back via `state`.
+ * For the web app flow, we store the code_verifier in sessionStorage because
+ * both /login and /auth/callback are on the same origin (Vercel domain).
+ * sessionStorage survives the OAuth redirect back to our domain.
  */
 
 export function generateCodeVerifier(): string {
@@ -34,14 +33,19 @@ export const WHOP_REDIRECT_URI = import.meta.env.VITE_APP_URL
 
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
+const PKCE_STORAGE_KEY = 'whop_pkce_verifier';
+
 /**
  * Builds the Whop OAuth URL with PKCE.
- * The code_verifier is sent in the `state` param so Whop echoes it back
- * in the redirect URL — no cross-origin storage needed.
+ * Stores code_verifier in sessionStorage (same-origin, survives redirect).
+ * Uses state only as a CSRF nonce — NOT for verifier transport.
  */
 export async function buildWhopOAuthUrl(): Promise<string> {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+  // Store in sessionStorage — both pages are same origin so this is reliable
+  sessionStorage.setItem(PKCE_STORAGE_KEY, codeVerifier);
 
   const params = new URLSearchParams({
     client_id: WHOP_CLIENT_ID,
@@ -49,8 +53,15 @@ export async function buildWhopOAuthUrl(): Promise<string> {
     response_type: 'code',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
-    state: codeVerifier, // Whop echoes `state` back → callback reads it from URL
+    state: 'web_oauth', // simple CSRF marker, not used as verifier carrier anymore
   });
 
   return `https://whop.com/oauth?${params.toString()}`;
+}
+
+/** Read the stored PKCE verifier after the OAuth redirect */
+export function getStoredCodeVerifier(): string | null {
+  const v = sessionStorage.getItem(PKCE_STORAGE_KEY);
+  sessionStorage.removeItem(PKCE_STORAGE_KEY); // single-use
+  return v;
 }

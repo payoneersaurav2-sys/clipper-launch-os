@@ -37,10 +37,21 @@ serve(async (req) => {
       code,
       redirect_uri: WHOP_REDIRECT_URI,
     };
-    // Include code_verifier if the client sent one (required for PKCE flows)
     if (code_verifier) {
       tokenBody.code_verifier = code_verifier;
     }
+
+    // DIAGNOSTIC LOG — visible in Supabase function logs
+    console.log('TOKEN EXCHANGE PAYLOAD:', JSON.stringify({
+      client_id: WHOP_CLIENT_ID,
+      client_secret_length: WHOP_CLIENT_SECRET.length,
+      grant_type: 'authorization_code',
+      code_length: code?.length,
+      code_prefix: code?.slice(0, 10),
+      redirect_uri: WHOP_REDIRECT_URI,
+      code_verifier_length: code_verifier?.length ?? 0,
+      code_verifier_prefix: code_verifier?.slice(0, 10) ?? 'MISSING',
+    }));
 
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
       method: 'POST',
@@ -50,7 +61,8 @@ serve(async (req) => {
 
     if (!tokenResponse.ok) {
       const errText = await tokenResponse.text();
-      throw new Error(`Failed to exchange Whop code: ${errText}`);
+      // Return full diagnostic context in the error
+      throw new Error(`Failed to exchange Whop code: ${errText} | DIAGNOSTICS: redirect_uri="${WHOP_REDIRECT_URI}", code_verifier_present=${!!code_verifier}, client_id="${WHOP_CLIENT_ID}"`);
     }
 
     const { access_token } = await tokenResponse.json();

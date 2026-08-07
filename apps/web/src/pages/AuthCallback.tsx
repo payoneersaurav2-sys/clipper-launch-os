@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { WHOP_REDIRECT_URI } from '@/lib/whopPkce';
+import { WHOP_REDIRECT_URI, getStoredCodeVerifier } from '@/lib/whopPkce';
 import { Loader2 } from 'lucide-react';
 let hasExchanged = false;
 
@@ -25,10 +25,8 @@ export default function AuthCallback() {
 
     const exchangeCode = async () => {
       try {
-        // The code_verifier was passed via the OAuth `state` param and is echoed back by Whop.
-        // We use state instead of localStorage because the OAuth starts in a Whop proxy iframe
-        // (different origin) and localStorage doesn't cross domains.
-        const codeVerifier = searchParams.get('state') || undefined;
+        // Read verifier from sessionStorage — stored before the OAuth redirect on the same origin
+        const codeVerifier = getStoredCodeVerifier() || searchParams.get('state') || undefined;
 
         const { data, error } = await supabase.functions.invoke('whop-auth', {
           body: {
