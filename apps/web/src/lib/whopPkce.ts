@@ -21,7 +21,11 @@ export async function generateCodeChallenge(verifier: string): Promise<string> {
 }
 
 function base64UrlEncode(array: Uint8Array): string {
-  return btoa(String.fromCharCode(...array))
+  let binary = '';
+  for (let i = 0; i < array.length; i++) {
+    binary += String.fromCharCode(array[i]);
+  }
+  return btoa(binary)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');

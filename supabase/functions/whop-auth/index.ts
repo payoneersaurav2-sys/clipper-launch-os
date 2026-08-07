@@ -30,15 +30,17 @@ serve(async (req) => {
       || 'https://creator-os999.vercel.app/auth/callback';
 
     // 2. Exchange code for Whop Access Token with PKCE (required by Whop)
-    // Using application/x-www-form-urlencoded as per strict OAuth 2.0 standards
-    const formParams = new URLSearchParams();
-    formParams.append('client_id', WHOP_CLIENT_ID);
-    formParams.append('client_secret', WHOP_CLIENT_SECRET);
-    formParams.append('grant_type', 'authorization_code');
-    formParams.append('code', code);
-    formParams.append('redirect_uri', WHOP_REDIRECT_URI);
+    // 2. Exchange code for Whop Access Token
+    // We send credentials via JSON, which Whop API is confirmed to parse correctly.
+    const tokenBody: Record<string, string> = {
+      client_id: WHOP_CLIENT_ID,
+      client_secret: WHOP_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: WHOP_REDIRECT_URI,
+    };
     if (code_verifier) {
-      formParams.append('code_verifier', code_verifier);
+      tokenBody.code_verifier = code_verifier;
     }
 
     // DIAGNOSTIC LOG
@@ -47,17 +49,15 @@ serve(async (req) => {
       code_prefix: code?.slice(0, 10),
       code_verifier_prefix: code_verifier?.slice(0, 12) ?? 'MISSING',
       code_verifier_length: code_verifier?.length ?? 0,
+      client_id: WHOP_CLIENT_ID,
     }));
-
-    const basicAuth = btoa(`${WHOP_CLIENT_ID}:${WHOP_CLIENT_SECRET}`);
 
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${basicAuth}`
+        'Content-Type': 'application/json'
       },
-      body: formParams.toString(),
+      body: JSON.stringify(tokenBody),
     });
 
     if (!tokenResponse.ok) {
