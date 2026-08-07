@@ -26,7 +26,9 @@ export default function AuthCallback() {
     setErrorMsg('');
 
     try {
-      const codeVerifier = getStoredCodeVerifier() || searchParams.get('state') || undefined;
+      // Primary source: state param in URL (where we stored the verifier)
+      // Fallback: sessionStorage
+      const codeVerifier = getStoredCodeVerifier(searchParams) ?? undefined;
 
       const { data, error } = await supabase.functions.invoke('whop-auth', {
         body: {

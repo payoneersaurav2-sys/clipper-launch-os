@@ -55,16 +55,33 @@ export async function buildWhopOAuthUrl(): Promise<string> {
     response_type: 'code',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
-    state: 'web_oauth',
+    // Pass verifier in state so it comes back in the redirect URL
+    // This eliminates sessionStorage dependency entirely
+    state: codeVerifier,
   });
 
   return `https://whop.com/oauth?${params.toString()}`;
 }
 
-/** Read the stored PKCE verifier after the OAuth redirect — single use */
-export function getStoredCodeVerifier(): string | null {
+/**
+ * Read the PKCE verifier from the OAuth redirect URL state param (primary)
+ * or fall back to sessionStorage (secondary).
+ * The state param is the most reliable source — it's in the URL, not cleared by browser.
+ */
+export function getStoredCodeVerifier(searchParams?: URLSearchParams): string | null {
+  // Primary: read from URL state parameter (always available if we passed it in buildWhopOAuthUrl)
+  if (searchParams) {
+    const stateVerifier = searchParams.get('state');
+    // Make sure it looks like a PKCE verifier (43+ chars), not a generic state string
+    if (stateVerifier && stateVerifier.length >= 43) {
+      console.log('[PKCE] Got verifier from URL state param:', stateVerifier.slice(0, 12));
+      return stateVerifier;
+    }
+  }
+
+  // Fallback: sessionStorage
   const v = sessionStorage.getItem(PKCE_STORAGE_KEY);
-  console.log('[PKCE] Read verifier from sessionStorage prefix:', v?.slice(0, 12) ?? 'NULL');
+  console.log('[PKCE] Got verifier from sessionStorage:', v?.slice(0, 12) ?? 'NULL');
   sessionStorage.removeItem(PKCE_STORAGE_KEY);
   return v;
 }
