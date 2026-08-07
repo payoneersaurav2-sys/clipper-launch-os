@@ -19,9 +19,13 @@ export default function AuthCallback() {
       navigate('/login?error=No+authorization+code+provided');
       return;
     }
-    
-    if (hasExchanged) return;
+    console.log('[AUTH] Checking lock. hasExchanged:', hasExchanged);
+    if (hasExchanged) {
+      console.warn('[AUTH] Prevented double execution of code exchange!');
+      return;
+    }
     hasExchanged = true;
+    console.log('[AUTH] Lock acquired. Executing token exchange for code:', code.slice(0, 5) + '...');
 
     const exchangeCode = async () => {
       try {
