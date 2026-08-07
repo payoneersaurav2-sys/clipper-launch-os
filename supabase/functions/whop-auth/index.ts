@@ -29,7 +29,7 @@ serve(async (req) => {
       || Deno.env.get('WHOP_REDIRECT_URI')
       || 'https://creator-os999.vercel.app/auth/callback';
 
-    // 2. Exchange code for Whop Access Token (PKCE-compliant)
+    // 2. Exchange code for Whop Access Token (confidential client: client_secret only, no PKCE)
     const tokenBody: Record<string, string> = {
       client_id: WHOP_CLIENT_ID,
       client_secret: WHOP_CLIENT_SECRET,
@@ -37,11 +37,8 @@ serve(async (req) => {
       code,
       redirect_uri: WHOP_REDIRECT_URI,
     };
-    if (code_verifier) {
-      tokenBody.code_verifier = code_verifier;
-    }
 
-    // DIAGNOSTIC LOG — visible in Supabase function logs
+    // DIAGNOSTIC LOG
     console.log('TOKEN EXCHANGE PAYLOAD:', JSON.stringify({
       client_id: WHOP_CLIENT_ID,
       client_secret_length: WHOP_CLIENT_SECRET.length,
@@ -49,8 +46,7 @@ serve(async (req) => {
       code_length: code?.length,
       code_prefix: code?.slice(0, 10),
       redirect_uri: WHOP_REDIRECT_URI,
-      code_verifier_length: code_verifier?.length ?? 0,
-      code_verifier_prefix: code_verifier?.slice(0, 10) ?? 'MISSING',
+      pkce: 'DISABLED - confidential client uses client_secret only',
     }));
 
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
