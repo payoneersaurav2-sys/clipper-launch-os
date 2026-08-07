@@ -37,11 +37,11 @@ export default function AuthCallback() {
         if (error) throw new Error(error.message);
         if (data?.error) throw new Error(data.error);
 
-        if (data?.supabase_token) {
+        if (data?.access_token) {
           setStatus('Authenticating OS...');
           const { data: authData, error: authError } = await supabase.auth.setSession({
-            access_token: data.supabase_token,
-            refresh_token: data.refresh_token ?? '',
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
           });
           if (authError) throw authError;
           if (authData?.session) setSession(authData.session);

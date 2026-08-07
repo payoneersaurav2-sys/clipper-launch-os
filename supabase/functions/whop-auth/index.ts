@@ -66,56 +66,69 @@ serve(async (req) => {
     const whopId = whopUser.id;
     const email = whopUser.email;
 
-    // 4. Upsert User in public.users
+    // 4. Create or retrieve the user in Supabase Auth
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const deterministicPassword = await derivePassword(whopId, SERVICE_ROLE_KEY);
+
+    let targetUid: string;
+    let signInEmail: string = email;
+
+    const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+    const byEmail = listData?.users?.find(u => u.email === email);
+    const byWhopId = listData?.users?.find(u => u.user_metadata?.whop_id === whopId);
+    const found = byEmail || byWhopId;
+
+    if (found) {
+      targetUid = found.id;
+      signInEmail = found.email!;
+      await supabaseAdmin.auth.admin.updateUserById(targetUid, {
+        password: deterministicPassword,
+        user_metadata: { whop_id: whopId },
+      });
+    } else {
+      const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: deterministicPassword,
+        email_confirm: true,
+        user_metadata: { whop_id: whopId }
+      });
+      if (createErr) throw new Error(`Failed to create user: ${createErr.message}`);
+      targetUid = newUser.user!.id;
+    }
+
+    // 5. Upsert into public.users (schema: id UUID, whop_id TEXT, full_name TEXT, membership_status TEXT)
     const { data: userData, error: dbError } = await supabaseAdmin.from('users').upsert({
-      id: whopId,
-      email: email,
-      full_name: whopUser.username || whopUser.name,
+      id: targetUid,
+      whop_id: whopId,
+      full_name: whopUser.username || whopUser.name || 'Whop User',
       membership_status: 'active',
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' }).select().single();
 
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
-    // 5. Ensure User exists in Supabase Auth
-    let targetUid = whopId;
-    const { data: authUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      email_confirm: true,
-      user_metadata: { whop_id: whopId }
+    // 6. Sign in via the REST token endpoint to get a real access + refresh token pair
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+    const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SERVICE_ROLE_KEY,
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ email: signInEmail, password: deterministicPassword }),
     });
 
-    if (createUserError && createUserError.message.includes('already been registered')) {
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const found = existingUsers.users.find(u => u.email === email);
-      if (found) targetUid = found.id;
-    } else if (authUser?.user?.id) {
-      targetUid = authUser.user.id;
+    if (!signInRes.ok) {
+      const errText = await signInRes.text();
+      throw new Error(`Sign-in failed: ${errText}`);
     }
 
-    if (!targetUid) throw new Error('Failed to resolve Supabase Auth UID');
-
-    // 6. Mint custom Supabase JWT
-    const jwtSecret = Deno.env.get('PROJECT_JWT_SECRET') ?? '';
-    if (!jwtSecret) {
-      throw new Error("PROJECT_JWT_SECRET is not configured in edge function secrets");
-    }
-
-    const token = await new SignJWT({
-      aud: 'authenticated',
-      role: 'authenticated',
-      email: email,
-      app_metadata: { provider: 'whop', providers: ['whop'] },
-      user_metadata: { whop_id: whopId }
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setSubject(targetUid)
-      .setIssuedAt()
-      .setExpirationTime('1h')
-      .sign(new TextEncoder().encode(jwtSecret));
+    const session = await signInRes.json();
 
     return new Response(JSON.stringify({
-      supabase_token: token,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
       user: userData
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -130,3 +143,14 @@ serve(async (req) => {
     });
   }
 });
+
+// Derive a deterministic password from userId + secret using SHA-256
+async function derivePassword(userId: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const data = encoder.encode(`whop-auth-${userId}`);
+  const key = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign('HMAC', key, data);
+  const hashArray = Array.from(new Uint8Array(signature));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32) + 'Aa1!';
+}
