@@ -31,8 +31,6 @@ serve(async (req) => {
 
     // 2. Exchange code for Whop Access Token with PKCE (required by Whop)
     const tokenBody: Record<string, string> = {
-      client_id: WHOP_CLIENT_ID,
-      client_secret: WHOP_CLIENT_SECRET,
       grant_type: 'authorization_code',
       code,
       redirect_uri: WHOP_REDIRECT_URI,
@@ -49,9 +47,14 @@ serve(async (req) => {
       code_verifier_length: code_verifier?.length ?? 0,
     }));
 
+    const basicAuth = btoa(`${WHOP_CLIENT_ID}:${WHOP_CLIENT_SECRET}`);
+
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${basicAuth}`
+      },
       body: JSON.stringify(tokenBody),
     });
 

@@ -27,9 +27,7 @@ function base64UrlEncode(array: Uint8Array): string {
     .replace(/=/g, '');
 }
 
-export const WHOP_REDIRECT_URI = import.meta.env.VITE_APP_URL
-  ? `${import.meta.env.VITE_APP_URL}/auth/callback`
-  : 'https://creator-os999.vercel.app/auth/callback';
+export const WHOP_REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
 
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
