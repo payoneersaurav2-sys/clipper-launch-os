@@ -15,53 +15,34 @@ export default function AuthCallback() {
   useEffect(() => {
     const code = searchParams.get('code');
 
-    if (!code) {
-      navigate('/login?error=No+authorization+code+provided');
-      return;
-    }
-    console.log('[AUTH] Checking lock. hasExchanged:', hasExchanged);
-    if (hasExchanged) {
-      console.warn('[AUTH] Prevented double execution of code exchange!');
-      return;
-    }
-    hasExchanged = true;
-    console.log('[AUTH] Lock acquired. Executing token exchange for code:', code.slice(0, 5) + '...');
+    // Check if we received tokens directly from the Server-Side Edge Function flow
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
 
-    const exchangeCode = async () => {
-      try {
-        // Read verifier from sessionStorage — stored before the OAuth redirect on the same origin
-        const codeVerifier = getStoredCodeVerifier() || searchParams.get('state') || undefined;
-
-        const { data, error } = await supabase.functions.invoke('whop-auth', {
-          body: {
-            code,
-            redirect_uri: WHOP_REDIRECT_URI,
-            code_verifier: codeVerifier,
-          },
-        });
-
-        if (error) throw new Error(error.message);
-        if (data?.error) throw new Error(data.error);
-
-        if (data?.access_token) {
-          setStatus('Authenticating OS...');
-          const { data: authData, error: authError } = await supabase.auth.setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-          });
-          if (authError) throw authError;
-          if (authData?.session) setSession(authData.session);
-          navigate('/dashboard');
-        } else {
-          throw new Error('Invalid authentication response');
+    if (accessToken) {
+      console.log('[AUTH] Received tokens from Server-Side flow! Authenticating...');
+      setStatus('Authenticating OS...');
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken || '',
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error('Session error:', error);
+          navigate(`/login?error=${encodeURIComponent(error.message)}`);
+          return;
         }
-      } catch (error: any) {
-        console.error('Auth callback error:', error);
-        navigate(`/login?error=${encodeURIComponent(error.message || 'Authentication failed')}`);
-      }
-    };
+        if (data.session) {
+          setSession(data.session);
+          navigate('/dashboard');
+        }
+      });
+      return;
+    }
 
-    exchangeCode();
+    // If we only got a code, it means the old flow somehow triggered. Just error out for now
+    // because the new flow ALWAYS redirects with access_token.
+    console.error('[AUTH] Received raw code on client, but we are using Server-Side flow!');
+    navigate('/login?error=Invalid+OAuth+Flow+Type');
   }, [searchParams, navigate, setSession]);
 
   return (

@@ -31,7 +31,7 @@ function base64UrlEncode(array: Uint8Array): string {
     .replace(/=/g, '');
 }
 
-export const WHOP_REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
+export const WHOP_REDIRECT_URI = 'https://ikryyvcvbuokblkmicjq.supabase.co/functions/v1/whop-auth';
 
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
@@ -45,9 +45,9 @@ export async function buildWhopOAuthUrl(): Promise<string> {
   const codeVerifier = generateCodeVerifier();
   const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-  // Store in sessionStorage — creator-os999.vercel.app persists through whop.com redirect
+  // Store in sessionStorage just in case, but we pass it directly via state for the Server-Side flow
   sessionStorage.setItem(PKCE_STORAGE_KEY, codeVerifier);
-  console.log('[PKCE] Stored verifier prefix:', codeVerifier.slice(0, 12));
+  console.log('[PKCE] Generated verifier prefix:', codeVerifier.slice(0, 12));
 
   const params = new URLSearchParams({
     client_id: WHOP_CLIENT_ID,
@@ -55,7 +55,7 @@ export async function buildWhopOAuthUrl(): Promise<string> {
     response_type: 'code',
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
-    state: 'web_oauth',
+    state: codeVerifier, // Send verifier explicitly in state parameter!
   });
 
   return `https://whop.com/oauth?${params.toString()}`;
