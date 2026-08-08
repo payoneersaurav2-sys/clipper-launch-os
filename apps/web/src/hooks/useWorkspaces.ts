@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -52,6 +53,20 @@ export const useWorkspaces = () => {
       setActiveWorkspace(newWorkspace);
     },
   });
+
+  // Whop iframe users intentionally bypass the web onboarding screens. Ensure
+  // that path still has a real workspace for all persisted CreatorOS data.
+  const ensuredForUserId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!user) {
+      ensuredForUserId.current = null;
+      return;
+    }
+    if (query.isSuccess && query.data?.length === 0 && ensuredForUserId.current !== user.id) {
+      ensuredForUserId.current = user.id;
+      createWorkspace.mutate('My Creator Workspace');
+    }
+  }, [createWorkspace, query.data?.length, query.isSuccess, user]);
 
   return { ...query, createWorkspace };
 };
