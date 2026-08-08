@@ -26,7 +26,7 @@ const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter', 'universal'];
 // ---- Create Modal -------------------------------------------
 function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: () => void }) {
   const { createCampaign, updateCampaign } = useCampaigns();
-  const [form, setForm] = useState({ title: campaign?.title ?? '', brand: campaign?.brand ?? '', niche: campaign?.niche ?? '', platform: campaign?.platform ?? 'tiktok', goal: campaign?.goal ?? '', start_date: campaign?.start_date?.slice(0, 10) ?? '', end_date: campaign?.end_date?.slice(0, 10) ?? '', status: campaign?.status ?? 'planning' as CampaignStatus });
+  const [form, setForm] = useState({ title: campaign?.title ?? '', brand: campaign?.brand ?? '', niche: campaign?.niche ?? '', platform: campaign?.platform ?? 'tiktok', goal: campaign?.goal ?? '', objective: campaign?.objective ?? '', target_audience: campaign?.target_audience ?? '', content_pillars: (campaign?.content_pillars ?? []).join(', '), posting_frequency: campaign?.posting_frequency ?? '', start_date: campaign?.start_date?.slice(0, 10) ?? '', end_date: campaign?.end_date?.slice(0, 10) ?? '', status: campaign?.status ?? 'planning' as CampaignStatus });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,8 +36,9 @@ function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: ()
     setSaving(true);
     setError('');
     try {
-      if (campaign) await updateCampaign.mutateAsync({ id: campaign.id, patch: form });
-      else await createCampaign.mutateAsync(form);
+      const payload = { ...form, content_pillars: form.content_pillars.split(',').map(value => value.trim()).filter(Boolean) };
+      if (campaign) await updateCampaign.mutateAsync({ id: campaign.id, patch: payload });
+      else await createCampaign.mutateAsync(payload);
       onClose();
     } catch {
       setError(`Could not ${campaign ? 'save' : 'create'} this campaign. Please try again.`);
@@ -101,6 +102,20 @@ function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: ()
             <label className="text-[12px] text-[#71717A]">Goal</label>
             <Input value={form.goal} onChange={e => setForm(f => ({ ...f, goal: e.target.value }))} placeholder="e.g. Reach 10k followers"
               className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] text-[#71717A]">Objective</label>
+            <Input value={form.objective} onChange={e => setForm(f => ({ ...f, objective: e.target.value }))} placeholder="What should this campaign achieve?"
+              className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] text-[#71717A]">Target audience</label>
+            <Input value={form.target_audience} onChange={e => setForm(f => ({ ...f, target_audience: e.target.value }))} placeholder="e.g. new creators building an audience"
+              className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">Content pillars</label><Input value={form.content_pillars} onChange={e => setForm(f => ({ ...f, content_pillars: e.target.value }))} placeholder="Education, proof" className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A]" /></div>
+            <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">Posting frequency</label><Input value={form.posting_frequency} onChange={e => setForm(f => ({ ...f, posting_frequency: e.target.value }))} placeholder="3 per week" className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A]" /></div>
           </div>
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}

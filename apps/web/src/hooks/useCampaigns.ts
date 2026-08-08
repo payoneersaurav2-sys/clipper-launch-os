@@ -15,6 +15,12 @@ export interface Campaign {
   niche?: string;
   platform?: string;
   goal?: string;
+  objective?: string;
+  target_audience?: string;
+  content_pillars?: string[];
+  posting_frequency?: string;
+  notes?: string;
+  ai_strategy?: Record<string, unknown>;
   start_date?: string;
   end_date?: string;
   status: CampaignStatus;
@@ -35,14 +41,28 @@ export interface Clip {
   title: string;
   hook?: string;
   caption?: string;
+  script?: string;
+  cta?: string;
+  hashtags?: string[];
+  content_pillar?: string;
+  media_url?: string;
+  media_type?: string;
+  media_status?: string;
   platform?: string;
   status: ClipStatus;
   views?: number;
   likes?: number;
   comments?: number;
   shares?: number;
+  saves?: number;
+  followers_gained?: number;
+  engagement_rate?: number;
+  retention_rate?: number;
   revenue?: number;
   publishing_date?: string;
+  timezone?: string;
+  published_url?: string;
+  publication_state?: string;
   tags?: string[];
   notes?: string;
   created_at: string;
@@ -180,6 +200,19 @@ export function useClips(campaignId?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
   });
 
+  const createClips = useMutation({
+    mutationFn: async (payloads: Partial<Clip>[]) => {
+      if (!wsId) throw new Error('Select a workspace before creating content.');
+      const { data, error } = await supabase
+        .from('clips')
+        .insert(payloads.map(payload => ({ ...payload, workspace_id: wsId })))
+        .select();
+      if (error) throw error;
+      return data ?? [];
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
+  });
+
   const updateClip = useMutation({
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Clip> }) => {
       const { data, error } = await supabase
@@ -207,7 +240,7 @@ export function useClips(campaignId?: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
   });
 
-  return { ...query, createClip, updateClip, deleteClip };
+  return { ...query, createClip, createClips, updateClip, deleteClip };
 }
 
 // ---- Analytics aggregates (from existing analytics table) ----

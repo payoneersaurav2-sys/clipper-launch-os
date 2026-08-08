@@ -121,7 +121,7 @@ export function buildCampaignPlanPrompt(input: {
 }): AIPromptContext {
   return {
     systemPrompt: `Create a ${input.durationDays ?? 7}-day content campaign plan for: "${input.topic}"`,
-    developerPrompt: `Build a detailed content calendar. Platform: ${input.platform ?? 'TikTok'}. Goal: ${input.goal ?? 'grow audience'}. Mix content types. Include posting times and growth tips. Return ONLY JSON.`,
+    developerPrompt: `Build a detailed, operational content calendar. Platform: ${input.platform ?? 'TikTok'}. Goal: ${input.goal ?? 'grow audience'}. Include strategy, 3-5 contentPillars, recommended postingFrequency, and exactly ${input.durationDays ?? 7} schedule entries. Every schedule entry needs a unique topic, contentType, platform, a compelling hook, a specific CTA, and contentPillar. Include posting times and growth tips. Return ONLY JSON matching the requested schema.`,
     taskContext: {
       ...baseContext(input.workspaceId, input.workspaceName),
       workflowStage: 'campaign',

@@ -124,6 +124,9 @@ export const AI_SCHEMAS = {
       title:        { type: 'string' },
       duration:     { type: 'string', description: 'e.g. 7 days' },
       goal:         { type: 'string' },
+      strategy:     { type: 'string' },
+      contentPillars: { type: 'array', items: { type: 'string' } },
+      postingFrequency: { type: 'string' },
       schedule: {
         type: 'array',
         items: {
@@ -136,13 +139,16 @@ export const AI_SCHEMAS = {
             platform: { type: 'string' },
             time:     { type: 'string' },
             notes:    { type: 'string' },
+            hook:     { type: 'string' },
+            cta:      { type: 'string' },
+            contentPillar: { type: 'string' },
           },
           required: ['day', 'contentType', 'topic', 'platform'],
         },
       },
       growthTips:   { type: 'array', items: { type: 'string' } },
     },
-    required: ['title', 'schedule', 'goal'],
+    required: ['title', 'schedule', 'goal', 'strategy', 'contentPillars', 'postingFrequency'],
   },
 
   // ---- Analytics -------------------------------------------

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClips, useCampaigns, ClipStatus, Clip } from '@/hooks/useCampaigns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Loader2, GripVertical, ChevronDown, X, Video } from 'lucide-react';
+import { getProductionState, getTransitionIssue } from '@/lib/clipWorkflow';
 
 const STAGES: { key: ClipStatus; label: string; color: string }[] = [
   { key: 'idea',      label: 'Idea',      color: '#71717A' },
@@ -79,7 +81,7 @@ function KanbanCard({ clip, onMove }: { clip: Clip; onMove: (id: string, status:
       onDragStartCapture={(event: React.DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', clip.id); }}
       className="bg-[#161616] border border-white/[0.06] rounded-[12px] p-4 cursor-grab active:cursor-grabbing hover:border-white/[0.12] transition-colors group">
       <div className="flex items-start justify-between gap-2 mb-3">
-        <p className="text-[13px] font-medium text-[#FAFAFA] leading-snug line-clamp-2">{clip.title}</p>
+        {clip.campaign_id ? <Link to={`/dashboard/campaign-os/${clip.campaign_id}/content/${clip.id}`} className="text-[13px] font-medium text-[#FAFAFA] leading-snug line-clamp-2 hover:text-primary">{clip.title}</Link> : <p className="text-[13px] font-medium text-[#FAFAFA] leading-snug line-clamp-2">{clip.title}</p>}
         <GripVertical className="h-4 w-4 text-[#71717A] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
       {clip.platform && (
@@ -88,6 +90,7 @@ function KanbanCard({ clip, onMove }: { clip: Clip; onMove: (id: string, status:
       {clip.hook && (
         <p className="text-[11px] text-[#71717A] mt-2 line-clamp-1 italic">"{clip.hook}"</p>
       )}
+      <p className="mt-2 text-[10px] text-[#A1A1AA]">{getProductionState(clip)}</p>
       {/* Quick move */}
       <div className="mt-3 pt-3 border-t border-white/[0.04]">
         <button onClick={() => setShowMove(!showMove)}
@@ -153,6 +156,9 @@ export default function ClipPipelinePage() {
 
   const handleMove = async (id: string, status: ClipStatus) => {
     setMoveError('');
+    const clip = clips?.find(item => item.id === id);
+    const transitionIssue = clip ? getTransitionIssue(clip, status) : null;
+    if (transitionIssue) { setMoveError(transitionIssue); return; }
     try {
       await updateClip.mutateAsync({ id, patch: { status } });
     } catch {
