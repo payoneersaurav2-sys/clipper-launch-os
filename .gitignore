@@ -6,6 +6,8 @@ build/
 .env.local
 .env.*
 !.env.example
+!.env.ai-cost.example
+dev/ai-cost-analyzer/output/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

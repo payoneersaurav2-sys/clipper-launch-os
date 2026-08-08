@@ -10,10 +10,12 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "ai-cost": "tsx dev/ai-cost-analyzer/index.ts"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "turbo": "^2.0.0",
+    "tsx": "^4.20.3"
   },
   "packageManager": "npm@10.8.1",
   "dependencies": {
