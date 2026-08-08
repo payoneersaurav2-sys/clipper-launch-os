@@ -5,11 +5,13 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Bell, Shield, Database, Trash2, Save, Loader2 } from 'lucide-react';
+import { User, Bell, Shield, Database, Trash2, Save, Loader2, Monitor, Moon, Sun } from 'lucide-react';
+import { AppearanceMode, useAppearance } from '@/components/AppearanceProvider';
 
 const TABS = [
   { id: 'profile',       label: 'Profile',       icon: User },
   { id: 'workspace',     label: 'Workspace',      icon: Database },
+  { id: 'appearance',    label: 'Appearance',     icon: Monitor },
   { id: 'notifications', label: 'Notifications',  icon: Bell },
   { id: 'security',      label: 'Security',       icon: Shield },
 ];
@@ -20,6 +22,37 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3 className="text-[13px] font-semibold text-[#A1A1AA] uppercase tracking-widest">{title}</h3>
       <div className="os-panel p-5 sm:p-6 space-y-5">{children}</div>
     </div>
+  );
+}
+
+function AppearanceTab() {
+  const { mode, resolvedMode, setMode } = useAppearance();
+  const options: Array<{ id: AppearanceMode; label: string; description: string; icon: typeof Sun }> = [
+    { id: 'light', label: 'Light', description: 'A bright, focused workspace.', icon: Sun },
+    { id: 'dark', label: 'Dark', description: 'The original Creator OS experience.', icon: Moon },
+    { id: 'system', label: 'System', description: `Follows this device (${resolvedMode}).`, icon: Monitor },
+  ];
+
+  return (
+    <Section title="Appearance">
+      <div className="space-y-1">
+        <p className="text-[14px] font-medium text-[#FAFAFA]">Choose your workspace appearance</p>
+        <p className="text-[12px] leading-relaxed text-[#71717A]">Your choice is saved on this device. System updates automatically when your device changes modes.</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Appearance mode">
+        {options.map(({ id, label, description, icon: Icon }) => {
+          const selected = mode === id;
+          return (
+            <button key={id} type="button" role="radio" aria-checked={selected} onClick={() => setMode(id)}
+              className={`min-h-[132px] rounded-[14px] border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${selected ? 'border-primary/55 bg-primary/10 shadow-[0_0_20px_rgba(124,58,237,0.12)]' : 'border-white/[0.08] bg-[#0D0D0D] hover:border-white/[0.16]'}`}>
+              <span className={`mb-4 flex h-9 w-9 items-center justify-center rounded-[10px] ${selected ? 'bg-primary text-white' : 'bg-white/[0.06] text-[#A1A1AA]'}`}><Icon className="h-4 w-4" aria-hidden="true" /></span>
+              <span className="block text-[13px] font-semibold text-[#FAFAFA]">{label}</span>
+              <span className="mt-1 block text-[11px] leading-relaxed text-[#71717A]">{description}</span>
+            </button>
+          );
+        })}
+      </div>
+    </Section>
   );
 }
 
@@ -193,6 +226,7 @@ export default function SettingsPage() {
         <motion.div key={activeTab} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
           {activeTab === 'profile'       && <ProfileTab />}
           {activeTab === 'workspace'     && <WorkspaceTab />}
+          {activeTab === 'appearance'    && <AppearanceTab />}
           {activeTab === 'notifications' && <NotificationsTab />}
           {activeTab === 'security'      && <SecurityTab />}
         </motion.div>

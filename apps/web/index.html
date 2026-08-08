@@ -1,9 +1,18 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
+    <script>
+      (() => {
+        const stored = localStorage.getItem('creator-os-appearance');
+        const mode = stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+        const resolved = mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : mode === 'system' ? 'light' : mode;
+        document.documentElement.dataset.theme = resolved;
+        document.documentElement.classList.toggle('dark', resolved === 'dark');
+      })();
+    </script>
 
     <!-- Primary Meta -->
     <title>Creator OS — The AI Operating System for Creators</title>
@@ -29,7 +38,7 @@
 
     <!-- Theme -->
     <meta name="theme-color" content="#7C3AED" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="light dark" />
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

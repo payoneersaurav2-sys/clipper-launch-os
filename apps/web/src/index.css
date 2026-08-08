@@ -36,7 +36,39 @@
  
     --radius: 1rem; /* 16px */
   }
+
+  :root[data-theme='light'] {
+    --background: 240 20% 98%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+    --secondary: 240 12% 95%;
+    --secondary-foreground: 240 6% 34%;
+    --muted: 240 12% 95%;
+    --muted-foreground: 240 5% 42%;
+    --border: 240 10% 88%;
+    --input: 240 10% 88%;
+  }
 }
+
+/* The product was originally dark-only and uses the brand neutrals directly
+   in utility classes. These scoped overrides preserve its hierarchy in light
+   mode without replacing its component system. */
+:root[data-theme='light'] body { background: #F7F7FA; color: #18181B; }
+:root[data-theme='light'] [class*="bg-[#080808]"] { background-color: #F7F7FA !important; }
+:root[data-theme='light'] [class*="bg-[#111111]"] { background-color: #FFFFFF !important; }
+:root[data-theme='light'] [class*="bg-[#0D0D0D]"] { background-color: #F3F3F5 !important; }
+:root[data-theme='light'] [class*="bg-[#161616]"] { background-color: #ECECF0 !important; }
+:root[data-theme='light'] [class*="text-[#FAFAFA]"] { color: #18181B !important; }
+:root[data-theme='light'] [class*="text-[#A1A1AA]"] { color: #52525B !important; }
+:root[data-theme='light'] [class*="text-[#71717A]"] { color: #666675 !important; }
+:root[data-theme='light'] [class*="border-white/"] { border-color: rgba(24, 24, 27, 0.12) !important; }
+:root[data-theme='light'] [class*="bg-white/"] { background-color: rgba(24, 24, 27, 0.045) !important; }
+:root[data-theme='light'] .os-panel { background: #FFFFFF; border-color: rgba(24, 24, 27, 0.12); box-shadow: 0 12px 32px rgba(24, 24, 27, 0.08); }
+:root[data-theme='light'] .os-subtle-panel { background: #F3F3F5; border-color: rgba(24, 24, 27, 0.1); }
+:root[data-theme='light'] .os-skeleton { background: rgba(24, 24, 27, 0.08); }
  
 @layer base {
   * {
