@@ -6,7 +6,17 @@ import './index.css'
 import { useAuthStore } from './stores/useAuthStore'
 import { AppearanceProvider } from './components/AppearanceProvider'
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Keep private workspace data in memory briefly between dashboard routes.
+      // Mutations still invalidate their matching queries immediately.
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 // Initialize auth session before rendering
 useAuthStore.getState().initialize()

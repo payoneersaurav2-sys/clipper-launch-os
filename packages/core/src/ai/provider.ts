@@ -254,7 +254,7 @@ export function createProvider(config: AIProviderConfig): IAIProvider {
 export function createDefaultProvider(): IAIProvider {
   return createProvider({
     name: 'openrouter',
-    apiKey: import.meta.env?.VITE_OPENROUTER_API_KEY ?? '',
+    apiKey: '',
     defaultModel: 'openai/gpt-4o-mini',
     timeout: 30_000,
     maxRetries: 2,

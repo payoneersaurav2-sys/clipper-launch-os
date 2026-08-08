@@ -8,5 +8,5 @@ type BrandMarkProps = {
 const sizeMap = { sm: 'h-8 w-8', md: 'h-12 w-12', lg: 'h-16 w-16' };
 
 export default function BrandMark({ className, size = 'md' }: BrandMarkProps) {
-  return <img src="/brand/creator-os-mark-transparent.png" alt="Creator OS" className={cn('block rounded-[14px] object-cover', sizeMap[size], className)} />;
+  return <img src="/brand/creator-os-mark-transparent.png" alt="Creator OS" width={585} height={445} className={cn('block rounded-[14px] object-cover', sizeMap[size], className)} />;
 }

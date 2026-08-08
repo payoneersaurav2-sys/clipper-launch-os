@@ -1,13 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { AlertTriangle, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ExpiredPage() {
   const signOut = useAuthStore((state) => state.signOut);
-
-  const handleWhopCheckout = () => {
-    window.location.href = 'https://whop.com/checkout/plan_xxx'; 
-  };
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
@@ -27,9 +25,8 @@ export default function ExpiredPage() {
         </div>
         
         <div className="pt-4 space-y-3">
-            <Button onClick={handleWhopCheckout} className="w-full h-12 bg-[#FF6243] hover:bg-[#FF6243]/90 text-white font-medium border-0">
-                <img src="https://whop.com/favicon.ico" alt="Whop" className="w-4 h-4 mr-2 filter brightness-0 invert" />
-                Renew on Whop
+            <Button onClick={() => navigate('/pricing')} className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium border-0">
+                View plans on Whop
             </Button>
             
             <Button onClick={() => signOut()} variant="ghost" className="w-full">

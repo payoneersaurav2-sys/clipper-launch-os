@@ -44,9 +44,9 @@ const SECTIONS = [
     color: 'text-blue-400 bg-blue-400/10',
     title: 'Troubleshooting',
     items: [
-      { q: 'AI generation is failing',                   a: 'Check that VITE_OPENROUTER_API_KEY is set in your .env file. The AI requires a valid API key to generate content.' },
+      { q: 'AI generation is failing',                   a: 'The AI service may be temporarily unavailable. Retry the request, then contact support if the issue continues.' },
       { q: '"Failed to fetch" error on login',           a: 'Your Supabase environment variables are missing or incorrect. Verify VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.' },
-      { q: 'I am redirected to /expired',                a: 'Your account membership_status is not "active". Go to Supabase Dashboard → Table Editor → users and set your row to active.' },
+      { q: 'I am redirected to /expired',                a: 'Creator OS access is managed through your Whop purchase. Confirm the purchase is active in Whop, then contact support if access has not refreshed.' },
       { q: 'Campaign data is not saving',                a: 'Ensure you have an active workspace. Run the database migrations from the SQL editor if tables are missing.' },
     ],
   },

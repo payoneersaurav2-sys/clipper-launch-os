@@ -4,17 +4,17 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Eager
 import LandingLayout   from './layouts/LandingLayout';
-import DashboardLayout from './layouts/DashboardLayout';
-import AuthLayout      from './layouts/AuthLayout';
-import ProtectedRoute  from './components/ProtectedRoute';
 import LandingPage     from './pages/LandingPage';
-import LoginPage       from './pages/LoginPage';
-import AuthCallback    from './pages/AuthCallback';
-import AuthIframe      from './pages/AuthIframe';
-import ExpiredPage     from './pages/ExpiredPage';
 import { NotFoundPage, ServerErrorPage } from './pages/ErrorPages';
 
 // Lazy — all heavy pages
+const DashboardLayout    = lazy(() => import('./layouts/DashboardLayout'));
+const AuthLayout         = lazy(() => import('./layouts/AuthLayout'));
+const ProtectedRoute     = lazy(() => import('./components/ProtectedRoute'));
+const LoginPage          = lazy(() => import('./pages/LoginPage'));
+const AuthCallback       = lazy(() => import('./pages/AuthCallback'));
+const AuthIframe         = lazy(() => import('./pages/AuthIframe'));
+const ExpiredPage        = lazy(() => import('./pages/ExpiredPage'));
 const DashboardHome      = lazy(() => import('./pages/DashboardHome'));
 const CampaignOSPage     = lazy(() => import('./pages/CampaignOSPage'));
 const CampaignDetailPage = lazy(() => import('./pages/CampaignDetailPage'));
@@ -49,7 +49,7 @@ function PageLoader() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public */}

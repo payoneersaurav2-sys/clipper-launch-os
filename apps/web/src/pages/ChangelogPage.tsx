@@ -33,7 +33,7 @@ const RELEASES = [
     label: 'Beta',
     labelColor: 'bg-yellow-400/10 text-yellow-400 border-yellow-400/30',
     highlights: [
-      { type: 'feature', text: 'Central AIService layer with rate limiting and token accounting' },
+      { type: 'feature', text: 'Authenticated AI gateway with rate limiting and token accounting' },
       { type: 'feature', text: 'Multi-step onboarding wizard (7 steps)' },
       { type: 'feature', text: 'User Settings with Profile, Workspace, Notifications, Security tabs' },
       { type: 'feature', text: 'Knowledge Vault with file upload and AI-powered Q&A' },

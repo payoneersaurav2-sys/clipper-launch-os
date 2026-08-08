@@ -32,11 +32,6 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-[14px] text-[#71717A] mb-2 leading-relaxed">
               An unexpected error occurred. This has been logged automatically.
             </p>
-            {this.state.error && (
-              <p className="text-[12px] font-mono text-red-400 bg-red-400/10 px-3 py-2 rounded-[8px] mb-6 max-w-full overflow-auto">
-                {this.state.error.message}
-              </p>
-            )}
             <div className="flex gap-3">
               <button onClick={() => this.setState({ hasError: false })}
                 className="flex items-center gap-2 h-10 px-5 rounded-[12px] bg-[#111111] border border-white/[0.08] text-[#A1A1AA] hover:text-[#FAFAFA] text-[13px] transition-colors">

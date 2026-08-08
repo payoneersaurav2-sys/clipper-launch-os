@@ -97,7 +97,6 @@ export default function OnboardingPage() {
       const { error: upsertErr } = await supabase.from('users').upsert({
         id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Creator',
-        membership_status: 'active',
         onboarding_complete: true,
         niche: form.niche,
         platform: form.platform,

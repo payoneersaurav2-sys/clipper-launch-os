@@ -43,7 +43,6 @@ export default function LoginPage() {
       if (signUpData.user) {
         await supabase.from('users').upsert({
           id: signUpData.user.id,
-          membership_status: 'active',
           full_name: email.split('@')[0],
         });
       }
@@ -114,7 +113,7 @@ export default function LoginPage() {
           <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
           <Input
             type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="Email address" required
+            placeholder="Email address" aria-label="Email address" autoComplete="email" required
             className="h-11 pl-10 rounded-[12px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50 focus:ring-primary/20"
           />
         </div>
@@ -122,10 +121,10 @@ export default function LoginPage() {
           <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
           <Input
             type={showPw ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="Password" required minLength={6}
+            placeholder="Password" aria-label="Password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} required minLength={6}
             className="h-11 pl-10 pr-10 rounded-[12px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50"
           />
-          <button type="button" onClick={() => setShowPw(v => !v)}
+          <button type="button" onClick={() => setShowPw(v => !v)} aria-label={showPw ? 'Hide password' : 'Show password'}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#71717A] hover:text-[#FAFAFA] transition-colors">
             {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>

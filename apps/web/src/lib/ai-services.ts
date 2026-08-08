@@ -154,3 +154,31 @@ export function buildAnalyticsReportPrompt(input: {
     temperature: 0.5,
   };
 }
+
+// ---- Knowledge Vault ----------------------------------------
+
+export function buildKnowledgeAnswerPrompt(input: {
+  workspaceId: string; workspaceName: string;
+  question: string; context: string;
+}): AIPromptContext {
+  return {
+    systemPrompt: `Answer the creator's question using only their saved knowledge.`,
+    developerPrompt: `Use only the supplied knowledge. If it does not answer the question, say so plainly. Return ONLY JSON with answer, sources, and confidence.`,
+    userMessage: `Knowledge:\n${input.context}\n\nQuestion: ${input.question}`,
+    taskContext: {
+      ...baseContext(input.workspaceId, input.workspaceName),
+      workflowStage: 'idea',
+      workspace: { id: input.workspaceId, name: input.workspaceName },
+    },
+    expectedJsonSchema: {
+      type: 'object',
+      properties: {
+        answer: { type: 'string' },
+        sources: { type: 'array', items: { type: 'string' } },
+        confidence: { type: 'number' },
+      },
+      required: ['answer', 'sources', 'confidence'],
+    },
+    temperature: 0.3,
+  };
+}

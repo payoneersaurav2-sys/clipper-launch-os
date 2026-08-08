@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { answerFromKnowledge } from '@/services/AIService';
+import { buildKnowledgeAnswerPrompt } from '@/lib/ai-services';
+import { useAI } from '@/hooks/useAI';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -158,7 +159,9 @@ export function KnowledgeVault() {
   const [search, setSearch] = useState('');
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [answerError, setAnswerError] = useState('');
   const [answering, setAnswering] = useState(false);
+  const { generateJSON } = useAI();
 
   const filtered = items?.filter(i =>
     i.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -169,15 +172,24 @@ export function KnowledgeVault() {
     if (!question.trim() || !items?.length || !wsId) return;
     setAnswering(true);
     setAnswer('');
+    setAnswerError('');
     const context = items.slice(0, 5).map(i => `[${i.title}]: ${i.content.slice(0, 800)}`).join('\n\n');
-    const result = await answerFromKnowledge({
-      question: question.trim(),
-      context,
-      workspaceId: wsId,
-      workspaceName: activeWorkspace?.name ?? 'Workspace',
-    });
-    setAnswer(result.answer);
-    setAnswering(false);
+    try {
+      const result = await generateJSON<{ answer: string }>(
+        buildKnowledgeAnswerPrompt({
+          question: question.trim(),
+          context,
+          workspaceId: wsId,
+          workspaceName: activeWorkspace?.name ?? 'Workspace',
+        }),
+        { category: 'custom', promptSummary: 'Answer from saved knowledge' },
+      );
+      setAnswer(result.answer);
+    } catch {
+      setAnswerError('We could not answer that right now. Please try again.');
+    } finally {
+      setAnswering(false);
+    }
   };
 
   return (
@@ -208,6 +220,11 @@ export function KnowledgeVault() {
             </Button>
           </div>
           <AnimatePresence>
+            {answerError && (
+              <motion.p initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="text-[12px] text-red-400" role="alert">
+                {answerError}
+              </motion.p>
+            )}
             {answer && (
               <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
                 className="p-4 rounded-[12px] bg-[#0D0D0D] border border-white/[0.06]">

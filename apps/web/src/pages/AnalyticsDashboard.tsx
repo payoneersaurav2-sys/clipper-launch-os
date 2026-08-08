@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useHistoryStore } from '@/stores/useHistoryStore';
@@ -8,14 +8,21 @@ import {
   TrendingUp, Eye, DollarSign, Layers, Zap,
   Star, BarChart2, Activity, Target 
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 // ---- Animated counter ---------------------------------------
 function Counter({ value, prefix = '', suffix = '', duration = 1.2 }: { value: number; prefix?: string; suffix?: string; duration?: number }) {
   const [display, setDisplay] = useState(0);
   const start = useRef(0);
   const raf = useRef<number>();
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      start.current = value;
+      setDisplay(value);
+      return;
+    }
     const begin = start.current;
     const startTime = performance.now();
     const animate = (now: number) => {
@@ -27,7 +34,7 @@ function Counter({ value, prefix = '', suffix = '', duration = 1.2 }: { value: n
     };
     raf.current = requestAnimationFrame(animate);
     return () => { if (raf.current) cancelAnimationFrame(raf.current); };
-  }, [value, duration]);
+  }, [value, duration, reduceMotion]);
 
   return <>{prefix}{display.toLocaleString()}{suffix}</>;
 }
@@ -39,7 +46,7 @@ function Sparkline({ values, color = '#7C3AED' }: { values: number[]; color?: st
   const min = Math.min(...values);
   const range = max - min || 1;
   const w = 100; const h = 32;
-  const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - ((v - min) / range) * h}`).join(' ');
+  const pts = values.map((v, i) => `${values.length === 1 ? w / 2 : (i / (values.length - 1)) * w},${h - ((v - min) / range) * h}`).join(' ');
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-8" preserveAspectRatio="none">
       <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -49,7 +56,7 @@ function Sparkline({ values, color = '#7C3AED' }: { values: number[]; color?: st
 
 // ---- Stat card ----------------------------------------------
 function StatCard({ icon: Icon, label, value, prefix, suffix, trend, sparkValues }:
-  { icon: any; label: string; value: number; prefix?: string; suffix?: string; trend?: string; sparkValues?: number[] }) {
+  { icon: LucideIcon; label: string; value: number; prefix?: string; suffix?: string; trend?: string; sparkValues?: number[] }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="bg-[#111111] border border-white/[0.06] rounded-[16px] p-6 hover:border-white/[0.12] transition-colors">

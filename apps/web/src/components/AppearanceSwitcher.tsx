@@ -16,7 +16,7 @@ export function AppearanceSwitcher({ className }: { className?: string }) {
 
   return (
     <div className={cn('relative', className)}>
-      <button type="button" onClick={() => setOpen(value => !value)} aria-expanded={open} aria-haspopup="menu"
+      <button type="button" onClick={() => setOpen(value => !value)} onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false); }} aria-expanded={open} aria-haspopup="menu"
         aria-label={`Appearance: ${mode}. Change appearance`}
         className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-white/[0.08] bg-white/[0.04] text-[#A1A1AA] transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <TriggerIcon className="h-4 w-4" aria-hidden="true" />

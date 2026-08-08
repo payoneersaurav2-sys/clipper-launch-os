@@ -4,7 +4,7 @@
 // ============================================================
 
 import React, { useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Copy, RotateCcw, Square, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -35,6 +35,7 @@ export default function AIOutputPanel({
 }: AIOutputPanelProps) {
   const [copied, setCopied] = React.useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
 
   const displayText = isStreaming ? streamedText : (content ?? streamedText);
 
@@ -75,7 +76,7 @@ export default function AIOutputPanel({
             <span className="flex items-center gap-1 text-[11px] text-primary">
               <motion.span
                 animate={{ opacity: [1, 0.3, 1] }}
-                transition={{ repeat: Infinity, duration: 1.2 }}
+                transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 1.2 }}
                 className="inline-block h-1.5 w-1.5 rounded-full bg-primary"
               />
               Generating…
@@ -134,7 +135,7 @@ export default function AIOutputPanel({
                   key={i}
                   className="h-1.5 w-1.5 rounded-full bg-primary"
                   animate={{ opacity: [0.3, 1, 0.3] }}
-                  transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
+                  transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 1, delay: i * 0.2 }}
                 />
               ))}
             </div>
@@ -145,8 +146,8 @@ export default function AIOutputPanel({
             {displayText}
             {isStreaming && (
               <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ repeat: Infinity, duration: 0.6 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: [1, 0] }}
+                transition={reduceMotion ? { duration: 0 } : { repeat: Infinity, duration: 0.6 }}
                 className="inline-block ml-0.5 w-0.5 h-[14px] bg-primary align-middle"
               />
             )}

@@ -1,8 +1,14 @@
 User-agent: *
 Allow: /
-Disallow: /dashboard/
-Disallow: /admin/
-Disallow: /auth/
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /auth
 Disallow: /api/
+Disallow: /login
+Disallow: /signup
+Disallow: /onboarding
+Disallow: /expired
+Disallow: /experiences/
+Disallow: /500
 
 Sitemap: https://creator-os999.vercel.app/sitemap.xml

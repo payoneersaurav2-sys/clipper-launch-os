@@ -15,7 +15,7 @@ const sizeMap = {
 };
 
 function WordmarkImage({ size = 'md', className }: Pick<WordmarkProps, 'size' | 'className'>) {
-  return <img src="/brand/creator-os-wordmark-transparent.png" alt="Creator OS" className={cn('block h-auto select-none', sizeMap[size], className)} />;
+  return <img src="/brand/creator-os-wordmark-transparent.png" alt="Creator OS" width={1135} height={220} className={cn('block h-auto select-none', sizeMap[size], className)} />;
 }
 
 export default function Wordmark({ className, size = 'md', href = '/', as = 'link' }: WordmarkProps) {
