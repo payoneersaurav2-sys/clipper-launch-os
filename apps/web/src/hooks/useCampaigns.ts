@@ -46,6 +46,7 @@ export interface Clip {
   hashtags?: string[];
   content_pillar?: string;
   media_url?: string;
+  media_path?: string;
   media_type?: string;
   media_status?: string;
   platform?: string;
