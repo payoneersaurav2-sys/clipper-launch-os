@@ -27,7 +27,10 @@ const plan = operations.flatMap(operation =>
     Array.from({ length: runs }, () => ({ operation, model, size }))
   ))
 );
-const maxRequests = Math.min(positive(arg('max-requests'), suite === 'smoke' ? 25 : 250), HARD_MAX_REQUESTS);
+// Baseline has 165 planned actions (11 operations × 3 sizes × 5 runs), each of
+// which can use a second production-equivalent JSON retry. Leave enough room
+// for the complete suite while retaining the absolute 500-call ceiling.
+const maxRequests = Math.min(positive(arg('max-requests'), suite === 'smoke' ? 25 : 350), HARD_MAX_REQUESTS);
 const maxSpend = Math.min(positive(arg('max-spend'), suite === 'smoke' ? 2 : 15), HARD_MAX_SPEND);
 
 function printPlan() {
