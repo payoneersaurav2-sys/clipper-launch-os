@@ -13,8 +13,8 @@ export async function requestAI(context: AIPromptContext): Promise<AIResponse> {
   const payload = await response.json().catch(() => null) as { error?: string; code?: string } | AIResponse | null;
   if (!response.ok) {
     const failure = payload as { error?: string; code?: string } | null;
-    const code = failure?.code === 'RATE_LIMITED' ? 'RATE_LIMITED' : failure?.code === 'AUTH_FAILED' ? 'AUTH_FAILED' : 'PROVIDER_OFFLINE';
-    throw new AIError(failure?.error || 'AI generation failed. Please try again.', code, code === 'RATE_LIMITED' || code === 'PROVIDER_OFFLINE');
+    const code = failure?.code === 'RATE_LIMITED' ? 'RATE_LIMITED' : failure?.code === 'AUTH_FAILED' ? 'AUTH_FAILED' : failure?.code === 'INVALID_JSON' ? 'INVALID_JSON' : 'PROVIDER_OFFLINE';
+    throw new AIError(failure?.error || 'AI generation failed. Please try again.', code, code === 'RATE_LIMITED' || code === 'PROVIDER_OFFLINE' || code === 'INVALID_JSON');
   }
   return payload as AIResponse;
 }
