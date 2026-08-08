@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { buildWhopOAuthUrl } from '@/lib/whopPkce';
+import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [err, setErr] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [success, setSuccess] = useState('');
+  const [whopLoading, setWhopLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,8 +73,14 @@ export default function LoginPage() {
   };
 
   const handleWhopLogin = async () => {
-    const url = await buildWhopOAuthUrl();
-    window.location.href = url;
+    setWhopLoading(true);
+    try {
+      const url = await buildWhopOAuthUrl();
+      window.location.assign(url);
+    } catch {
+      setWhopLoading(false);
+      setErr('We could not start Whop sign-in. Please try again.');
+    }
   };
 
   return (
@@ -140,11 +148,7 @@ export default function LoginPage() {
       </div>
 
       {/* Whop OAuth */}
-      <Button onClick={handleWhopLogin} variant="outline"
-        className="w-full h-11 rounded-[12px] border-white/[0.08] bg-[#0D0D0D] text-[#FAFAFA] hover:bg-white/[0.05] font-medium text-[14px]">
-        <img src="https://whop.com/favicon.ico" alt="Whop" className="w-4 h-4 mr-2 filter brightness-0 invert" />
-        Continue with Whop
-      </Button>
+      <WhopOAuthButton onClick={handleWhopLogin} loading={whopLoading} />
 
       {/* Toggle login/signup */}
       <div className="text-center text-[13px] text-[#71717A]">
