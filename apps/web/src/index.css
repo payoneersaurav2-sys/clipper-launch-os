@@ -69,6 +69,20 @@
   .os-alert-error { @apply rounded-[12px] border border-red-500/20 bg-red-500/10 px-3.5 py-3 text-[13px] leading-relaxed text-red-300; }
   .os-alert-success { @apply rounded-[12px] border border-emerald-500/20 bg-emerald-500/10 px-3.5 py-3 text-[13px] leading-relaxed text-emerald-300; }
   .os-skeleton { @apply animate-pulse rounded-[10px] bg-white/[0.05]; }
+  .os-glow-sweep { position: relative; isolation: isolate; overflow: hidden; }
+  .os-glow-sweep::after {
+    content: ""; pointer-events: none; position: absolute; z-index: 1; left: -42%; bottom: 0;
+    height: 1px; width: 38%; opacity: 0;
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,.2), #8B5CF6, rgba(167,139,250,.2), transparent);
+    box-shadow: 0 0 12px rgba(124,58,237,.9), 0 0 24px rgba(124,58,237,.35);
+  }
+  .os-glow-sweep:hover::after, .os-glow-sweep:focus-visible::after { animation: os-glow-sweep .55s cubic-bezier(.2,.8,.2,1) forwards; }
+}
+
+@keyframes os-glow-sweep {
+  0% { left: -42%; opacity: 0; }
+  15% { opacity: 1; }
+  100% { left: 104%; opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {

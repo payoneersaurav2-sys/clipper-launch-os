@@ -102,7 +102,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                     title={collapsed ? item.name : undefined}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'flex min-h-9 items-center gap-3 rounded-[10px] px-2.5 py-2 text-[13px] font-medium transition-all duration-150 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                      'os-glow-sweep flex min-h-9 items-center gap-3 rounded-[10px] px-2.5 py-2 text-[13px] font-medium transition-all duration-150 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       active
                         ? 'bg-primary/[0.10] text-primary'
                         : 'text-[#71717A] hover:bg-white/[0.04] hover:text-[#FAFAFA]',
