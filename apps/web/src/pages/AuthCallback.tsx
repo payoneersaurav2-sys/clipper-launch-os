@@ -12,7 +12,7 @@ let exchangeInProgress = false;
 export default function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const setSession = useAuthStore((state) => state.setSession);
+  const syncSession = useAuthStore((state) => state.syncSession);
   const [status, setStatus] = useState('Verifying Whop membership...');
   const didRun = useRef(false);
 
@@ -66,7 +66,8 @@ export default function AuthCallback() {
             refresh_token: data.refresh_token ?? '',
           });
           if (authError) throw authError;
-          if (authData?.session) setSession(authData.session);
+          if (!authData?.session) throw new Error('Supabase did not create a session.');
+          await syncSession(authData.session);
           navigate('/dashboard');
         } else {
           throw new Error('No access token in response');
@@ -77,7 +78,7 @@ export default function AuthCallback() {
         navigate(`/login?error=${encodeURIComponent(err.message || 'Authentication failed')}`);
       }
     })();
-  }, [navigate, searchParams, setSession]);
+  }, [navigate, searchParams, syncSession]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">

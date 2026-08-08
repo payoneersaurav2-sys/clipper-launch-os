@@ -96,6 +96,7 @@ serve(async (req) => {
       whop_id: userId,
       full_name: fullName,
       membership_status: 'active',
+      onboarding_complete: true,
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' });
 

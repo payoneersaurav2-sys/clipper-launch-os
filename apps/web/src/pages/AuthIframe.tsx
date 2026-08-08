@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 export default function AuthIframe() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const setSession = useAuthStore((state) => state.setSession);
+  const syncSession = useAuthStore((state) => state.syncSession);
   const [status, setStatus] = useState('Connecting to Whop...');
   const [error, setError] = useState('');
 
@@ -16,7 +16,7 @@ export default function AuthIframe() {
       // ── Fast path: reuse existing Supabase session (repeat visits are instant) ──
       const { data: { session: existingSession } } = await supabase.auth.getSession();
       if (existingSession) {
-        setSession(existingSession);
+        await syncSession(existingSession);
         navigate('/dashboard');
         return;
       }
@@ -56,7 +56,8 @@ export default function AuthIframe() {
               refresh_token: data.refresh_token,
             });
             if (authError) throw authError;
-            if (authData?.session) setSession(authData.session);
+            if (!authData?.session) throw new Error('Supabase did not create a session.');
+            await syncSession(authData.session);
             navigate('/dashboard');
           } else {
             throw new Error('Invalid authentication response.');
@@ -76,7 +77,7 @@ export default function AuthIframe() {
     };
 
     run();
-  }, [searchParams, navigate, setSession]);
+  }, [searchParams, navigate, syncSession]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">

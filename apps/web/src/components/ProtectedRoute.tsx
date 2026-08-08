@@ -28,7 +28,8 @@ export default function ProtectedRoute() {
     return <Navigate to="/expired" replace />;
   }
 
-  // Force onboarding if they haven't done it yet
+  // Whop-authenticated users are marked onboarding-complete by the verified
+  // server-side iframe flow. Web users retain the normal onboarding flow.
   if (onboardingComplete !== true) {
     return <Navigate to="/onboarding" replace />;
   }
