@@ -98,7 +98,7 @@ export function IdeaStudio() {
       </div>
 
       {(error || generationNotice) && (
-        <div className={`p-4 rounded-[12px] border text-[13px] ${error || generationNotice.startsWith('Could') || generationNotice.startsWith('Choose') || generationNotice.startsWith('The AI') ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
+        <div className={`p-4 rounded-[12px] border text-[13px] ${error || (generationNotice ?? '').startsWith('Could') || (generationNotice ?? '').startsWith('Choose') || (generationNotice ?? '').startsWith('The AI') ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
           {error || generationNotice}
         </div>
       )}
