@@ -82,7 +82,7 @@ export function CaptionOS() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
+    <div className="os-page max-w-5xl animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="min-w-0">
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Caption OS</h2>

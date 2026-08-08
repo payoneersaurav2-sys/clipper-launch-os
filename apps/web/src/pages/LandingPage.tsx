@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool } from 'lucide-react';
+import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3, PlayCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
@@ -63,6 +63,14 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      <section className="relative border-y border-white/[0.06] bg-[#0B0B0B]/80 px-4 py-5 sm:px-6 sm:py-6">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/[0.06]">
+          {[['One connected workflow', 'Ideas, campaigns, production, and iteration.'], ['Built for short-form', 'Hooks, captions, storyboards, and pipeline clarity.'], ['Move with context', 'Every output stays connected to the next action.']].map(([title, copy]) => (
+            <div key={title} className="px-4 py-1"><p className="text-[13px] font-medium text-[#FAFAFA]">{title}</p><p className="mt-1 text-[12px] text-[#71717A]">{copy}</p></div>
+          ))}
+        </div>
+      </section>
+
       {/* Workflow Bento Grid */}
       <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-[#080808] relative z-10">
         <div className="max-w-6xl mx-auto">
@@ -108,6 +116,36 @@ export default function LandingPage() {
               <p className="text-[#A1A1AA] leading-relaxed max-w-md text-[15px] tracking-tight">Plan 7-day launches, track production across your entire team, and review automated analytics all in one beautiful kanban board.</p>
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      <section className="relative px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-10 max-w-xl sm:mb-14">
+            <p className="mb-3 text-[11px] font-semibold tracking-[0.16em] text-primary">ONE OPERATING RHYTHM</p>
+            <h2 className="text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-[44px]">From a raw idea to a repeatable system.</h2>
+            <p className="mt-4 text-[15px] leading-relaxed text-[#A1A1AA]">Creator OS keeps the work moving forward, so you can focus on the decisions that make your content distinct.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            {[
+              { number: '01', title: 'Find the angle', copy: 'Capture an idea or use Idea Studio to create a focused starting point.', icon: Sparkles },
+              { number: '02', title: 'Build the asset', copy: 'Turn the angle into hooks, captions, and a production-ready storyboard.', icon: PenTool },
+              { number: '03', title: 'Run the workflow', copy: 'Organize related content in Campaign OS and move it through the pipeline.', icon: Layers3 },
+              { number: '04', title: 'Learn and repeat', copy: 'Use analytics and history to decide what the next piece should improve.', icon: BarChart },
+            ].map((step, index) => <motion.article key={step.number} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.3 }} transition={{ duration: 0.35, delay: index * 0.05 }} className="rounded-[18px] border border-white/[0.07] bg-[#111111] p-5 sm:p-6">
+              <div className="flex items-center justify-between"><span className="text-[11px] font-semibold tracking-[0.14em] text-primary">{step.number}</span><step.icon className="h-4 w-4 text-[#71717A]" /></div>
+              <h3 className="mt-8 text-[17px] font-semibold tracking-tight">{step.title}</h3><p className="mt-2 text-[13px] leading-relaxed text-[#71717A]">{step.copy}</p>
+            </motion.article>)}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative px-4 pb-20 sm:px-6 sm:pb-28">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-primary/25 bg-[radial-gradient(ellipse_70%_120%_at_50%_0%,rgba(124,58,237,.24),transparent_65%),#111111] px-6 py-12 text-center sm:px-12 sm:py-16">
+          <PlayCircle className="mx-auto h-6 w-6 text-primary" aria-hidden="true" />
+          <h2 className="mx-auto mt-5 max-w-2xl text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-[46px]">Build the system behind your next level of content.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-[#A1A1AA]">Start with the workflow you use today. Scale only when your operation calls for it.</p>
+          <Link to="/pricing" className="mt-8 inline-flex"><Button size="lg" className="h-12 rounded-[12px] px-7 text-[14px]">Explore Creator OS <ArrowRight className="h-4 w-4" /></Button></Link>
         </div>
       </section>
     </div>

@@ -169,7 +169,7 @@ export default function ClipPipelinePage() {
   const clipsByStage = (key: ClipStatus) => clips?.filter(c => c.status === key) ?? [];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="os-page animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Clip Pipeline</h2>

@@ -18,7 +18,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-4">
       <h3 className="text-[13px] font-semibold text-[#A1A1AA] uppercase tracking-widest">{title}</h3>
-      <div className="p-6 rounded-[18px] bg-[#111111] border border-white/[0.06] space-y-5">{children}</div>
+      <div className="os-panel p-5 sm:p-6 space-y-5">{children}</div>
     </div>
   );
 }
@@ -127,8 +127,8 @@ function NotificationsTab() {
       {Object.entries(prefs).map(([key, val]) => (
         <Field key={key} label={key.charAt(0).toUpperCase() + key.slice(1) + ' notifications'}
           hint={key === 'ai' ? 'When AI finishes generating' : key === 'campaign' ? 'Campaign status changes' : key === 'billing' ? 'Renewal and payment alerts' : 'Team invitations and changes'}>
-          <button onClick={() => toggle(key as keyof typeof prefs)}
-            className={`relative w-10 h-[22px] rounded-full transition-colors ${val ? 'bg-primary' : 'bg-white/[0.12]'}`}>
+          <button onClick={() => toggle(key as keyof typeof prefs)} aria-pressed={val} aria-label={`${key} notifications ${val ? 'enabled' : 'disabled'}`}
+            className={`relative w-11 h-[24px] rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${val ? 'bg-primary' : 'bg-white/[0.12]'}`}>
             <span className={`absolute top-0.5 h-[18px] w-[18px] rounded-full bg-white transition-transform ${val ? 'translate-x-[20px]' : 'translate-x-0.5'}`} />
           </button>
         </Field>
@@ -170,17 +170,17 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');
 
   return (
-    <div className="max-w-3xl space-y-8 animate-in fade-in duration-500">
+    <div className="os-page max-w-3xl animate-in fade-in duration-500">
       <div>
         <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Settings</h2>
         <p className="text-[14px] text-[#71717A] mt-1">Manage your account and workspace.</p>
       </div>
 
       {/* Tab bar — scrollable on mobile */}
-      <div className="overflow-x-auto -mx-1 px-1">
+      <div className="overflow-x-auto -mx-1 px-1" role="tablist" aria-label="Settings sections">
         <div className="flex gap-1 p-1 rounded-[12px] bg-[#111111] border border-white/[0.06] w-fit min-w-0">
         {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)} role="tab" aria-selected={activeTab === tab.id}
             className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-[10px] text-[12px] sm:text-[13px] font-medium transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-primary/10 text-primary' : 'text-[#71717A] hover:text-[#FAFAFA]'}`}>
             <tab.icon className="h-4 w-4 shrink-0" /><span className="hidden sm:inline">{tab.label}</span>
           </button>

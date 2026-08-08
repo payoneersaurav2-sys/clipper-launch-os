@@ -531,7 +531,7 @@ export default function CampaignOSPage() {
       : campaigns?.filter((c) => c.status === filter);
 
   return (
-    <div className="space-y-8 max-w-6xl animate-in fade-in duration-500">
+    <div className="os-page max-w-6xl animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 justify-between">
         <div>
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">

@@ -33,7 +33,7 @@ export function LaunchCenter() {
   };
 
   return (
-    <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
+    <div className="os-page max-w-5xl animate-in fade-in duration-500">
       <div>
         <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Launch Center</h2>
         <p className="text-[14px] text-[#71717A] mt-1">Plan your content campaigns with AI strategy.</p>

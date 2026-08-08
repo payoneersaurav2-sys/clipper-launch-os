@@ -66,7 +66,7 @@ export default function AISettingsPage() {
   const clearMemory  = useMemoryStore(s => s.clearAll);
 
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-3xl animate-in fade-in duration-500">
+    <div className="os-page max-w-3xl animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">AI Settings</h2>

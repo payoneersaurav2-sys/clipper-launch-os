@@ -385,7 +385,7 @@ export default function ContentWorkspacePage() {
   const storyboard = parseStoryboard(draft.script);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 animate-in fade-in duration-500">
+    <div className="os-page max-w-5xl animate-in fade-in duration-500">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <Link

@@ -53,7 +53,7 @@ export function FeedbackWidget() {
       <motion.button
         onClick={() => setOpen(v => !v)}
         whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-        className="fixed bottom-6 right-6 z-40 h-12 w-12 rounded-full bg-primary shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center text-white transition-all hover:shadow-[0_0_30px_rgba(124,58,237,0.6)]"
+        className="fixed bottom-5 right-5 z-40 min-h-12 min-w-12 rounded-full bg-primary shadow-[0_0_20px_rgba(124,58,237,0.4)] flex items-center justify-center text-white transition-all hover:shadow-[0_0_30px_rgba(124,58,237,0.6)]"
         aria-label="Send feedback">
         <AnimatePresence mode="wait">
           {open
@@ -68,7 +68,7 @@ export function FeedbackWidget() {
         {open && (
           <motion.div initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.15 }}
-            className="fixed bottom-20 right-6 z-40 w-80 bg-[#111111] border border-white/[0.08] rounded-[20px] p-6 shadow-2xl">
+            className="fixed bottom-0 right-0 z-40 w-full rounded-t-[22px] border border-white/[0.08] bg-[#111111] p-5 shadow-2xl sm:bottom-20 sm:right-6 sm:w-80 sm:rounded-[20px] sm:p-6">
 
             {sent ? (
               <div className="flex flex-col items-center py-4 text-center gap-3">

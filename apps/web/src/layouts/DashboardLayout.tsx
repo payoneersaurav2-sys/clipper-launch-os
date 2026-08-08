@@ -100,8 +100,9 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                   <Link key={item.name} to={item.href}
                     onClick={onNavigate}
                     title={collapsed ? item.name : undefined}
+                    aria-current={active ? 'page' : undefined}
                     className={cn(
-                      'flex items-center gap-3 rounded-[10px] px-2.5 py-2 text-[13px] font-medium transition-all duration-150 group',
+                      'flex min-h-9 items-center gap-3 rounded-[10px] px-2.5 py-2 text-[13px] font-medium transition-all duration-150 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                       active
                         ? 'bg-primary/[0.10] text-primary'
                         : 'text-[#71717A] hover:bg-white/[0.04] hover:text-[#FAFAFA]',
@@ -130,7 +131,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                 <p className="text-[12px] font-medium text-[#FAFAFA] truncate">{user?.email?.split('@')[0] || 'Creator'}</p>
                 <p className="text-[10px] text-[#71717A]">Active</p>
               </div>
-              <button onClick={handleLogout}
+              <button onClick={handleLogout} aria-label="Sign out"
                 className="text-[#71717A] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1 rounded-[6px] hover:bg-red-400/10">
                 <LogOut className="h-3.5 w-3.5" />
               </button>
@@ -203,7 +204,7 @@ export default function DashboardLayout() {
           <motion.aside
             initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 h-full w-[260px] z-50 flex flex-col border-r border-white/[0.06] bg-[#080808] lg:hidden"
+            className="fixed top-0 left-0 h-full w-[280px] z-50 flex flex-col border-r border-white/[0.08] bg-[#080808] shadow-2xl lg:hidden"
           >
             {/* Mobile drawer header */}
             <div className="flex h-16 items-center justify-between px-4 shrink-0">
@@ -220,7 +221,7 @@ export default function DashboardLayout() {
 
       {/* ---- Desktop Sidebar --------------------------------- */}
       <aside className={cn(
-        'hidden lg:flex flex-col border-r border-white/[0.06] bg-[#080808] transition-all duration-300 z-20 shrink-0',
+        'hidden lg:flex flex-col border-r border-white/[0.06] bg-[linear-gradient(180deg,#0b0b0b_0%,#080808_45%)] transition-all duration-300 z-20 shrink-0',
         collapsed ? 'w-[68px]' : 'w-[240px]'
       )}>
         {/* Logo + collapse toggle */}
@@ -231,8 +232,8 @@ export default function DashboardLayout() {
               <span className="text-[#FAFAFA]">C</span><span className="text-primary">O</span>
             </span>
           )}
-          <button onClick={() => setCollapsed(v => !v)}
-            className="shrink-0 text-[#71717A] hover:text-[#FAFAFA] transition-colors p-1 rounded-[6px] hover:bg-white/[0.05]">
+          <button onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="shrink-0 text-[#71717A] hover:text-[#FAFAFA] transition-colors p-1.5 rounded-[8px] hover:bg-white/[0.05]">
             {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </button>
         </div>
@@ -242,18 +243,20 @@ export default function DashboardLayout() {
       {/* ---- Main ------------------------------------------ */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header */}
-        <header className="flex h-14 lg:h-16 items-center justify-between px-4 lg:px-8 border-b border-white/[0.04] shrink-0 gap-3">
+        <header className="flex h-14 lg:h-16 items-center justify-between px-4 lg:px-8 border-b border-white/[0.05] bg-[#080808]/80 backdrop-blur-md shrink-0 gap-3">
           {/* Mobile: hamburger */}
           <button
-            className="lg:hidden text-[#71717A] hover:text-[#FAFAFA] p-1.5 rounded-[8px] hover:bg-white/[0.05] transition-colors"
+            className="lg:hidden min-h-10 min-w-10 text-[#71717A] hover:text-[#FAFAFA] p-1.5 rounded-[8px] hover:bg-white/[0.05] transition-colors"
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
           </button>
 
-          <span className="text-[13px] text-[#71717A] hidden sm:block truncate">{currentPageName}</span>
-          <span className="text-[13px] text-[#71717A] sm:hidden font-medium text-[#FAFAFA]">{currentPageName}</span>
+          <div className="min-w-0">
+            <span className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-[#71717A] sm:block">Creator OS</span>
+            <span className="block truncate text-[13px] font-medium text-[#FAFAFA]">{currentPageName}</span>
+          </div>
 
           <div className="flex items-center gap-2 shrink-0">
             <NotificationCenter />
