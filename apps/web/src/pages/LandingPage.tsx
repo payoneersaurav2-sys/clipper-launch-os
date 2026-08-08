@@ -1,14 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3, PlayCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <div className="flex flex-col min-h-screen relative overflow-hidden bg-[#080808] font-sans text-[#FAFAFA]">
       
       {/* Dynamic Background - Extremely subtle for premium feel */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+      <motion.div aria-hidden="true" animate={reduceMotion ? undefined : { x: [0, 18, 0], y: [0, -10, 0], opacity: [0.32, 0.62, 0.32] }} transition={{ duration: 12, ease: 'easeInOut', repeat: Infinity }} className="pointer-events-none absolute -top-40 left-1/2 h-[430px] w-[680px] -translate-x-1/2 rounded-full bg-primary/15 blur-[110px]" />
       
       {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center text-center px-4 pt-24 sm:pt-32 md:pt-40 pb-16 sm:pb-24 md:pb-32">
@@ -65,8 +68,8 @@ export default function LandingPage() {
 
       <section className="relative border-y border-white/[0.06] bg-[#0B0B0B]/80 px-4 py-5 sm:px-6 sm:py-6">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-4 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-white/[0.06]">
-          {[['One connected workflow', 'Ideas, campaigns, production, and iteration.'], ['Built for short-form', 'Hooks, captions, storyboards, and pipeline clarity.'], ['Move with context', 'Every output stays connected to the next action.']].map(([title, copy]) => (
-            <div key={title} className="px-4 py-1"><p className="text-[13px] font-medium text-[#FAFAFA]">{title}</p><p className="mt-1 text-[12px] text-[#71717A]">{copy}</p></div>
+          {[['One connected workflow', 'Ideas, campaigns, production, and iteration.'], ['Built for short-form', 'Hooks, captions, storyboards, and pipeline clarity.'], ['Move with context', 'Every output stays connected to the next action.']].map(([title, copy], index) => (
+            <motion.div key={title} initial={reduceMotion ? false : { opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.7 }} transition={{ duration: 0.32, delay: index * 0.07 }} className="px-4 py-1"><p className="text-[13px] font-medium text-[#FAFAFA]">{title}</p><p className="mt-1 text-[12px] text-[#71717A]">{copy}</p></motion.div>
           ))}
         </div>
       </section>
@@ -74,15 +77,16 @@ export default function LandingPage() {
       {/* Workflow Bento Grid */}
       <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-[#080808] relative z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+          <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.45 }} transition={{ duration: 0.42 }} className="text-center mb-12 sm:mb-16 lg:mb-20">
             <h2 className="text-[26px] sm:text-[36px] md:text-[48px] font-semibold tracking-tight mb-4 text-[#FAFAFA] leading-none">A seamless workflow engine.</h2>
             <p className="text-[#A1A1AA] max-w-2xl mx-auto text-[17px] tracking-tight">Outputs automatically become inputs. No manual transfer. Everything is connected.</p>
-          </div>
+          </motion.div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 lg:gap-6">
             <motion.div 
-              whileHover={{ scale: 0.99, y: -2 }}
-              className="sm:col-span-2 p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              whileHover={reduceMotion ? undefined : { y: -5 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              className="os-glow-sweep sm:col-span-2 p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm hover:shadow-[0_18px_38px_rgba(124,58,237,0.12)] relative overflow-hidden group transition-shadow duration-300"
             >
               <Workflow className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">1. Idea Studio</h3>
@@ -90,8 +94,9 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div 
-              whileHover={{ scale: 0.99, y: -2 }}
-              className="p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              whileHover={reduceMotion ? undefined : { y: -5 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              className="os-glow-sweep p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm hover:shadow-[0_18px_38px_rgba(124,58,237,0.12)] relative overflow-hidden group transition-shadow duration-300"
             >
               <Zap className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[20px] font-semibold mb-3 tracking-tight">2. Hook Engine</h3>
@@ -99,8 +104,9 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div 
-              whileHover={{ scale: 0.99, y: -2 }}
-              className="p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              whileHover={reduceMotion ? undefined : { y: -5 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              className="os-glow-sweep p-6 sm:p-8 lg:p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm hover:shadow-[0_18px_38px_rgba(124,58,237,0.12)] relative overflow-hidden group transition-shadow duration-300"
             >
               <PenTool className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[20px] font-semibold mb-3 tracking-tight">3. Caption OS</h3>
@@ -108,8 +114,9 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div 
-              whileHover={{ scale: 0.99, y: -2 }}
-              className="md:col-span-2 p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm relative overflow-hidden group transition-all duration-300"
+              whileHover={reduceMotion ? undefined : { y: -5 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              className="os-glow-sweep md:col-span-2 p-10 rounded-[20px] border border-white/[0.06] bg-[#111111] text-[#FAFAFA] shadow-sm hover:shadow-[0_18px_38px_rgba(124,58,237,0.12)] relative overflow-hidden group transition-shadow duration-300"
             >
               <BarChart className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">4. Campaign Center</h3>
