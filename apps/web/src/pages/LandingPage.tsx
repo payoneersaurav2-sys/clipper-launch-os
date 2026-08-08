@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 export default function LandingPage() {
   return (
@@ -49,11 +50,11 @@ export default function LandingPage() {
           transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
           className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto"
         >
-          <a href="https://whop.com/forgeos/creator-os-ee/" className="w-full sm:w-auto" target="_blank" rel="noopener noreferrer">
+          <Link to="/pricing" className="w-full sm:w-auto">
             <Button size="lg" className="w-full h-12 rounded-[12px] px-8 text-[15px] font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_20px_rgba(124,58,237,0.3)] hover:shadow-[0_0_30px_rgba(124,58,237,0.5)] transition-all duration-300">
-              Start Free Trial <ArrowRight className="ml-2 h-[16px] w-[16px]" />
+              Explore Plans <ArrowRight className="ml-2 h-[16px] w-[16px]" />
             </Button>
-          </a>
+          </Link>
           <a href="/login" className="w-full sm:w-auto">
             <Button variant="outline" size="lg" className="w-full h-12 rounded-[12px] px-8 text-[15px] font-medium bg-[#111111] border border-white/[0.06] text-[#FAFAFA] hover:bg-white/[0.03] transition-all duration-300">
               Sign In

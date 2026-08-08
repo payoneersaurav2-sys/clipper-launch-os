@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 
 const footerNav = [
   { label: 'Features', href: '/#features' },
+  { label: 'Pricing', href: '/pricing' },
   { label: 'FAQ', href: '/faq' },
   { label: 'Terms', href: '/terms' },
   { label: 'Contact', href: 'mailto:sauravwhop@gmail.com' },
@@ -42,6 +43,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
 
           {/* Desktop Nav */}
           <div className="hidden sm:flex items-center gap-2 lg:gap-3">
+            <Link to="/pricing">
+              <Button variant="ghost" className="text-[14px] font-medium text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-white/[0.03] px-3 lg:px-4 h-9 rounded-[10px]">
+                Pricing
+              </Button>
+            </Link>
             <Link to="/faq">
               <Button variant="ghost" className="text-[14px] font-medium text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-white/[0.03] px-3 lg:px-4 h-9 rounded-[10px]">
                 FAQ
@@ -52,11 +58,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 Sign In
               </Button>
             </Link>
-            <a href="https://whop.com/forgeos/creator-os-ee/" target="_blank" rel="noopener noreferrer">
+            <Link to="/pricing">
               <Button className="h-9 rounded-[10px] px-4 lg:px-5 text-[13px] lg:text-[14px] font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.25)] hover:shadow-[0_0_22px_rgba(124,58,237,0.45)] transition-all duration-300">
-                Get Started
+                View Plans
               </Button>
-            </a>
+            </Link>
           </div>
 
           {/* Mobile: hamburger */}
@@ -78,6 +84,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               className="sm:hidden border-t border-white/[0.06] bg-[#080808]"
             >
               <div className="px-4 py-4 flex flex-col gap-2">
+                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start text-[14px] font-medium text-[#A1A1AA] hover:text-[#FAFAFA] h-10 rounded-[10px]">
+                    Pricing
+                  </Button>
+                </Link>
                 <Link to="/faq" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start text-[14px] font-medium text-[#A1A1AA] hover:text-[#FAFAFA] h-10 rounded-[10px]">
                     FAQ
@@ -88,11 +99,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                     Sign In
                   </Button>
                 </Link>
-                <a href="https://whop.com/forgeos/creator-os-ee/" target="_blank" rel="noopener noreferrer" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full h-10 rounded-[10px] text-[14px] font-medium bg-primary text-white hover:bg-primary/90 mt-1">
-                    Get Started
+                    View Plans
                   </Button>
-                </a>
+                </Link>
               </div>
             </motion.div>
           )}

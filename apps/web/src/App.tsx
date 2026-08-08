@@ -29,6 +29,7 @@ const ChangelogPage      = lazy(() => import('./pages/ChangelogPage'));
 const SignupPage          = lazy(() => import('./pages/SignupPage'));
 const TermsPage           = lazy(() => import('./pages/TermsPage'));
 const FAQPage             = lazy(() => import('./pages/FAQPage'));
+const PricingPage         = lazy(() => import('./pages/PricingPage'));
 
 const IdeaStudio     = lazy(() => import('./components/modules/IdeaStudio').then(m => ({ default: m.IdeaStudio })));
 const HookEngine     = lazy(() => import('./components/modules/HookEngine').then(m => ({ default: m.HookEngine })));
@@ -54,6 +55,7 @@ export default function App() {
             {/* Public */}
             <Route path="/"          element={<LandingLayout><LandingPage /></LandingLayout>} />
             <Route path="/faq"       element={<LandingLayout><FAQPage /></LandingLayout>} />
+            <Route path="/pricing"   element={<LandingLayout><PricingPage /></LandingLayout>} />
             <Route path="/terms"     element={<LandingLayout><TermsPage /></LandingLayout>} />
             <Route path="/changelog" element={<LandingLayout><ChangelogPage /></LandingLayout>} />
             <Route path="/help"      element={<LandingLayout><HelpCenterPage /></LandingLayout>} />
