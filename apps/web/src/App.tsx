@@ -17,6 +17,7 @@ import { NotFoundPage, ServerErrorPage } from './pages/ErrorPages';
 // Lazy — all heavy pages
 const DashboardHome      = lazy(() => import('./pages/DashboardHome'));
 const CampaignOSPage     = lazy(() => import('./pages/CampaignOSPage'));
+const CampaignDetailPage = lazy(() => import('./pages/CampaignDetailPage'));
 const ClipPipelinePage   = lazy(() => import('./pages/ClipPipelinePage'));
 const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const AISettingsPage     = lazy(() => import('./pages/AISettingsPage'));
@@ -76,6 +77,7 @@ export default function App() {
                 <Route path="caption-os"      element={<CaptionOS />} />
                 <Route path="launch-center"   element={<LaunchCenter />} />
                 <Route path="campaign-os"     element={<CampaignOSPage />} />
+                <Route path="campaign-os/:campaignId" element={<CampaignDetailPage />} />
                 <Route path="clip-pipeline"   element={<ClipPipelinePage />} />
                 <Route path="analytics"       element={<AnalyticsDashboard />} />
                 <Route path="knowledge-vault" element={<KnowledgeVault />} />

@@ -126,6 +126,27 @@ export function useCampaigns() {
   return { ...query, createCampaign, updateCampaign, deleteCampaign, duplicateCampaign };
 }
 
+export function useCampaign(campaignId?: string) {
+  const { activeWorkspace } = useWorkspaceStore();
+  const wsId = activeWorkspace?.id;
+
+  return useQuery({
+    queryKey: ['campaign', wsId, campaignId],
+    queryFn: async (): Promise<Campaign | null> => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('*')
+        .eq('id', campaignId)
+        .eq('workspace_id', wsId)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!wsId && !!campaignId,
+  });
+}
+
 // ---- Clips ---------------------------------------------------
 
 export function useClips(campaignId?: string) {

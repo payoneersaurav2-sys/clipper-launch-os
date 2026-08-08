@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useCampaigns, Campaign, CampaignStatus } from '@/hooks/useCampaigns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Link } from 'react-router-dom';
 import { 
   Plus, Loader2, MoreHorizontal, Copy, Trash2, Archive,
   Pencil, Rocket, Target, X
@@ -25,7 +26,7 @@ const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter', 'universal'];
 // ---- Create Modal -------------------------------------------
 function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: () => void }) {
   const { createCampaign, updateCampaign } = useCampaigns();
-  const [form, setForm] = useState({ title: campaign?.title ?? '', brand: campaign?.brand ?? '', niche: campaign?.niche ?? '', platform: campaign?.platform ?? 'tiktok', goal: campaign?.goal ?? '', status: campaign?.status ?? 'planning' as CampaignStatus });
+  const [form, setForm] = useState({ title: campaign?.title ?? '', brand: campaign?.brand ?? '', niche: campaign?.niche ?? '', platform: campaign?.platform ?? 'tiktok', goal: campaign?.goal ?? '', start_date: campaign?.start_date?.slice(0, 10) ?? '', end_date: campaign?.end_date?.slice(0, 10) ?? '', status: campaign?.status ?? 'planning' as CampaignStatus });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -60,6 +61,10 @@ function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: ()
             <label className="text-[12px] text-[#71717A]">Campaign Name *</label>
             <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Finance Niche Sprint"
               className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">Start date</label><Input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))} className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA]" /></div>
+            <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">End date</label><Input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))} className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA]" /></div>
           </div>
           <div className="space-y-1.5">
             <label className="text-[12px] text-[#71717A]">Status</label>
@@ -153,7 +158,7 @@ function CampaignCard({ campaign, onEdit }: { campaign: Campaign; onEdit: (campa
         </div>
       </div>
 
-      <h3 className="text-[15px] font-semibold text-[#FAFAFA] tracking-tight mb-1.5 line-clamp-1">{campaign.title}</h3>
+      <Link to={`/dashboard/campaign-os/${campaign.id}`} className="block text-[15px] font-semibold text-[#FAFAFA] tracking-tight mb-1.5 line-clamp-1 hover:text-primary transition-colors">{campaign.title}</Link>
       {campaign.brand && <p className="text-[12px] text-[#71717A] mb-1">{campaign.brand}</p>}
 
       <div className="flex flex-wrap gap-3 my-4 text-[12px] text-[#71717A]">

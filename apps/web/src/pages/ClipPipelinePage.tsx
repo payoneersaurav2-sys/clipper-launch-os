@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClips, useCampaigns, ClipStatus, Clip } from '@/hooks/useCampaigns';
 import { Button } from '@/components/ui/button';
@@ -143,8 +144,9 @@ function KanbanColumn({ stage, clips, onMove }: { stage: typeof STAGES[0]; clips
 }
 
 export default function ClipPipelinePage() {
+  const location = useLocation();
   const { data: campaigns } = useCampaigns();
-  const [selectedCampaign, setSelectedCampaign] = useState<string | undefined>();
+  const [selectedCampaign, setSelectedCampaign] = useState<string | undefined>(() => (location.state as { campaignId?: string } | null)?.campaignId);
   const { data: clips, isLoading, updateClip } = useClips(selectedCampaign);
   const [showAdd, setShowAdd] = useState(false);
   const [moveError, setMoveError] = useState('');

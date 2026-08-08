@@ -166,7 +166,7 @@ Acceptance criteria: Metrics identify their source/time range, persist securely,
 
 ### COS-CAMPAIGN-001
 
-Priority: P1 | Area: Campaign OS | Status: [ ] NOT STARTED | Complexity: Medium
+Priority: P1 | Area: Campaign OS | Status: [x] COMPLETED | Complexity: Medium
 
 Task: Implement the existing Campaign Edit action or mark it unavailable until a real editor exists.
 
@@ -175,6 +175,18 @@ Why it matters: The menu currently presents a no-op action.
 Dependencies: Confirm campaign-field specification.
 
 Acceptance criteria: Edit opens a working form, persists authorized changes, and handles loading/success/error states.
+
+### COS-CAMPAIGN-002
+
+Priority: P1 | Area: Campaign OS | Status: [x] COMPLETED | Complexity: Medium
+
+Task: Add a real campaign detail route backed by the existing campaign and clip relationships.
+
+Why it matters: Campaign cards need an operational view for creators to monitor and manage associated content.
+
+Dependencies: Existing `campaigns` and `clips` migrations.
+
+Acceptance criteria: A campaign opens directly; linked clips, real manual metrics, progress, status, and publishing-date changes persist; the Clip Pipeline opens scoped to the campaign.
 
 ### COS-SETTINGS-001
 
