@@ -19,6 +19,7 @@ export function IdeaStudio() {
   const [isCreating, setIsCreating] = useState(false);
   const [expandingId, setExpandingId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, any>>({});
+  const [generationNotice, setGenerationNotice] = useState<string | null>(null);
 
   const ws = { id: activeWorkspace?.id ?? 'default', name: activeWorkspace?.name ?? 'Workspace' };
 
@@ -37,17 +38,30 @@ export function IdeaStudio() {
 
   const handleAIGenerate = async () => {
     clearError();
-    const data = await generateJSON<{ ideas: any[] }>(
-      buildGenerateIdeasPrompt({ 
-        workspaceId: ws.id, 
-        workspaceName: ws.name,
-        niche: activeWorkspace?.niche ?? undefined,
-        platform: activeWorkspace?.platform ?? undefined,
-      }),
-      { category: 'idea', promptSummary: 'Generate viral ideas' }
-    );
-    for (const idea of data.ideas ?? []) {
-      await createIdea.mutateAsync({ title: idea.title, context: idea.context ?? '' });
+    setGenerationNotice(null);
+    if (!activeWorkspace) {
+      setGenerationNotice('Choose or create a workspace before generating ideas.');
+      return;
+    }
+    try {
+      const data = await generateJSON<{ ideas?: Array<{ title?: string; context?: string }> }>(
+        buildGenerateIdeasPrompt({
+          workspaceId: ws.id,
+          workspaceName: ws.name,
+          niche: activeWorkspace.niche ?? undefined,
+          platform: activeWorkspace.platform ?? undefined,
+        }),
+        { category: 'idea', promptSummary: 'Generate viral ideas' }
+      );
+      const generatedIdeas = (data.ideas ?? []).filter((idea) => typeof idea?.title === 'string' && idea.title.trim().length > 0);
+      if (generatedIdeas.length === 0) {
+        setGenerationNotice('The AI returned no usable ideas. Please retry.');
+        return;
+      }
+      await Promise.all(generatedIdeas.map((idea) => createIdea.mutateAsync({ title: idea.title!.trim(), context: idea.context?.trim() ?? '' })));
+      setGenerationNotice(`${generatedIdeas.length} ideas added to your workspace.`);
+    } catch (generationError) {
+      setGenerationNotice(generationError instanceof Error ? generationError.message : 'Could not generate ideas. Please retry.');
     }
   };
 
@@ -83,8 +97,10 @@ export function IdeaStudio() {
         </Button>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-[12px] bg-red-500/10 border border-red-500/20 text-[13px] text-red-400">{error}</div>
+      {(error || generationNotice) && (
+        <div className={`p-4 rounded-[12px] border text-[13px] ${error || generationNotice.startsWith('Could') || generationNotice.startsWith('Choose') || generationNotice.startsWith('The AI') ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
+          {error || generationNotice}
+        </div>
       )}
 
       <form onSubmit={handleCreate} className="flex gap-3">
