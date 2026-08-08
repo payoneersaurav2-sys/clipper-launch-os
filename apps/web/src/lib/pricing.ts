@@ -20,9 +20,9 @@ export type PricingPlan = {
 };
 
 // This is the only checkout-URL configuration in Creator OS.
-// Mapping follows the supplied slot order, with source #5 deliberately left
-// unassigned because it duplicates source #4. Do not assign it to another plan
-// until the Whop product owner confirms what it represents.
+// The owner supplied three monthly plans first, followed by the annual plans.
+// Source #5 deliberately remains unassigned because it duplicates source #4.
+// Do not assign it to another plan until the Whop product owner confirms it.
 const suppliedCheckoutUrls = [
   'https://whop.com/checkout/plan_x36ZUqtqy8DUf',
   'https://whop.com/checkout/plan_FAWP5M3r4he3u',
@@ -56,17 +56,17 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: 'creator', name: 'Creator', positioning: 'Build your content engine.', monthlyPrice: 19, annualPrice: 190, cta: 'Start Creating',
     features: creatorFeatures,
-    checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[1], billing: 'annual', sourceIndex: 2 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
   },
   {
     id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Start Pro', recommended: true,
     features: proFeatures,
-    checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[1], billing: 'monthly', sourceIndex: 2 }, annual: { url: suppliedCheckoutUrls[5], billing: 'annual', sourceIndex: 6 } },
   },
   {
     id: 'agency', name: 'Agency', positioning: 'Scale content across brands and clients.', monthlyPrice: 149, annualPrice: 1490, cta: 'Start Scaling',
     features: [...proFeatures, 'Campaign OS for content operations', 'Production-ready content workspaces', 'Analytics built for higher-volume workflows'],
-    checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
   },
 ];
 
