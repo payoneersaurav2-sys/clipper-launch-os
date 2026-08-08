@@ -11,6 +11,7 @@ import {
 import { getReadinessIssues, getTransitionIssue } from "@/lib/clipWorkflow";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import { BrandedDateTimePicker } from "@/components/BrandedDateControls";
 
 type StoryboardScene = {
   scene?: string;
@@ -615,21 +616,10 @@ export default function ContentWorkspacePage() {
               Uploads are stored privately in your workspace. A URL is useful
               when your finished media already lives elsewhere.
             </p>
-            <label className="block text-[12px] text-[#71717A]">
-              Schedule (local time)
-              <input
-                type="datetime-local"
-                value={draft.publishing_date?.slice(0, 16) ?? ""}
-                onChange={(e) =>
-                  patchDraft({
-                    publishing_date: e.target.value
-                      ? new Date(e.target.value).toISOString()
-                      : undefined,
-                  })
-                }
-                className="mt-1.5 h-10 w-full rounded-[10px] border border-white/[0.08] bg-[#0D0D0D] px-3 text-[13px] text-[#FAFAFA]"
-              />
-            </label>
+            <BrandedDateTimePicker
+              value={draft.publishing_date}
+              onChange={(publishing_date) => patchDraft({ publishing_date })}
+            />
             <label className="block text-[12px] text-[#71717A]">
               Timezone
               <input
