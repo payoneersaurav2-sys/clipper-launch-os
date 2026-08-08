@@ -20,9 +20,9 @@ export type PricingPlan = {
 };
 
 // This is the only checkout-URL configuration in Creator OS.
-// The owner supplied three monthly plans first, followed by the annual plans.
+// Creator and Agency follow the supplied order. The owner verified that Pro's
+// two Whop plans are the exception: source #6 is monthly and source #2 annual.
 // Source #5 deliberately remains unassigned because it duplicates source #4.
-// Do not assign it to another plan until the Whop product owner confirms it.
 const suppliedCheckoutUrls = [
   'https://whop.com/checkout/plan_x36ZUqtqy8DUf',
   'https://whop.com/checkout/plan_FAWP5M3r4he3u',
@@ -61,7 +61,7 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Start Pro', recommended: true,
     features: proFeatures,
-    checkout: { monthly: { url: suppliedCheckoutUrls[1], billing: 'monthly', sourceIndex: 2 }, annual: { url: suppliedCheckoutUrls[5], billing: 'annual', sourceIndex: 6 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[1], billing: 'annual', sourceIndex: 2 } },
   },
   {
     id: 'agency', name: 'Agency', positioning: 'Scale content across brands and clients.', monthlyPrice: 149, annualPrice: 1490, cta: 'Start Scaling',
