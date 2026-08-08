@@ -245,6 +245,9 @@ export type AIErrorCode =
   | 'CONTEXT_OVERFLOW'
   | 'STREAM_INTERRUPTED'
   | 'AUTH_FAILED'
+  | 'SUBSCRIPTION_REQUIRED'
+  | 'PLAN_NOT_RESOLVED'
+  | 'PLAN_LIMIT_REACHED'
   | 'UNKNOWN';
 
 export class AIError extends Error {

@@ -6,6 +6,7 @@ interface AuthState {
   user: User | null;
   session: Session | null;
   membershipStatus: string | null;
+  subscriptionTier: string | null;
   onboardingComplete: boolean | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
@@ -19,22 +20,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
   membershipStatus: null,
+  subscriptionTier: null,
   onboardingComplete: null,
   isLoading: true,
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session, user: session?.user ?? null, isLoading: false }),
   syncSession: async (session) => {
     let status = null;
+    let tier = null;
     let onboarded = null;
 
     if (session?.user) {
       const { data } = await supabase
         .from('users')
-        .select('membership_status, onboarding_complete')
+        .select('membership_status, subscription_tier, onboarding_complete')
         .eq('id', session.user.id)
         .single();
       if (data) {
         status = data.membership_status;
+        tier = data.subscription_tier;
         onboarded = data.onboarding_complete;
       }
     }
@@ -43,13 +47,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       session,
       user: session?.user ?? null,
       membershipStatus: status,
+      subscriptionTier: tier,
       onboardingComplete: onboarded,
       isLoading: false,
     });
   },
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null, session: null, membershipStatus: null, onboardingComplete: null });
+    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, onboardingComplete: null });
   },
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession();

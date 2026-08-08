@@ -9,6 +9,47 @@ const corsHeaders = {
 
 // Whop's public key set for verifying x-whop-user-token JWTs
 const WHOP_JWKS = createRemoteJWKSet(new URL('https://api.whop.com/.well-known/jwks.json'));
+const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
+
+type WhopMembership = {
+  id: string;
+  plan_id: string;
+  status: string;
+  current_period_end?: string | null;
+  created_at?: string;
+};
+
+async function resolveWhopPlan(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  whopApiKey: string,
+  whopUserId: string,
+) {
+  const membershipsResponse = await fetch(
+    `https://api.whop.com/api/v1/memberships?user_id=${encodeURIComponent(whopUserId)}&first=100&order=created_at&direction=desc`,
+    { headers: { Authorization: `Bearer ${whopApiKey}` } },
+  );
+  if (!membershipsResponse.ok) {
+    throw new Error(`Whop membership lookup failed: ${membershipsResponse.status}`);
+  }
+  const memberships = ((await membershipsResponse.json()).data ?? []) as WhopMembership[];
+  const candidates = memberships.filter((membership) => ACCESS_GRANTING_STATUSES.has(membership.status));
+  if (!candidates.length) return null;
+
+  const { data: mappings, error } = await supabaseAdmin
+    .from('whop_plan_mappings')
+    .select('whop_plan_id, tier')
+    .in('whop_plan_id', candidates.map((membership) => membership.plan_id));
+  if (error) throw new Error(`Creator OS plan mapping lookup failed: ${error.message}`);
+
+  const tierRank: Record<string, number> = { creator: 1, pro: 2, agency: 3 };
+  const byPlan = new Map((mappings ?? []).map((mapping) => [mapping.whop_plan_id, mapping.tier]));
+  const matched = candidates
+    .map((membership) => ({ membership, tier: byPlan.get(membership.plan_id) }))
+    .filter((item): item is { membership: WhopMembership; tier: string } => Boolean(item.tier))
+    .sort((a, b) => (tierRank[b.tier] ?? 0) - (tierRank[a.tier] ?? 0))[0];
+
+  return matched ?? null;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -57,6 +98,16 @@ serve(async (req) => {
     const access = await accessResponse.json();
     if (!access.has_access || !['customer', 'admin'].includes(access.access_level)) {
       return new Response(JSON.stringify({ error: 'Your Whop membership does not have access to Creator OS.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
+
+    // Whop access verifies the Experience; membership resolution verifies the
+    // paid Creator OS tier. Checkout URLs are never used as an entitlement.
+    const resolvedPlan = await resolveWhopPlan(supabaseAdmin, whopApiKey, userId);
+    if (!resolvedPlan) {
+      return new Response(JSON.stringify({ error: 'Your Whop access is valid, but no active Creator OS plan could be resolved.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 403,
       });
@@ -115,7 +166,12 @@ serve(async (req) => {
       id: targetUid,
       whop_id: userId,
       full_name: fullName,
-      membership_status: 'active',
+      membership_status: resolvedPlan.membership.status,
+      subscription_tier: resolvedPlan.tier,
+      whop_membership_id: resolvedPlan.membership.id,
+      whop_plan_id: resolvedPlan.membership.plan_id,
+      membership_expires_at: resolvedPlan.membership.current_period_end ?? null,
+      entitlement_updated_at: new Date().toISOString(),
       onboarding_complete: true,
       updated_at: new Date().toISOString()
     }, { onConflict: 'id' });

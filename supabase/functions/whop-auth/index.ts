@@ -9,6 +9,44 @@ const corsHeaders = {
 const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? 'app_NsohXjOYOE0EkK';
 const WHOP_CLIENT_SECRET = Deno.env.get('WHOP_CLIENT_SECRET') ?? '';
 const DEFAULT_REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
+const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
+
+type WhopMembership = {
+  id: string;
+  plan_id: string;
+  status: string;
+  current_period_end?: string | null;
+  created_at?: string;
+};
+
+async function resolveWhopPlan(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  whopApiKey: string,
+  whopUserId: string,
+) {
+  const membershipsResponse = await fetch(
+    `https://api.whop.com/api/v1/memberships?user_id=${encodeURIComponent(whopUserId)}&first=100&order=created_at&direction=desc`,
+    { headers: { Authorization: `Bearer ${whopApiKey}` } },
+  );
+  if (!membershipsResponse.ok) throw new Error(`Whop membership lookup failed: ${membershipsResponse.status}`);
+
+  const memberships = ((await membershipsResponse.json()).data ?? []) as WhopMembership[];
+  const candidates = memberships.filter((membership) => ACCESS_GRANTING_STATUSES.has(membership.status));
+  if (!candidates.length) return null;
+
+  const { data: mappings, error } = await supabaseAdmin
+    .from('whop_plan_mappings')
+    .select('whop_plan_id, tier')
+    .in('whop_plan_id', candidates.map((membership) => membership.plan_id));
+  if (error) throw new Error(`Creator OS plan mapping lookup failed: ${error.message}`);
+
+  const rank: Record<string, number> = { creator: 1, pro: 2, agency: 3 };
+  const tiersByPlan = new Map((mappings ?? []).map((mapping) => [mapping.whop_plan_id, mapping.tier]));
+  return candidates
+    .map((membership) => ({ membership, tier: tiersByPlan.get(membership.plan_id) }))
+    .filter((item): item is { membership: WhopMembership; tier: string } => Boolean(item.tier))
+    .sort((a, b) => (rank[b.tier] ?? 0) - (rank[a.tier] ?? 0))[0] ?? null;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -96,6 +134,15 @@ serve(async (req) => {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+    const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
+    if (!whopApiKey) throw new Error('Whop membership verification is not configured');
+    const resolvedPlan = await resolveWhopPlan(supabaseAdmin, whopApiKey, whopUserId);
+    if (!resolvedPlan) {
+      return new Response(
+        JSON.stringify({ error: 'No active Creator OS Whop plan could be resolved for this account.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     const { data: existingUsers, error: existingUsersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
     if (existingUsersError) throw new Error(`Could not look up Supabase user: ${existingUsersError.message}`);
@@ -132,7 +179,12 @@ serve(async (req) => {
       whop_id: whopUserId,
       full_name: fullName,
       avatar_url: whopUser.picture ?? null,
-      membership_status: 'active',
+      membership_status: resolvedPlan.membership.status,
+      subscription_tier: resolvedPlan.tier,
+      whop_membership_id: resolvedPlan.membership.id,
+      whop_plan_id: resolvedPlan.membership.plan_id,
+      membership_expires_at: resolvedPlan.membership.current_period_end ?? null,
+      entitlement_updated_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
     if (profileError) throw new Error(`Could not synchronize Creator OS profile: ${profileError.message}`);

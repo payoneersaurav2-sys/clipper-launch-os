@@ -19,6 +19,8 @@ import { buildCampaignPlanPrompt } from "@/lib/ai-services";
 import { Button } from "@/components/ui/button";
 import { getTransitionIssue } from "@/lib/clipWorkflow";
 import { BrandedDateTimePicker } from "@/components/BrandedDateControls";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 
 const statuses: ClipStatus[] = [
   "idea",
@@ -57,9 +59,11 @@ export default function CampaignDetailPage() {
     createClips,
   } = useClips(campaignId);
   const { generateJSON, isGenerating, error: aiError, clearError } = useAI();
+  const { data: entitlements } = useEntitlements();
   const [contentError, setContentError] = useState("");
   const [quantity, setQuantity] = useState(10);
   const [generationNotice, setGenerationNotice] = useState("");
+  const maxContentBatch = entitlements?.limits?.content_batch_size ?? 10;
 
   if (isLoading)
     return (
@@ -286,7 +290,9 @@ export default function CampaignDetailPage() {
               <button
                 key={value}
                 onClick={() => setQuantity(value)}
-                className={`rounded-full px-3 py-1 text-[11px] ${quantity === value ? "bg-primary text-white" : "border border-white/[0.08] text-[#A1A1AA]"}`}
+                disabled={value > maxContentBatch}
+                aria-label={value > maxContentBatch ? `${value} content ideas require a higher plan` : `Generate ${value} content ideas`}
+                className={`rounded-full px-3 py-1 text-[11px] disabled:cursor-not-allowed disabled:opacity-40 ${quantity === value ? "bg-primary text-white" : "border border-white/[0.08] text-[#A1A1AA]"}`}
               >
                 {value}
               </button>
@@ -305,6 +311,16 @@ export default function CampaignDetailPage() {
             </Button>
           </div>
         </div>
+        {maxContentBatch < 20 && (
+          <div className="mt-4">
+            <UpgradePrompt
+              compact
+              feature="Larger content batches"
+              requiredPlan="pro"
+              description="Creator includes up to 10 ideas at a time."
+            />
+          </div>
+        )}
         {(aiError || generationNotice) && (
           <p
             role="status"

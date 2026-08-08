@@ -22,7 +22,7 @@ export default function ProtectedRoute() {
   // 2. User created account directly (membership_status = 'active' set on signup), OR
   // 3. DEV mode — no membership check when running locally
   const isDev = import.meta.env.DEV;
-  const hasAccess = membershipStatus === 'active' || isDev;
+  const hasAccess = ['active', 'trialing', 'past_due', 'completed'].includes(membershipStatus ?? '') || isDev;
 
   if (!hasAccess) {
     return <Navigate to="/expired" replace />;
