@@ -5,18 +5,16 @@
 // ============================================================
 
 import { useState, useRef, useCallback } from 'react';
-import { createDefaultProvider } from '@clipper/core/src/ai/provider';
 import { AIPromptContext, AIResponse, AIError, GenerationCategory } from '@clipper/core/src/ai/types';
+import { requestAI } from '@/lib/ai-api';
 import { useHistoryStore } from '@/stores/useHistoryStore';
 import { useMemoryStore } from '@/stores/useMemoryStore';
 import { useAISettingsStore } from '@/stores/useAISettingsStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 // Singleton provider — created once, reused across hook instances
-let _provider = createDefaultProvider();
-
 export function refreshProvider() {
-  _provider = createDefaultProvider();
+  // AI configuration is read by the authenticated server gateway on every request.
 }
 
 // ---- Types --------------------------------------------------
@@ -91,7 +89,7 @@ export function useAI() {
 
     const start = Date.now();
     try {
-      const response = await _provider.generate(enrichedCtx);
+      const response = await requestAI(enrichedCtx);
 
       if (!opts.skipHistory) {
         addRecord({
@@ -148,16 +146,11 @@ export function useAI() {
 
     const start = Date.now();
     try {
-      const response = await _provider.stream(
-        enrichedCtx,
-        (chunk) => {
-          if (!chunk.done) {
-            setState(s => ({ ...s, streamedText: s.streamedText + chunk.text }));
-            opts.onStream?.(chunk.text);
-          }
-        },
-        abort.signal
-      );
+      const response = await requestAI(enrichedCtx);
+      if (!abort.signal.aborted) {
+        setState(s => ({ ...s, streamedText: response.content }));
+        opts.onStream?.(response.content);
+      }
 
       if (!opts.skipHistory && !abort.signal.aborted) {
         addRecord({

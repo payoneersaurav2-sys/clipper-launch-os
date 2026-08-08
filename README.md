@@ -97,7 +97,7 @@ VITE_SUPABASE_URL=https://xxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_xxxx
 
 # Optional — AI generations
-VITE_OPENROUTER_API_KEY=sk-or-xxxx
+OPENROUTER_API_KEY=sk-or-xxxx
 
 # Optional — Whop OAuth
 VITE_WHOP_CLIENT_ID=your_whop_client_id
