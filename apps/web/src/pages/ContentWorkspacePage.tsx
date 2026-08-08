@@ -8,6 +8,21 @@ import { buildGenerateCaptionPrompt, buildGenerateHooksPrompt } from '@/lib/ai-s
 import { getReadinessIssues, getTransitionIssue } from '@/lib/clipWorkflow';
 import { Button } from '@/components/ui/button';
 
+function toSpokenScript(content: string): string {
+  try {
+    const parsed = JSON.parse(content) as { script?: string | Array<{ type?: string; content?: string }> };
+    if (typeof parsed.script === 'string') return parsed.script.trim();
+    if (Array.isArray(parsed.script)) {
+      const spoken = parsed.script
+        .filter(item => ['spoken', 'value_beat'].includes(item.type?.toLowerCase() ?? ''))
+        .map(item => item.content?.trim())
+        .filter((line): line is string => Boolean(line));
+      if (spoken.length) return spoken.join('\n\n');
+    }
+  } catch { /* Plain text is already the preferred format. */ }
+  return content.trim();
+}
+
 export default function ContentWorkspacePage() {
   const { campaignId, clipId } = useParams();
   const { data: campaign } = useCampaign(campaignId);
@@ -36,8 +51,8 @@ export default function ContentWorkspacePage() {
   const generateScript = async () => {
     clearError(); setMessage('');
     try {
-      const response = await generate({ systemPrompt: `Write a short-form video script for "${draft.title || clip.title}".`, developerPrompt: `Platform: ${draft.platform || clip.platform || 'TikTok'}. Hook: ${draft.hook || 'create a compelling hook'}. Include a spoken hook, value beats, visual cues, and CTA. Return plain production-ready script only.`, taskContext: { workspace, workflowStage: 'idea', userPreferences: {}, memory: [], previousGenerations: [] }, temperature: 0.7 }, { category: 'custom', promptSummary: `Script: ${clip.title}` });
-      patchDraft({ script: response.content, status: draft.status === 'idea' ? 'writing' : draft.status }); setMessage('Script generated. Review it, then save your changes.');
+      const response = await generate({ systemPrompt: `Write a short-form spoken video script for "${draft.title || clip.title}".`, developerPrompt: `Platform: ${draft.platform || clip.platform || 'TikTok'}. Use this hook: ${draft.hook || 'create a compelling hook'}. Return only the words the creator should say aloud, in short readable paragraphs. Do not return JSON, markdown, labels, visual cues, captions, hashtags, production notes, or a CTA.`, taskContext: { workspace, workflowStage: 'idea', userPreferences: {}, memory: [], previousGenerations: [] }, temperature: 0.7 }, { category: 'custom', promptSummary: `Script: ${clip.title}` });
+      patchDraft({ script: toSpokenScript(response.content), status: draft.status === 'idea' ? 'writing' : draft.status }); setMessage('Spoken script generated. Review it, then save your changes.');
     } catch { /* AI hook exposes the actionable error. */ }
   };
   const generateHook = async () => {
