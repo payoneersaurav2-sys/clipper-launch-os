@@ -1,61 +1,86 @@
 /**
- * PKCE (Proof Key for Code Exchange) utilities for Whop OAuth.
- * Using 'plain' method: code_challenge = code_verifier (no SHA-256)
- * This eliminates any hashing mismatch as root cause.
+ * Whop OAuth 2.1 PKCE helpers.
+ *
+ * The verifier stays in sessionStorage on our origin. `state` is a separate,
+ * opaque CSRF token; never place the verifier in a callback URL.
  */
 
 export const WHOP_REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
 export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
 
-const PKCE_STORAGE_KEY = 'whop_pkce_verifier';
+const PKCE_STORAGE_KEY = 'creator_os_whop_oauth';
 
-function generateCodeVerifier(): string {
-  const array = new Uint8Array(48); // 48 bytes → 64 base64url chars (well above 43 min)
-  crypto.getRandomValues(array);
+interface PkceTransaction {
+  codeVerifier: string;
+  state: string;
+  nonce: string;
+}
+
+function base64UrlEncode(bytes: Uint8Array): string {
   let binary = '';
-  for (let i = 0; i < array.length; i++) {
-    binary += String.fromCharCode(array[i]);
-  }
+  for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary)
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '');
 }
 
-export async function buildWhopOAuthUrl(): Promise<string> {
-  const codeVerifier = generateCodeVerifier();
-
-  // Store in both sessionStorage AND state param for maximum reliability
-  sessionStorage.setItem(PKCE_STORAGE_KEY, codeVerifier);
-  console.log('[PKCE] Generated verifier (length=' + codeVerifier.length + '):', codeVerifier.slice(0, 16));
-
-  // Using plain method: challenge = verifier (no SHA-256 needed)
-  // This tests if SHA-256 hashing is the source of the invalid_grant
-  const params = new URLSearchParams({
-    client_id: WHOP_CLIENT_ID,
-    redirect_uri: WHOP_REDIRECT_URI,
-    response_type: 'code',
-    code_challenge: codeVerifier,         // plain: challenge IS the verifier
-    code_challenge_method: 'plain',
-    state: codeVerifier,                  // embed verifier in state for retrieval
-  });
-
-  return `https://whop.com/oauth?${params.toString()}`;
+function randomString(byteLength: number): string {
+  return base64UrlEncode(crypto.getRandomValues(new Uint8Array(byteLength)));
 }
 
-export function getStoredCodeVerifier(searchParams?: URLSearchParams): string | null {
-  // Primary: state param in URL (embedded during auth)
-  if (searchParams) {
-    const stateVerifier = searchParams.get('state');
-    if (stateVerifier && stateVerifier.length >= 43) {
-      console.log('[PKCE] Got verifier from state param (len=' + stateVerifier.length + '):', stateVerifier.slice(0, 16));
-      return stateVerifier;
-    }
-  }
+async function createS256Challenge(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+  return base64UrlEncode(new Uint8Array(digest));
+}
 
-  // Fallback: sessionStorage
-  const v = sessionStorage.getItem(PKCE_STORAGE_KEY);
-  console.log('[PKCE] Got verifier from sessionStorage (len=' + (v?.length ?? 0) + '):', v?.slice(0, 16) ?? 'NULL');
+export async function buildWhopOAuthUrl(): Promise<string> {
+  const transaction: PkceTransaction = {
+    codeVerifier: randomString(32),
+    state: randomString(16),
+    nonce: randomString(16),
+  };
+
+  sessionStorage.setItem(PKCE_STORAGE_KEY, JSON.stringify(transaction));
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: WHOP_CLIENT_ID,
+    redirect_uri: WHOP_REDIRECT_URI,
+    scope: 'openid profile email',
+    state: transaction.state,
+    nonce: transaction.nonce,
+    code_challenge: await createS256Challenge(transaction.codeVerifier),
+    code_challenge_method: 'S256',
+  });
+
+  return `https://api.whop.com/oauth/authorize?${params.toString()}`;
+}
+
+/**
+ * Verifies the callback state and returns the one-time verifier. The
+ * transaction is consumed even on an invalid callback so a user must restart
+ * the flow instead of accidentally reusing an authorization code.
+ */
+export function getStoredCodeVerifier(searchParams: URLSearchParams): string | null {
+  const rawTransaction = sessionStorage.getItem(PKCE_STORAGE_KEY);
   sessionStorage.removeItem(PKCE_STORAGE_KEY);
-  return v;
+
+  if (!rawTransaction) return null;
+
+  try {
+    const transaction = JSON.parse(rawTransaction) as Partial<PkceTransaction>;
+    const returnedState = searchParams.get('state');
+    if (
+      !transaction.codeVerifier ||
+      !transaction.state ||
+      !returnedState ||
+      returnedState !== transaction.state
+    ) {
+      return null;
+    }
+    return transaction.codeVerifier;
+  } catch {
+    return null;
+  }
 }

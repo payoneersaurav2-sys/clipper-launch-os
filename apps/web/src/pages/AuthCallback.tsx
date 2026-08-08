@@ -25,6 +25,13 @@ export default function AuthCallback() {
     didRun.current = true;
     exchangeInProgress = true;
 
+    const oauthError = searchParams.get('error');
+    if (oauthError) {
+      exchangeInProgress = false;
+      navigate(`/login?error=${encodeURIComponent(searchParams.get('error_description') || oauthError)}`);
+      return;
+    }
+
     const code = searchParams.get('code');
     if (!code) {
       exchangeInProgress = false;
@@ -32,14 +39,12 @@ export default function AuthCallback() {
       return;
     }
 
-    // Get verifier: primary = state param in URL, fallback = sessionStorage
-    const codeVerifier = getStoredCodeVerifier(searchParams) ?? undefined;
-
-    console.log('[AUTH] Starting exchange:', {
-      code_prefix: code.slice(0, 8),
-      has_verifier: !!codeVerifier,
-      verifier_prefix: codeVerifier?.slice(0, 12) ?? 'NONE',
-    });
+    const codeVerifier = getStoredCodeVerifier(searchParams);
+    if (!codeVerifier) {
+      exchangeInProgress = false;
+      navigate('/login?error=Your+Whop+sign-in+session+expired.+Please+try+again.');
+      return;
+    }
 
     (async () => {
       try {
