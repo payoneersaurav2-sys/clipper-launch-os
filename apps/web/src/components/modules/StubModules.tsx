@@ -1,7 +1,5 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import EmptyState from '@/components/EmptyState';
-import { BookOpen, Library } from 'lucide-react';
 
 export function ClipTracker() {
   const navigate = useNavigate();

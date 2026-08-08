@@ -14,7 +14,7 @@ export function IdeaStudio() {
   const navigate = useNavigate();
   const { data: ideas, isLoading, createIdea } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
-  const { generateJSON, isGenerating, error, cancel, clearError } = useAI();
+  const { generateJSON, isGenerating, error, clearError } = useAI();
   const [newTitle, setNewTitle] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [expandingId, setExpandingId] = useState<string | null>(null);
@@ -41,8 +41,8 @@ export function IdeaStudio() {
       buildGenerateIdeasPrompt({ 
         workspaceId: ws.id, 
         workspaceName: ws.name,
-        niche: activeWorkspace?.niche,
-        platform: activeWorkspace?.platform,
+        niche: activeWorkspace?.niche ?? undefined,
+        platform: activeWorkspace?.platform ?? undefined,
       }),
       { category: 'idea', promptSummary: 'Generate viral ideas' }
     );
@@ -58,7 +58,7 @@ export function IdeaStudio() {
         workspaceId: ws.id, 
         workspaceName: ws.name, 
         ideaTitle: idea.title,
-        platform: activeWorkspace?.platform 
+        platform: activeWorkspace?.platform ?? undefined,
       }),
       { category: 'idea', promptSummary: `Expand: ${idea.title}` }
     );

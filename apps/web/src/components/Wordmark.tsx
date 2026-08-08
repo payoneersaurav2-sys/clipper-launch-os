@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -44,4 +43,3 @@ export default function Wordmark({ className, size = 'md', href = '/', as = 'lin
     </Link>
   );
 }
-

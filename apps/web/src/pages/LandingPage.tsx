@@ -1,6 +1,5 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Workflow, Zap, Play, BarChart, PenTool } from 'lucide-react';
+import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function LandingPage() {

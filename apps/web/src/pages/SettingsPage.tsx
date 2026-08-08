@@ -1,11 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Bell, Shield, Database, Trash2, Save, Loader2, Key, Eye, EyeOff } from 'lucide-react';
+import { User, Bell, Shield, Database, Trash2, Save, Loader2 } from 'lucide-react';
 
 const TABS = [
   { id: 'profile',       label: 'Profile',       icon: User },
@@ -139,20 +139,13 @@ function NotificationsTab() {
 
 // ---- Security Tab ------------------------------------------
 function SecurityTab() {
-  const [showKey, setShowKey] = useState(false);
-  const apiKey = `cos_sk_${Math.random().toString(36).slice(2, 18)}`;
-
   return (
     <div className="space-y-6">
       <Section title="API Access">
-        <Field label="Your API Key" hint="Use this to access Creator OS from external tools">
+        <Field label="API Access" hint="Server-issued API keys are not available yet.">
           <div className="flex items-center gap-2">
-            <Input value={showKey ? apiKey : '••••••••••••••••••••'} readOnly
-              className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] font-mono text-[12px]" />
-            <Button variant="ghost" size="icon" onClick={() => setShowKey(v => !v)}
-              className="h-10 w-10 rounded-[10px] border border-white/[0.08] text-[#71717A] hover:text-[#FAFAFA]">
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
+            <Input value="Not available" readOnly disabled
+              className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#71717A] font-mono text-[12px]" />
           </div>
         </Field>
       </Section>

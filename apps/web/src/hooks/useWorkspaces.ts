@@ -5,7 +5,7 @@ import { useWorkspaceStore, Workspace } from '@/stores/useWorkspaceStore';
 
 export const useWorkspaces = () => {
   const { user } = useAuthStore();
-  const { setActiveWorkspace, workspaces, setWorkspaces, activeWorkspace } = useWorkspaceStore();
+  const { setActiveWorkspace, setWorkspaces, activeWorkspace } = useWorkspaceStore();
   const queryClient = useQueryClient();
 
   const fetchWorkspaces = async (): Promise<Workspace[]> => {
@@ -19,9 +19,11 @@ export const useWorkspaces = () => {
 
     if (error) throw error;
     
-    // Auto-select first workspace if none active
-    if (data.length > 0 && !activeWorkspace) {
-      setActiveWorkspace(data[0]);
+    // Persisted Zustand state can outlive the authenticated user. Keep the
+    // selected workspace only when it is in this user's RLS-filtered result.
+    const nextActiveWorkspace = data.find(workspace => workspace.id === activeWorkspace?.id) ?? data[0] ?? null;
+    if (nextActiveWorkspace?.id !== activeWorkspace?.id || (!nextActiveWorkspace && activeWorkspace)) {
+      setActiveWorkspace(nextActiveWorkspace);
     }
     setWorkspaces(data);
     

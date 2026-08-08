@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Search, Rocket, Lightbulb, Zap, Type, BarChart2, Settings, X, ArrowRight } from 'lucide-react';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
@@ -73,10 +73,6 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
   }, [navigate, onClose]);
 
   useEffect(() => {
-    setSelected(0);
-  }, [query]);
-
-  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSelected(s => Math.min(s + 1, flat.length - 1)); }
       if (e.key === 'ArrowUp')   { e.preventDefault(); setSelected(s => Math.max(s - 1, 0)); }
@@ -98,7 +94,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
         {/* Search input */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
           <Search className="h-4 w-4 text-[#71717A] shrink-0" />
-          <input autoFocus value={query} onChange={e => setQuery(e.target.value)}
+          <input autoFocus value={query} onChange={e => { setQuery(e.target.value); setSelected(0); }}
             placeholder="Search or jump to…"
             className="flex-1 bg-transparent text-[#FAFAFA] text-[14px] placeholder:text-[#71717A] outline-none" />
           <button onClick={onClose} className="text-[#71717A] hover:text-[#FAFAFA] transition-colors shrink-0">

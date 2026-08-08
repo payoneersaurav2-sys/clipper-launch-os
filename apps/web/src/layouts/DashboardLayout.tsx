@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
@@ -151,7 +151,6 @@ export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { showTour, completeTour } = useTour();
   const location = useLocation();
-  const navigate = useNavigate();
 
   useWorkspaces();
 

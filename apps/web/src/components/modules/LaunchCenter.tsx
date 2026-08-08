@@ -3,7 +3,6 @@ import { useAI } from '@/hooks/useAI';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { buildCampaignPlanPrompt } from '@/lib/ai-services';
 import EmptyState from '@/components/EmptyState';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Sparkles, Calendar, Target, Zap } from 'lucide-react';

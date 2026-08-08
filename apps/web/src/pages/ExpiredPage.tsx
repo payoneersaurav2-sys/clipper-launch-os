@@ -1,8 +1,6 @@
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { AlertTriangle, LogOut } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export default function ExpiredPage() {
   const signOut = useAuthStore((state) => state.signOut);

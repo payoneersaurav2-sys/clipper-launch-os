@@ -7,7 +7,7 @@
 import { createDefaultProvider } from '@clipper/core/src/ai/provider';
 import { PromptEngine } from '@clipper/core/src/ai/prompt-engine';
 import {
-  AIPromptContext, AIResponse, AIError, GenerationCategory, WorkflowStage
+  AIPromptContext, AIResponse, AIError, WorkflowStage
 } from '@clipper/core/src/ai/types';
 import { AI_SCHEMAS } from '@clipper/core/src/ai/schemas';
 

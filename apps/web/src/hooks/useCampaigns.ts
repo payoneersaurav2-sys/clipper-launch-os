@@ -111,7 +111,7 @@ export function useCampaigns() {
 
   const duplicateCampaign = useMutation({
     mutationFn: async (campaign: Campaign) => {
-      const { id, created_at, updated_at, ...rest } = campaign;
+      const { id: _id, created_at: _createdAt, updated_at: _updatedAt, ...rest } = campaign;
       const { data, error } = await supabase
         .from('campaigns')
         .insert([{ ...rest, title: `${campaign.title} (Copy)`, status: 'planning' }])
@@ -134,7 +134,7 @@ export function useClips(campaignId?: string) {
   const qc = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['clips', campaignId],
+    queryKey: ['clips', wsId, campaignId],
     queryFn: async (): Promise<Clip[]> => {
       let q = supabase.from('clips').select('*').is('deleted_at', null).order('created_at', { ascending: true });
       if (campaignId) q = q.eq('campaign_id', campaignId);
@@ -156,7 +156,7 @@ export function useClips(campaignId?: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', campaignId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
   });
 
   const updateClip = useMutation({
@@ -171,8 +171,7 @@ export function useClips(campaignId?: string) {
       return data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['clips', campaignId] });
-      qc.invalidateQueries({ queryKey: ['clips'] });
+      qc.invalidateQueries({ queryKey: ['clips', wsId] });
     },
   });
 
@@ -184,7 +183,7 @@ export function useClips(campaignId?: string) {
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', campaignId] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
   });
 
   return { ...query, createClip, updateClip, deleteClip };

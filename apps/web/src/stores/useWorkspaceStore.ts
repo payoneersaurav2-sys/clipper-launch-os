@@ -5,12 +5,14 @@ export interface Workspace {
   id: string;
   name: string;
   owner_id: string;
+  niche?: string | null;
+  platform?: string | null;
 }
 
 interface WorkspaceState {
   activeWorkspace: Workspace | null;
   workspaces: Workspace[];
-  setActiveWorkspace: (workspace: Workspace) => void;
+  setActiveWorkspace: (workspace: Workspace | null) => void;
   setWorkspaces: (workspaces: Workspace[]) => void;
 }
 

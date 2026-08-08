@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { GenerationRecord, GenerationCategory, TokenUsage, AIModelId } from '@clipper/core/src/ai/types';
+import { GenerationRecord, GenerationCategory } from '@clipper/core/src/ai/types';
 
 function generateId(): string {
   return `gen_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

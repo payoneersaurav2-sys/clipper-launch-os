@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Plus, Loader2, MoreHorizontal, Copy, Trash2, Archive,
-  Pencil, Rocket, Target, Calendar, ChevronRight, X
+  Pencil, Rocket, Target, X
 } from 'lucide-react';
 
 const STATUS_CONFIG: Record<CampaignStatus, { label: string; color: string; bg: string }> = {

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Bell, Sparkles, Rocket, CreditCard, Users, Check, X } from 'lucide-react';
+import { Bell, Sparkles, Rocket, CreditCard, Users, X } from 'lucide-react';
 
 interface Notification {
   id: string;

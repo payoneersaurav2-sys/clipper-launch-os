@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, Lightbulb, Zap, Type, Rocket, 
-  BarChart2, X, ChevronRight, ChevronLeft, Sparkles
+import { Lightbulb, Zap, Type, Rocket,
+  BarChart2, ChevronRight, ChevronLeft, Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -70,7 +69,6 @@ export function ProductTour({ onComplete }: { onComplete: () => void }) {
 
   const handleNext = () => {
     if (step < STEPS.length - 1) {
-      navigate(STEPS[step + 1].href);
       setStep(s => s + 1);
     } else {
       handleComplete();
@@ -84,7 +82,7 @@ export function ProductTour({ onComplete }: { onComplete: () => void }) {
 
   useEffect(() => {
     navigate(current.href);
-  }, [step]);
+  }, [current.href, navigate]);
 
   return (
     <AnimatePresence>
@@ -131,7 +129,7 @@ export function ProductTour({ onComplete }: { onComplete: () => void }) {
             </button>
             <div className="flex gap-2 ml-auto">
               {step > 0 && (
-                <Button onClick={() => { navigate(STEPS[step-1].href); setStep(s => s-1); }} variant="outline"
+                <Button onClick={() => setStep(s => s - 1)} variant="outline"
                   className="h-9 w-9 p-0 rounded-[10px] border-white/[0.08] bg-transparent text-[#A1A1AA]">
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -151,12 +149,7 @@ export function ProductTour({ onComplete }: { onComplete: () => void }) {
 }
 
 export function useTour() {
-  const [showTour, setShowTour] = useState(false);
-
-  useEffect(() => {
-    const done = localStorage.getItem(TOUR_KEY);
-    if (!done) setShowTour(true);
-  }, []);
+  const [showTour, setShowTour] = useState(() => !localStorage.getItem(TOUR_KEY));
 
   return {
     showTour,

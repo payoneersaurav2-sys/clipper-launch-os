@@ -62,7 +62,6 @@ export default function AISettingsPage() {
   const totalCost   = useHistoryStore(s => s.getTotalCost());
   const recordCount = useHistoryStore(s => s.records.length);
   const favCount    = useHistoryStore(s => s.getFavorites().length);
-  const memCount    = useMemoryStore(s => s.items.length);
   const clearHistory = useHistoryStore(s => s.clearAll);
   const clearMemory  = useMemoryStore(s => s.clearAll);
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -77,7 +77,7 @@ export default function AuthCallback() {
         navigate(`/login?error=${encodeURIComponent(err.message || 'Authentication failed')}`);
       }
     })();
-  }, []); // Empty deps — run once on mount only
+  }, [navigate, searchParams, setSession]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">

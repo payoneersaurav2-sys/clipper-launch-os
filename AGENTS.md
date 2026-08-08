@@ -8,9 +8,9 @@ Creator OS (repository name: `clipper-launch-os`) is a premium creator workflow 
 
 - npm workspaces + Turborepo; React 18, TypeScript, Vite, Tailwind, Framer Motion.
 - Server state: TanStack Query. Client state: Zustand. Backend: Supabase (Postgres, RLS, Edge Functions). AI provider: OpenRouter.
-- `npm run build` — currently passes.
-- `npm run lint` — currently fails during ESLint rule loading, before linting source.
-- `npm run typecheck` — currently executes zero Turbo tasks; it is not a typecheck gate.
+- `npm run build` builds the web workspace.
+- `npm run lint` runs the web workspace lint gate.
+- `npm run typecheck` runs `tsc --noEmit` for the web workspace.
 - No automated test script or test runner is configured. Use targeted checks and manual validation for changed flows.
 
 ## Routes and modules
@@ -26,7 +26,7 @@ Creator OS (repository name: `clipper-launch-os`) is a premium creator workflow 
 - Supabase schema evolution belongs in chronological `supabase/migrations/`; do not edit applied migrations or infer live database state from files.
 - Keep tenant queries scoped to the active workspace and preserve RLS. Check policies before adding any table or query.
 - Components should use the AI service/hooks rather than calling OpenRouter directly. Do not introduce another provider path.
-- Whop has OAuth (`whop-auth`) and iframe-token (`whop-iframe-auth`) paths. Treat both as security-sensitive; validate with real Whop/Supabase credentials before claiming they work.
+- Whop has OAuth (`whop-auth`) and iframe-token (`whop-iframe-auth`) paths. OAuth uses PKCE and opaque state, then expects Supabase session tokens from `whop-auth`. Both flows require live Whop/Supabase verification before being considered production-ready.
 
 ## Design rules
 
@@ -37,9 +37,8 @@ Creator OS (repository name: `clipper-launch-os`) is a premium creator workflow 
 ## Known constraints at takeover
 
 - OpenRouter requests currently run from the browser using `VITE_OPENROUTER_API_KEY`; this exposes a key to clients. The server-side `ai-router` exists but is not used by the web client and has correctness issues documented in `docs/ai.md`.
-- The OAuth callback expects Supabase session tokens from `whop-auth`, but the checked-in function only performs a Whop OAuth token exchange. The iframe route is structurally more complete but requires live verification.
 - Prompt Library is a stub. Analytics has mocked sparklines/trends. Campaign edit is a no-op. Clip Pipeline supports manual stage moves, not drag-and-drop or source-clip extraction.
 
 ## Documentation
 
-See `README.md` for the inherited overview. Current evidence-based takeover documentation is in `docs/`: architecture, product, design system, authentication, database, AI, Whop, and Clip Pipeline.
+See `README.md` for the inherited overview. Current evidence-based takeover documentation is in `docs/`: architecture, product, design system, authentication, database, AI, Whop, Clip Pipeline, and the master completion backlog in `docs/EXECUTION-PLAN.md`.

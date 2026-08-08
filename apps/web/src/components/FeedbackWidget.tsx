@@ -18,23 +18,31 @@ export function FeedbackWidget() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { user } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
+    if (!user) {
+      setErrorMessage('Please sign in before sending feedback.');
+      return;
+    }
     setSending(true);
+    setErrorMessage(null);
 
     // Store in Supabase notifications table as a feedback entry
     const { error } = await supabase.from('notifications').insert({
-      user_id: user?.id ?? '00000000-0000-0000-0000-000000000000',
+      user_id: user.id,
       type: 'system',
-      title: `[FEEDBACK:${type.toUpperCase()}] ${user?.email ?? 'anonymous'}`,
+      title: `[FEEDBACK:${type.toUpperCase()}] ${user.email ?? 'creator'}`,
       message: message.trim(),
     });
-    if (error) console.error("Failed to send feedback:", error);
-
     setSending(false);
+    if (error) {
+      setErrorMessage('Feedback could not be sent. Please try again later.');
+      return;
+    }
     setSent(true);
     setTimeout(() => { setSent(false); setOpen(false); setMessage(''); setType('general'); }, 2000);
   };
@@ -94,6 +102,8 @@ export function FeedbackWidget() {
                   placeholder={type === 'bug' ? 'Describe what happened…' : type === 'feature' ? 'What feature would you love to see?' : 'Share your thoughts…'}
                   rows={4} required
                   className="w-full rounded-[12px] bg-[#0D0D0D] border border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] p-3 text-[13px] resize-none outline-none focus:border-primary/50 transition-colors" />
+
+                {errorMessage && <p role="alert" className="text-[12px] text-red-400">{errorMessage}</p>}
 
                 <button type="submit" disabled={sending || !message.trim()}
                   className="w-full h-10 rounded-[12px] bg-primary text-white hover:bg-primary/90 text-[13px] font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50">

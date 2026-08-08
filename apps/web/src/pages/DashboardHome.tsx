@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useHistoryStore } from '@/stores/useHistoryStore';
@@ -50,11 +49,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DashboardHome() {
-  const { user } = useAuthStore();
   const { data: campaigns } = useCampaigns();
   const { data: ideas }     = useClipIdeas();
   const recentGens          = useHistoryStore(s => s.getRecent(4));
-  const favCount            = useHistoryStore(s => s.getFavorites().length);
   const genCount            = useHistoryStore(s => s.records.length);
 
   const [completed, setCompleted] = useState<number[]>([]);

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BookOpen, Zap, HelpCircle, MessageSquare, FileText, ChevronRight, ExternalLink } from 'lucide-react';
 

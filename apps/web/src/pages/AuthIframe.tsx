@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthIframe() {
@@ -23,26 +22,19 @@ export default function AuthIframe() {
       }
 
       let token = searchParams.get('token');
-      let debugLog = `URL Token: ${token || 'None'}\n`;
 
       if (!token) {
         try {
-          debugLog += `Fetching /api/get-whop-token...\n`;
           const res = await fetch('/api/get-whop-token');
-          debugLog += `Response Status: ${res.status} ${res.statusText}\n`;
-          
+
           if (res.ok) {
             const data = await res.json();
-            debugLog += `Data received: ${JSON.stringify(data)}\n`;
             if (data.token) {
               token = data.token;
             }
-          } else {
-            const text = await res.text();
-            debugLog += `Response Body: ${text.slice(0, 100)}\n`;
           }
-        } catch (e: any) {
-          debugLog += `Fetch Error: ${e.message}\n`;
+        } catch {
+          // Do not expose token-endpoint responses or diagnostics in the iframe.
         }
       }
 
@@ -79,7 +71,7 @@ export default function AuthIframe() {
 
       // ── STRICT IFRAME MODE ──
       // The user wants NO redirects. It must happen entirely inside the iframe.
-      setError(`No token provided by Whop.\n\nDebug Info:\n${debugLog}`);
+      setError('We could not verify your Whop session. Please reopen Creator OS from Whop and try again.');
       setStatus('');
     };
 
