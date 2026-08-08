@@ -7,6 +7,7 @@ import { useWorkspaces } from '@/hooks/useWorkspaces';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, ChevronRight, Sparkles } from 'lucide-react';
+import Wordmark from '@/components/Wordmark';
 
 const NICHES = ['Finance', 'Fitness', 'Tech', 'Lifestyle', 'Business', 'Education', 'Entertainment', 'Travel', 'Food', 'Gaming', 'Beauty', 'Motivation', 'Other'];
 const PLATFORMS = ['TikTok', 'YouTube', 'Instagram', 'Twitter / X', 'LinkedIn', 'Multi-platform'];
@@ -129,9 +130,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-lg py-8 sm:py-0">
         {/* Logo */}
         <div className="text-center mb-10">
-          <span className="text-[18px] font-bold tracking-[-0.04em]">
-            <span className="text-[#FAFAFA]">Creator</span><span className="text-primary"> OS</span>
-          </span>
+          <Wordmark size="lg" as="div" className="mx-auto" />
         </div>
 
         <AnimatePresence mode="wait">

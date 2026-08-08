@@ -9,37 +9,21 @@ interface WordmarkProps {
 }
 
 const sizeMap = {
-  sm: { fontSize: '13px', letterSpacing: '0.02em' },
-  md: { fontSize: '15px', letterSpacing: '0.02em' },
-  lg: { fontSize: '20px', letterSpacing: '0.025em' },
+  sm: 'w-[98px] sm:w-[108px]',
+  md: 'w-[132px] sm:w-[144px]',
+  lg: 'w-[188px] sm:w-[212px]',
 };
 
-function WordmarkInner({ size = 'md', className }: { size?: WordmarkProps['size']; className?: string }) {
-  const { fontSize, letterSpacing } = sizeMap[size];
-  return (
-    <span
-      className={cn('leading-none select-none', className)}
-      style={{
-        fontFamily: '"Orbitron", sans-serif',
-        fontWeight: 800,
-        fontSize,
-        letterSpacing,
-        lineHeight: 1,
-      }}
-    >
-      <span style={{ color: '#FAFAFA' }}>CREATOR</span>
-      <span style={{ color: '#7C3AED' }}> OS</span>
-    </span>
-  );
+function WordmarkImage({ size = 'md', className }: Pick<WordmarkProps, 'size' | 'className'>) {
+  return <img src="/brand/creator-os-wordmark.png" alt="Creator OS" className={cn('block h-auto select-none', sizeMap[size], className)} />;
 }
 
 export default function Wordmark({ className, size = 'md', href = '/', as = 'link' }: WordmarkProps) {
-  if (as === 'div') {
-    return <WordmarkInner size={size} className={className} />;
-  }
+  if (as === 'div') return <WordmarkImage size={size} className={className} />;
+
   return (
-    <Link to={href} className="flex items-center">
-      <WordmarkInner size={size} className={className} />
+    <Link to={href} className="flex items-center" aria-label="Creator OS home">
+      <WordmarkImage size={size} className={className} />
     </Link>
   );
 }

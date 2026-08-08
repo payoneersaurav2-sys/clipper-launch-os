@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
 import Wordmark from '@/components/Wordmark';
+import BrandMark from '@/components/BrandMark';
 import { CommandPalette } from '@/components/CommandPalette';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { ProductTour, useTour } from '@/components/ProductTour';
@@ -227,11 +228,7 @@ export default function DashboardLayout() {
         {/* Logo + collapse toggle */}
         <div className="flex h-16 items-center justify-between px-4 shrink-0">
           {!collapsed && <Wordmark size="md" href="/dashboard" />}
-          {collapsed && (
-            <span className="w-full flex justify-center font-bold text-[13px] tracking-[-0.04em]">
-              <span className="text-[#FAFAFA]">C</span><span className="text-primary">O</span>
-            </span>
-          )}
+          {collapsed && <span className="flex w-full justify-center"><BrandMark size="sm" /></span>}
           <button onClick={() => setCollapsed(v => !v)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="shrink-0 text-[#71717A] hover:text-[#FAFAFA] transition-colors p-1.5 rounded-[8px] hover:bg-white/[0.05]">
             {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}

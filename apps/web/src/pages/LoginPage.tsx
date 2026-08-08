@@ -6,6 +6,7 @@ import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
+import BrandMark from '@/components/BrandMark';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -87,9 +88,7 @@ export default function LoginPage() {
     <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500 font-sans text-[#FAFAFA] w-full max-w-[380px] mx-auto p-8 rounded-[20px] bg-[#111111] border border-white/[0.06] shadow-xl">
       {/* Header */}
       <div className="flex flex-col items-center text-center">
-        <div className="h-10 w-10 mb-5 rounded-[12px] bg-primary flex items-center justify-center shadow-[0_0_20px_rgba(124,58,237,0.3)]">
-          <span className="font-bold text-white text-[14px] tracking-tighter">CO</span>
-        </div>
+        <BrandMark size="sm" className="mb-5 shadow-[0_0_20px_rgba(124,58,237,0.28)]" />
         <h1 className="text-[22px] font-semibold tracking-tight text-[#FAFAFA]">Creator OS</h1>
         <p className="text-[13px] text-[#A1A1AA] mt-1.5">
           {mode === 'login' ? 'Sign in to your workspace.' : 'Create your Creator OS account.'}
