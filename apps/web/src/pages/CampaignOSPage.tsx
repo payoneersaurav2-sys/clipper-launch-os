@@ -22,11 +22,19 @@ const STATUS_CONFIG: Record<CampaignStatus, { label: string; color: string; bg: 
 
 const ALL_STATUSES = Object.keys(STATUS_CONFIG) as CampaignStatus[];
 const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter', 'universal'];
+const FREQUENCY_UNITS = ['week', 'day', 'month'] as const;
+
+function parsePostingFrequency(value?: string) {
+  const match = value?.match(/^(\d+)\s*(?:per\s*)?(week|day|month)s?$/i);
+  return { count: match?.[1] ?? '', unit: (match?.[2]?.toLowerCase() ?? 'week') as typeof FREQUENCY_UNITS[number] };
+}
 
 // ---- Create Modal -------------------------------------------
 function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: () => void }) {
   const { createCampaign, updateCampaign } = useCampaigns();
   const [form, setForm] = useState({ title: campaign?.title ?? '', brand: campaign?.brand ?? '', niche: campaign?.niche ?? '', platform: campaign?.platform ?? 'tiktok', goal: campaign?.goal ?? '', objective: campaign?.objective ?? '', target_audience: campaign?.target_audience ?? '', content_pillars: (campaign?.content_pillars ?? []).join(', '), posting_frequency: campaign?.posting_frequency ?? '', start_date: campaign?.start_date?.slice(0, 10) ?? '', end_date: campaign?.end_date?.slice(0, 10) ?? '', status: campaign?.status ?? 'planning' as CampaignStatus });
+  const [frequencyCount, setFrequencyCount] = useState(() => parsePostingFrequency(campaign?.posting_frequency).count);
+  const [frequencyUnit, setFrequencyUnit] = useState<typeof FREQUENCY_UNITS[number]>(() => parsePostingFrequency(campaign?.posting_frequency).unit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,12 +44,13 @@ function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: ()
     setSaving(true);
     setError('');
     try {
-      const payload = { ...form, content_pillars: form.content_pillars.split(',').map(value => value.trim()).filter(Boolean) };
+      const payload = { ...form, content_pillars: form.content_pillars.split(',').map(value => value.trim()).filter(Boolean), posting_frequency: frequencyCount ? `${frequencyCount} per ${frequencyUnit}` : '' };
       if (campaign) await updateCampaign.mutateAsync({ id: campaign.id, patch: payload });
       else await createCampaign.mutateAsync(payload);
       onClose();
-    } catch {
-      setError(`Could not ${campaign ? 'save' : 'create'} this campaign. Please try again.`);
+    } catch (saveError) {
+      const detail = saveError instanceof Error ? saveError.message : '';
+      setError(detail.includes('posting_frequency') || detail.includes('target_audience') || detail.includes('content_pillars') || detail.includes('objective') ? 'Campaign workflow fields are not in Supabase yet. Apply the latest database migration, then save again.' : `Could not ${campaign ? 'save' : 'create'} this campaign. Please try again.`);
     } finally {
       setSaving(false);
     }
@@ -115,7 +124,7 @@ function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: ()
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">Content pillars</label><Input value={form.content_pillars} onChange={e => setForm(f => ({ ...f, content_pillars: e.target.value }))} placeholder="Education, proof" className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A]" /></div>
-            <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">Posting frequency</label><Input value={form.posting_frequency} onChange={e => setForm(f => ({ ...f, posting_frequency: e.target.value }))} placeholder="3 per week" className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A]" /></div>
+            <div className="space-y-1.5"><label className="text-[12px] text-[#71717A]">Posting frequency</label><div className="flex gap-2"><Input type="number" min="1" value={frequencyCount} onChange={e => setFrequencyCount(e.target.value)} placeholder="3" className="h-10 w-20 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A]" /><select value={frequencyUnit} onChange={e => setFrequencyUnit(e.target.value as typeof FREQUENCY_UNITS[number])} className="h-10 min-w-0 flex-1 rounded-[10px] border border-white/[0.08] bg-[#0D0D0D] px-2 text-[13px] text-[#FAFAFA]">{FREQUENCY_UNITS.map(unit => <option key={unit} value={unit}>per {unit}</option>)}</select></div></div>
           </div>
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}
