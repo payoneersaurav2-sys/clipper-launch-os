@@ -128,6 +128,9 @@ export function buildCampaignPlanPrompt(input: {
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform, niche: input.niche, goals: input.goal },
     },
     expectedJsonSchema: AI_SCHEMAS.campaignPlan,
+    // A multi-item calendar is substantially larger than an individual hook or caption.
+    // The normal balanced limit (1024) truncates 10+ structured content entries.
+    maxTokens: Math.min(8_000, Math.max(3_500, (input.durationDays ?? 7) * 350)),
     temperature: 0.7,
   };
 }

@@ -19,11 +19,15 @@ function parseModelJson(content: string): unknown | null {
   return null;
 }
 
-async function generateFromOpenRouter(key: string, model: string, messages: ChatMessage[], temperature: number, maxTokens: number | undefined, expectsJson: boolean) {
+async function generateFromOpenRouter(key: string, model: string, messages: ChatMessage[], temperature: number, maxTokens: number | undefined, expectedSchema: AIPromptContext['expectedJsonSchema']) {
   return fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://creator-os999.vercel.app', 'X-Title': 'Creator OS' },
-    body: JSON.stringify({ model, messages, temperature, max_tokens: maxTokens, response_format: expectsJson ? { type: 'json_object' } : undefined }),
+    body: JSON.stringify({
+      model, messages, temperature, max_tokens: maxTokens,
+      response_format: expectedSchema ? { type: 'json_schema', json_schema: { name: 'creator_os_response', strict: false, schema: expectedSchema } } : undefined,
+      plugins: expectedSchema ? [{ id: 'response-healing' }] : undefined,
+    }),
   });
 }
 
@@ -42,7 +46,7 @@ export default async function handler(request: Request) {
     const { context } = await request.json() as { context?: AIPromptContext };
     if (!context?.systemPrompt || !context?.developerPrompt || !context?.taskContext?.workspace?.id) return json({ error: 'Invalid AI request.', code: 'PROVIDER_OFFLINE' }, 400);
     const built = PromptEngine.build(PromptEngine.compress(context));
-    let upstream = await generateFromOpenRouter(openRouterKey, built.model, built.messages, built.temperature, context.maxTokens, Boolean(context.expectedJsonSchema));
+    let upstream = await generateFromOpenRouter(openRouterKey, built.model, built.messages, built.temperature, context.maxTokens, context.expectedJsonSchema);
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => 'OpenRouter rejected the request.');
       return json({ error: upstream.status === 401 ? 'OpenRouter credentials are invalid or missing.' : detail, code: upstream.status === 401 ? 'AUTH_FAILED' : upstream.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_OFFLINE' }, upstream.status === 401 ? 502 : upstream.status);
@@ -52,7 +56,7 @@ export default async function handler(request: Request) {
     let parsed = context.expectedJsonSchema ? parseModelJson(content) : null;
     if (context.expectedJsonSchema && parsed === null) {
       // One real retry is cheaper and safer than inventing or attempting to repair AI output.
-      upstream = await generateFromOpenRouter(openRouterKey, built.model, [...built.messages, { role: 'user', content: 'Return the requested result as one valid JSON object only. Do not use markdown fences or explanatory text.' }], built.temperature, context.maxTokens, true);
+      upstream = await generateFromOpenRouter(openRouterKey, built.model, [...built.messages, { role: 'user', content: 'Return the requested result as one valid JSON object only. Do not use markdown fences or explanatory text.' }], built.temperature, context.maxTokens, context.expectedJsonSchema);
       if (!upstream.ok) return json({ error: 'OpenRouter could not return a valid structured response.', code: upstream.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_OFFLINE' }, upstream.status);
       data = await upstream.json(); content = data.choices?.[0]?.message?.content ?? ''; parsed = parseModelJson(content);
       if (parsed === null) return json({ error: 'AI returned invalid JSON after a retry. Please try again.', code: 'INVALID_JSON' }, 502);
