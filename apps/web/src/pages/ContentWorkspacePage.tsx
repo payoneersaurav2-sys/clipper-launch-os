@@ -126,6 +126,69 @@ function MediaUploader({
   );
 }
 
+function MediaPreview({
+  mediaPath,
+  mediaUrl,
+  mediaType,
+}: {
+  mediaPath?: string;
+  mediaUrl?: string;
+  mediaType?: string;
+}) {
+  const [signedUrl, setSignedUrl] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    if (!mediaPath) {
+      setSignedUrl("");
+      return;
+    }
+    void supabase.storage
+      .from("clip-media")
+      .createSignedUrl(mediaPath, 60 * 60)
+      .then(({ data, error: signedUrlError }) => {
+        if (!active) return;
+        if (signedUrlError || !data?.signedUrl)
+          setError("Could not load a media preview.");
+        else {
+          setError("");
+          setSignedUrl(data.signedUrl);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [mediaPath]);
+  const source = mediaUrl || signedUrl;
+  if (!source && !error) return null;
+  const isImage =
+    mediaType?.startsWith("image/") ||
+    /\.(png|jpe?g|webp|gif)(?:[?#]|$)/i.test(source);
+  return (
+    <div className="overflow-hidden rounded-[12px] border border-white/[0.08] bg-black">
+      <p className="border-b border-white/[0.06] px-3 py-2 text-[11px] font-medium text-[#A1A1AA]">
+        Media preview
+      </p>
+      {error ? (
+        <p className="p-3 text-[11px] text-red-400">{error}</p>
+      ) : isImage ? (
+        <img
+          src={source}
+          alt="Attached content media"
+          className="max-h-56 w-full object-contain"
+        />
+      ) : (
+        <video
+          src={source}
+          controls
+          preload="metadata"
+          className="max-h-56 w-full bg-black"
+        />
+      )}
+    </div>
+  );
+}
+
 export default function ContentWorkspacePage() {
   const { campaignId, clipId } = useParams();
   const { data: campaign } = useCampaign(campaignId);
@@ -528,6 +591,11 @@ export default function ContentWorkspacePage() {
               mediaPath={draft.media_path}
               onUploaded={saveUploadedMedia}
             />
+            <MediaPreview
+              mediaPath={draft.media_path}
+              mediaUrl={draft.media_url}
+              mediaType={draft.media_type}
+            />
             <div className="border-t border-white/[0.06]" />
             <label className="block text-[12px] text-[#71717A]">
               Or attach a media URL
@@ -543,7 +611,10 @@ export default function ContentWorkspacePage() {
                 className="mt-1.5 h-10 w-full rounded-[10px] border border-white/[0.08] bg-[#0D0D0D] px-3 text-[13px] text-[#FAFAFA]"
               />
             </label>
-            <p className="text-[11px] leading-relaxed text-[#71717A]">Uploads are stored privately in your workspace. A URL is useful when your finished media already lives elsewhere.</p>
+            <p className="text-[11px] leading-relaxed text-[#71717A]">
+              Uploads are stored privately in your workspace. A URL is useful
+              when your finished media already lives elsewhere.
+            </p>
             <label className="block text-[12px] text-[#71717A]">
               Schedule (local time)
               <input
