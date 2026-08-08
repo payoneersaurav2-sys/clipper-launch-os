@@ -28,6 +28,7 @@ export function buildGenerateIdeasPrompt(input: {
       workspace: { id: input.workspaceId, name: input.workspaceName, niche: input.niche, platform: input.platform, tone: input.tone },
     },
     expectedJsonSchema: AI_SCHEMAS.ideas,
+    billingOperation: 'idea_generation',
     temperature: 0.85,
   };
 }
@@ -41,6 +42,7 @@ export function buildExpandIdeaPrompt(input: {
     developerPrompt: `Expand into a full production brief. Include angles, target audience, format recommendations, and inspiration. Return ONLY JSON.`,
     taskContext: { ...baseContext(input.workspaceId, input.workspaceName), workflowStage: 'idea', workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform } },
     expectedJsonSchema: AI_SCHEMAS.ideaExpansion,
+    billingOperation: 'idea_expansion',
     temperature: 0.7,
   };
 }
@@ -62,6 +64,7 @@ export function buildGenerateHooksPrompt(input: {
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform },
     },
     expectedJsonSchema: AI_SCHEMAS.hooks,
+    billingOperation: 'hook_generation',
     temperature: 0.9,
   };
 }
@@ -75,6 +78,7 @@ export function buildScoreHookPrompt(input: {
     developerPrompt: `Score on pattern interrupt, emotion, clarity, platform fit for ${input.platform ?? 'TikTok'}. Provide an improved rewrite. Return ONLY JSON.`,
     taskContext: { ...baseContext(input.workspaceId, input.workspaceName), workflowStage: 'hook', workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform } },
     expectedJsonSchema: AI_SCHEMAS.hookScore,
+    billingOperation: 'hook_scoring',
     temperature: 0.4,
   };
 }
@@ -95,6 +99,7 @@ export function buildGenerateCaptionPrompt(input: {
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform, tone: input.tone },
     },
     expectedJsonSchema: AI_SCHEMAS.captions,
+    billingOperation: 'caption_generation',
     temperature: 0.75,
   };
 }
@@ -108,6 +113,7 @@ export function buildCaptionVariantsPrompt(input: {
     developerPrompt: `Create optimized captions for: ${input.platforms.join(', ')}. Each tailored to platform culture, limits, audience. Return ONLY JSON.`,
     taskContext: { ...baseContext(input.workspaceId, input.workspaceName), workflowStage: 'caption', workspace: { id: input.workspaceId, name: input.workspaceName } },
     expectedJsonSchema: AI_SCHEMAS.captionVariants,
+    billingOperation: 'caption_variants',
     temperature: 0.75,
   };
 }
@@ -117,7 +123,7 @@ export function buildCaptionVariantsPrompt(input: {
 export function buildCampaignPlanPrompt(input: {
   workspaceId: string; workspaceName: string;
   topic: string; platform?: string;
-  durationDays?: number; goal?: string; niche?: string;
+  durationDays?: number; goal?: string; niche?: string; billingOperation?: 'campaign_strategy' | 'campaign_content_plan';
 }): AIPromptContext {
   return {
     systemPrompt: `Create a ${input.durationDays ?? 7}-day content campaign plan for: "${input.topic}"`,
@@ -128,6 +134,7 @@ export function buildCampaignPlanPrompt(input: {
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform, niche: input.niche, goals: input.goal },
     },
     expectedJsonSchema: AI_SCHEMAS.campaignPlan,
+    billingOperation: input.billingOperation ?? 'campaign_strategy',
     // A multi-item calendar is substantially larger than an individual hook or caption.
     // The normal balanced limit (1024) truncates 10+ structured content entries.
     maxTokens: Math.min(8_000, Math.max(3_500, (input.durationDays ?? 7) * 350)),
@@ -151,6 +158,7 @@ export function buildAnalyticsReportPrompt(input: {
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform },
     },
     expectedJsonSchema: AI_SCHEMAS.analyticsReport,
+    billingOperation: 'analytics_analysis',
     temperature: 0.5,
   };
 }
@@ -179,6 +187,7 @@ export function buildKnowledgeAnswerPrompt(input: {
       },
       required: ['answer', 'sources', 'confidence'],
     },
+    billingOperation: 'knowledge_answer',
     temperature: 0.3,
   };
 }

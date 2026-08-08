@@ -137,6 +137,7 @@ export default function CampaignDetailPage() {
           goal: campaign.goal || campaign.objective,
           niche: campaign.niche,
           durationDays: quantity,
+          billingOperation: 'campaign_content_plan',
         }),
         {
           category: "campaign",

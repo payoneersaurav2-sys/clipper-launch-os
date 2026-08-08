@@ -25,6 +25,10 @@ export async function requestAI(context: AIPromptContext): Promise<AIResponse> {
               ? 'SUBSCRIPTION_REQUIRED'
               : failure?.code === 'PLAN_NOT_RESOLVED'
                 ? 'PLAN_NOT_RESOLVED'
+                : failure?.code === 'INSUFFICIENT_CREDITS'
+                  ? 'INSUFFICIENT_CREDITS'
+                  : failure?.code === 'CREDIT_OPERATION_UNAVAILABLE'
+                    ? 'CREDIT_OPERATION_UNAVAILABLE'
                 : 'PROVIDER_OFFLINE';
     throw new AIError(failure?.error || 'AI generation failed. Please try again.', code, code === 'RATE_LIMITED' || code === 'PROVIDER_OFFLINE' || code === 'INVALID_JSON');
   }

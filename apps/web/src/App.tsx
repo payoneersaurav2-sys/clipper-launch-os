@@ -30,6 +30,7 @@ const SignupPage          = lazy(() => import('./pages/SignupPage'));
 const TermsPage           = lazy(() => import('./pages/TermsPage'));
 const FAQPage             = lazy(() => import('./pages/FAQPage'));
 const PricingPage         = lazy(() => import('./pages/PricingPage'));
+const CreditStorePage     = lazy(() => import('./pages/CreditStorePage'));
 
 const IdeaStudio     = lazy(() => import('./components/modules/IdeaStudio').then(m => ({ default: m.IdeaStudio })));
 const HookEngine     = lazy(() => import('./components/modules/HookEngine').then(m => ({ default: m.HookEngine })));
@@ -88,6 +89,7 @@ export default function App() {
                 <Route path="prompt-library"  element={<PromptLibrary />} />
                 <Route path="ai-settings"     element={<AISettingsPage />} />
                 <Route path="settings"        element={<SettingsPage />} />
+                <Route path="credits"         element={<CreditStorePage />} />
                 <Route path="help"            element={<HelpCenterPage />} />
                 <Route path="changelog"       element={<ChangelogPage />} />
                 <Route path="*"               element={<NotFoundPage />} />

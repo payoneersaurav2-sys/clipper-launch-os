@@ -2,16 +2,36 @@
 
 ## Authority and flow
 
-Whop is the billing authority. Creator OS never infers access from a checkout URL, local storage, or a value sent from the browser.
+Whop is the paid-billing authority. Creator OS never infers an upgrade, a purchase, or access beyond the free allowance from a checkout URL, local storage, or a value sent from the browser.
 
 1. Whop authentication identifies a Whop user.
 2. The server calls Whop's memberships API for that user.
-3. Only active, trialing, past_due, or completed memberships with a mapped Whop plan ID are accepted.
+3. An account with no paid membership receives the explicit `free` tier; active, trialing, past_due, or completed memberships with a mapped Whop plan ID receive their paid tier.
 4. The server stores the membership ID, plan ID, tier, status, and expiry on public.users.
-5. PostgreSQL uses that server-managed state to enforce database limits; the AI API reserves capacity through a protected RPC before contacting OpenRouter.
-6. Signed Whop membership webhooks keep the state fresh after upgrades, cancellations, and expirations.
+5. PostgreSQL uses that server-managed state to enforce database limits; the AI API atomically reserves credits through a protected RPC before contacting OpenRouter.
+6. Signed Whop membership and payment webhooks keep access, monthly allocations, and verified credit purchases fresh.
 
-Unknown, expired, canceled, or unmapped memberships fail closed.
+Unknown, expired, canceled, or unmapped paid memberships fail closed to paid access. A user who has only the free tier can use the one-time free allowance.
+
+## Credits
+
+`20260808150000_credit_ledger.sql` adds an append-only ledger and credit lots. It grants exactly 100 one-time free credits, then grants 500 / 2,000 / 7,500 subscription credits per verified Creator / Pro / Agency billing period. Purchased lots never expire; subscription lots expire at their supplied billing-period end.
+
+| AI operation | Credits | Measured P95 OpenRouter cost |
+| --- | ---: | ---: |
+| Idea generation | 21 | $0.00209220 |
+| Idea expansion | 4 | $0.00031200 |
+| Hook generation | 6 | $0.00050835 |
+| Hook scoring | 2 | $0.00019620 |
+| Caption generation | 3 | $0.00025740 |
+| Caption variants | 4 | $0.00032505 |
+| Campaign strategy | 18 | $0.00176520 |
+| Campaign content plan | 18 | $0.00174495 |
+| Storyboard/script | 4 | $0.00036225 |
+| Analytics analysis | 5 | $0.00044010 |
+| Knowledge answer | 3 | $0.00028065 |
+
+Credit-pack plan IDs are server-mapped only: 1,000 / $9 = `plan_pHajojZffyDxv`; 5,000 / $29 = `plan_5IB8JVbpg8rik`; 15,000 / $69 = `plan_3SbRI3CB8aiur`; 50,000 / $149 = `plan_cpIr2MLFacoNX`; 150,000 / $299 = `plan_2eRxyfJ19G1eu`.
 
 ## Feature matrix
 
@@ -45,20 +65,21 @@ apps/web/src/lib/entitlements.ts mirrors those values only for UI states. It is 
 
 Before enabling this system:
 
-1. Apply 20260808140000_subscription_entitlements.sql after the prior migrations.
+1. Apply 20260808140000_subscription_entitlements.sql and then 20260808150000_credit_ledger.sql after the prior migrations.
 2. Confirm the six plan IDs in Whop are exactly the plans above.
 3. Ensure the existing WHOP_API_KEY can read memberships.
 4. Deploy the updated whop-auth and whop-iframe-auth functions.
-5. Deploy whop-membership-webhook, set WHOP_WEBHOOK_SECRET, and configure Whop to send membership.activated and membership.deactivated events to it.
-6. Verify Creator, Pro, Agency, canceled, expired, and unknown-plan accounts in Whop before enabling customer access.
+5. Deploy whop-membership-webhook, set WHOP_WEBHOOK_SECRET, and configure Whop to send membership lifecycle events plus `payment.succeeded` to it.
+6. Verify free, Creator, Pro, Agency, canceled, expired, unknown-plan, successful-credit-purchase, failed-payment, and replayed-webhook accounts in Whop before enabling customer access.
 
 No plan is granted when any of these lookups fail.
 
 ## Test checklist
 
-- Creator: 1 workspace, up to 10 active campaigns, 10-item content plans, 250 AI workflows/month.
-- Pro: Creator access plus 3 workspaces, 30-item plans, 1,000 AI workflows/month.
-- Agency: Pro access plus 10 workspaces, 50-item plans, 3,000 AI workflows/month.
-- Unsubscribed/expired/canceled/unknown: no protected access and the AI API returns a controlled entitlement error.
+- Free: exactly 100 credits once, 1 workspace, 1 active campaign, up to 5 content items per insert; verify repeated balance calls do not create a second grant.
+- Creator / Pro / Agency: 500 / 2,000 / 7,500 monthly credits and their existing capacity limits.
+- Successful credit payment: one purchased lot matching the plan mapping; failed payments add nothing; a replayed event adds nothing.
+- Insufficient balance: the AI API returns `INSUFFICIENT_CREDITS` before contacting OpenRouter; provider failures release the reservation.
+- Expired/canceled/unknown paid membership: no paid access and no future monthly grant; purchased lots are retained.
 - Direct Supabase insert attempts beyond workspace, campaign, or batch limits fail with PLAN_LIMIT_REACHED.
 - Replayed/invalid webhook requests are rejected; duplicate valid events are idempotent.

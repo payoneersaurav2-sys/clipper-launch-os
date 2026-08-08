@@ -5,7 +5,7 @@ export const config = { runtime: 'edge' };
 const environment = () => (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
 const json = (body: unknown, status: number) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
-type Reservation = { allowed?: boolean; code?: string; eventId?: string; maxOutputTokens?: number };
+type CreditReservation = { allowed?: boolean; code?: string; reservationId?: string; credits?: number; required?: number; available?: number };
 
 async function invokeEntitlementRpc(
   supabaseUrl: string,
@@ -49,6 +49,7 @@ async function generateFromOpenRouter(key: string, model: string, messages: Chat
       model, messages, temperature, max_tokens: maxTokens,
       response_format: expectedSchema ? { type: 'json_schema', json_schema: { name: 'creator_os_response', strict: false, schema: expectedSchema } } : undefined,
       plugins: expectedSchema ? [{ id: 'response-healing' }] : undefined,
+      usage: { include: true },
     }),
   });
 }
@@ -64,74 +65,81 @@ export default async function handler(request: Request) {
   if (!authorization?.startsWith('Bearer ')) return json({ error: 'Sign in again to use AI generation.', code: 'AUTH_FAILED' }, 401);
   const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, authorization } });
   if (!userResponse.ok) return json({ error: 'Sign in again to use AI generation.', code: 'AUTH_FAILED' }, 401);
-  let reservationId: string | undefined;
+  let creditReservationId: string | undefined;
   try {
     const { context } = await request.json() as { context?: AIPromptContext };
     if (!context?.systemPrompt || !context?.developerPrompt || !context?.taskContext?.workspace?.id) return json({ error: 'Invalid AI request.', code: 'PROVIDER_OFFLINE' }, 400);
-    const operation = String(context.taskContext.workflowStage ?? 'custom').slice(0, 64);
-    let reservation: Reservation;
+    const operation = String(context.billingOperation ?? '').slice(0, 64);
+    let reservation: CreditReservation;
     try {
       reservation = await invokeEntitlementRpc(
         supabaseUrl,
         supabaseAnonKey,
         authorization,
-        'reserve_ai_generation',
+        'reserve_creator_os_credits',
         { p_operation: operation },
-      ) as Reservation;
+      ) as CreditReservation;
     } catch {
       return json({ error: 'Creator OS could not verify your plan. Please try again.', code: 'PLAN_NOT_RESOLVED' }, 503);
     }
-    if (!reservation.allowed || !reservation.eventId) {
-      const code = reservation.code === 'PLAN_LIMIT_REACHED'
-        ? 'PLAN_LIMIT_REACHED'
+    if (!reservation.allowed || !reservation.reservationId) {
+      const code = reservation.code === 'INSUFFICIENT_CREDITS'
+        ? 'INSUFFICIENT_CREDITS'
         : reservation.code === 'SUBSCRIPTION_REQUIRED'
           ? 'SUBSCRIPTION_REQUIRED'
+          : reservation.code === 'CREDIT_OPERATION_UNAVAILABLE'
+            ? 'CREDIT_OPERATION_UNAVAILABLE'
           : 'PLAN_NOT_RESOLVED';
-      const message = code === 'PLAN_LIMIT_REACHED'
-        ? 'You have reached this month\'s AI workflow capacity. Upgrade for more generation capacity.'
+      const message = code === 'INSUFFICIENT_CREDITS'
+        ? `Not enough CreatorOS credits for this action. It requires ${reservation.required ?? 'more'} credits; you have ${reservation.available ?? 0}.`
         : code === 'SUBSCRIPTION_REQUIRED'
-          ? 'An active Creator OS subscription is required to use AI generation.'
+          ? 'Your Creator OS account is not eligible to use AI generation.'
+          : code === 'CREDIT_OPERATION_UNAVAILABLE'
+            ? 'This AI operation is not available until its credit cost is configured.'
           : 'Your Creator OS plan could not be resolved. Please sign in through Whop again.';
       return json({ error: message, code }, 403);
     }
-    reservationId = reservation.eventId;
+    creditReservationId = reservation.reservationId;
     const built = PromptEngine.build(PromptEngine.compress(context));
-    const maxTokens = Math.min(context.maxTokens ?? reservation.maxOutputTokens ?? 4000, reservation.maxOutputTokens ?? 4000);
+    const maxTokens = Math.min(context.maxTokens ?? 4000, 8000);
     let upstream = await generateFromOpenRouter(openRouterKey, built.model, built.messages, built.temperature, maxTokens, context.expectedJsonSchema);
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => 'OpenRouter rejected the request.');
-      await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_ai_generation', { p_event_id: reservationId }).catch(() => undefined);
+      await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
       return json({ error: upstream.status === 401 ? 'OpenRouter credentials are invalid or missing.' : detail, code: upstream.status === 401 ? 'AUTH_FAILED' : upstream.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_OFFLINE' }, upstream.status === 401 ? 502 : upstream.status);
     }
     let data = await upstream.json();
+    let actualCostUsd = Number(data.usage?.cost ?? 0);
     let content = data.choices?.[0]?.message?.content ?? '';
     let parsed = context.expectedJsonSchema ? parseModelJson(content) : null;
     if (context.expectedJsonSchema && parsed === null) {
       // One real retry is cheaper and safer than inventing or attempting to repair AI output.
       upstream = await generateFromOpenRouter(openRouterKey, built.model, [...built.messages, { role: 'user', content: 'Return the requested result as one valid JSON object only. Do not use markdown fences or explanatory text.' }], built.temperature, maxTokens, context.expectedJsonSchema);
       if (!upstream.ok) {
-        await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_ai_generation', { p_event_id: reservationId }).catch(() => undefined);
+        await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
         return json({ error: 'OpenRouter could not return a valid structured response.', code: upstream.status === 429 ? 'RATE_LIMITED' : 'PROVIDER_OFFLINE' }, upstream.status);
       }
-      data = await upstream.json(); content = data.choices?.[0]?.message?.content ?? ''; parsed = parseModelJson(content);
-      if (parsed === null) return json({ error: 'AI returned invalid JSON after a retry. Please try again.', code: 'INVALID_JSON' }, 502);
+      data = await upstream.json(); actualCostUsd += Number(data.usage?.cost ?? 0); content = data.choices?.[0]?.message?.content ?? ''; parsed = parseModelJson(content);
+      if (parsed === null) {
+        await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
+        return json({ error: 'AI returned invalid JSON after a retry. Please try again.', code: 'INVALID_JSON' }, 502);
+      }
     }
     if (!content) {
-      await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_ai_generation', { p_event_id: reservationId }).catch(() => undefined);
+      await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
       return json({ error: 'OpenRouter returned an empty response.', code: 'PROVIDER_OFFLINE' }, 502);
     }
     if (parsed !== null) content = JSON.stringify(parsed);
-    await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'complete_ai_generation', {
-      p_event_id: reservationId,
+    await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'complete_creator_os_credit_reservation', {
+      p_reservation_id: creditReservationId,
       p_provider_request_id: data.id ?? null,
-      p_prompt_tokens: data.usage?.prompt_tokens ?? 0,
-      p_completion_tokens: data.usage?.completion_tokens ?? 0,
-      p_total_tokens: data.usage?.total_tokens ?? 0,
+      p_actual_cost_usd: Number.isFinite(actualCostUsd) ? actualCostUsd : null,
+      p_ai_usage_event_id: null,
     }).catch(() => undefined);
     return json({ content, model: built.model, generationId: data.id, latencyMs: 0, usage: { promptTokens: data.usage?.prompt_tokens ?? 0, completionTokens: data.usage?.completion_tokens ?? 0, totalTokens: data.usage?.total_tokens ?? 0 } }, 200);
   } catch {
-    if (reservationId) {
-      await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_ai_generation', { p_event_id: reservationId }).catch(() => undefined);
+    if (creditReservationId) {
+      await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
     }
     return json({ error: 'AI gateway could not process this request.', code: 'PROVIDER_OFFLINE' }, 500);
   }

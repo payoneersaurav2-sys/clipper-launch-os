@@ -1,4 +1,4 @@
-export type PlanTier = 'creator' | 'pro' | 'agency';
+export type PlanTier = 'free' | 'creator' | 'pro' | 'agency';
 export type EntitlementStatus = 'active' | 'unsubscribed' | 'unknown';
 export type EntitlementFeature =
   | 'core_ai'
@@ -32,6 +32,18 @@ export type Entitlements = {
  * The database migration is authoritative for every enforceable limit.
  */
 export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities; limits: PlanLimits }> = {
+  free: {
+    capabilities: {
+      core_ai: true,
+      campaigns: true,
+      clip_pipeline: true,
+      basic_analytics: true,
+      scheduling: true,
+      batch_generation: false,
+      multi_workspace: false,
+    },
+    limits: { workspaces: 1, active_campaigns: 1, ai_generations_per_month: 0, content_batch_size: 5, max_output_tokens: 4000 },
+  },
   creator: {
     capabilities: {
       core_ai: true,
@@ -71,7 +83,7 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
 };
 
 export function isPlanTier(value: unknown): value is PlanTier {
-  return value === 'creator' || value === 'pro' || value === 'agency';
+  return value === 'free' || value === 'creator' || value === 'pro' || value === 'agency';
 }
 
 export function hasEntitlement(

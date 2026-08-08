@@ -309,6 +309,7 @@ export default function ContentWorkspacePage() {
             previousGenerations: [],
           },
           temperature: 0.7,
+          billingOperation: 'storyboard_script',
         },
         { category: "custom", promptSummary: `Storyboard: ${clip.title}` },
       );

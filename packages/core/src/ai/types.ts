@@ -145,6 +145,8 @@ export interface AIPromptContext {
   // Schema / output
   expectedJsonSchema?: Record<string, unknown>;
   responseFormat?: 'json' | 'text' | 'markdown';
+  /** Server-side billing key. The API rejects unknown operations. */
+  billingOperation?: string;
 }
 
 // ---- Response -----------------------------------------------
@@ -248,6 +250,8 @@ export type AIErrorCode =
   | 'SUBSCRIPTION_REQUIRED'
   | 'PLAN_NOT_RESOLVED'
   | 'PLAN_LIMIT_REACHED'
+  | 'INSUFFICIENT_CREDITS'
+  | 'CREDIT_OPERATION_UNAVAILABLE'
   | 'UNKNOWN';
 
 export class AIError extends Error {

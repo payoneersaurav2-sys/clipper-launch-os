@@ -33,12 +33,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (session?.user) {
       const { data } = await supabase
         .from('users')
-        .select('membership_status, subscription_tier, onboarding_complete')
+        .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete')
         .eq('id', session.user.id)
         .single();
       if (data) {
-        status = data.membership_status;
-        tier = data.subscription_tier;
+        const expired = Boolean(data.membership_expires_at && new Date(data.membership_expires_at).getTime() <= Date.now());
+        status = expired ? 'inactive' : data.membership_status;
+        tier = expired ? 'free' : data.subscription_tier;
         onboarded = data.onboarding_complete;
       }
     }

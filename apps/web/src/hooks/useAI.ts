@@ -111,6 +111,9 @@ export function useAI() {
 
     } catch (err: any) {
       const msg = err instanceof AIError ? `[${err.code}] ${err.message}` : String(err.message ?? err);
+      if (err instanceof AIError && err.code === 'INSUFFICIENT_CREDITS') {
+        window.dispatchEvent(new CustomEvent('creator-os-credit-required', { detail: msg }));
+      }
       setState(s => ({ ...s, isGenerating: false, error: msg }));
       throw err;
     }
@@ -173,6 +176,9 @@ export function useAI() {
     } catch (err: any) {
       if (!abort.signal.aborted) {
         const msg = err instanceof AIError ? `[${err.code}] ${err.message}` : String(err.message ?? err);
+        if (err instanceof AIError && err.code === 'INSUFFICIENT_CREDITS') {
+          window.dispatchEvent(new CustomEvent('creator-os-credit-required', { detail: msg }));
+        }
         setState(s => ({ ...s, isGenerating: false, isStreaming: false, error: msg }));
       } else {
         setState(s => ({ ...s, isGenerating: false, isStreaming: false }));

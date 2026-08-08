@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 type UpgradePromptProps = {
   feature: string;
-  requiredPlan: PlanTier;
+  requiredPlan: Exclude<PlanTier, 'free'>;
   description: string;
   compact?: boolean;
 };

@@ -4,11 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { 
   LayoutDashboard, Lightbulb, PenTool, Type, Rocket, 
   Video, Library, TerminalSquare, LineChart, Settings,
-  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag, Menu, X
+  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag, Menu, X, Coins
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaces } from '@/hooks/useWorkspaces';
+import { useCredits } from '@/hooks/useCredits';
 import Wordmark from '@/components/Wordmark';
 import BrandMark from '@/components/BrandMark';
 import { CommandPalette } from '@/components/CommandPalette';
@@ -48,6 +49,7 @@ const navGroups = [
     label: 'System',
     items: [
       { name: 'AI Settings', href: '/dashboard/ai-settings', icon: Settings },
+      { name: 'Credits',     href: '/dashboard/credits',     icon: Coins },
       { name: 'Settings',    href: '/dashboard/settings',    icon: UserCircle },
       { name: 'Help',        href: '/dashboard/help',        icon: HelpCircle },
       { name: 'Changelog',   href: '/dashboard/changelog',   icon: Tag },
@@ -152,8 +154,10 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [creditNotice, setCreditNotice] = useState<string | null>(null);
   const { showTour, completeTour } = useTour();
   const location = useLocation();
+  const { data: creditBalance } = useCredits();
 
   useWorkspaces();
 
@@ -169,6 +173,15 @@ export default function DashboardLayout() {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    const handleCreditRequirement = (event: Event) => {
+      const detail = event as CustomEvent<string>;
+      setCreditNotice(detail.detail || 'Not enough CreatorOS credits for this action.');
+    };
+    window.addEventListener('creator-os-credit-required', handleCreditRequirement);
+    return () => window.removeEventListener('creator-os-credit-required', handleCreditRequirement);
   }, []);
 
   // ⌘K listener
@@ -257,6 +270,21 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <Link
+              to="/dashboard/credits"
+              aria-label={`${creditBalance?.available ?? 0} CreatorOS credits available`}
+              className={cn(
+                'os-glow-sweep inline-flex min-h-10 items-center gap-2 rounded-[10px] border px-2.5 text-[12px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                (creditBalance?.available ?? 0) <= 50
+                  ? 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+                  : 'border-white/[0.08] bg-white/[0.03] text-[#D4D4D8] hover:border-primary/35 hover:text-[#FAFAFA]'
+              )}
+              title={(creditBalance?.available ?? 0) <= 50 ? 'Low credits — get more capacity' : 'CreatorOS credits'}
+            >
+              <Coins className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              <span className="hidden sm:inline">{creditBalance?.available ?? '—'} credits</span>
+              <span className="sm:hidden">{creditBalance?.available ?? '—'}</span>
+            </Link>
             <AppearanceSwitcher />
             <NotificationCenter />
           </div>
@@ -273,6 +301,31 @@ export default function DashboardLayout() {
 
       {/* ---- Feedback Widget ------------------------------- */}
       <FeedbackWidget />
+
+      <AnimatePresence>
+        {creditNotice && (
+          <motion.aside
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            role="alert"
+            className="fixed bottom-5 right-5 z-[70] w-[min(390px,calc(100vw-2.5rem))] rounded-2xl border border-primary/35 bg-[#121014]/95 p-4 shadow-2xl backdrop-blur-xl"
+          >
+            <div className="flex gap-3">
+              <Coins className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[#FAFAFA]">Not enough CreatorOS credits</p>
+                <p className="mt-1 text-xs leading-5 text-[#A1A1AA]">{creditNotice.replace(/^\[INSUFFICIENT_CREDITS\]\s*/, '')}</p>
+                <div className="mt-3 flex items-center gap-2">
+                  <Link to="/dashboard/credits" onClick={() => setCreditNotice(null)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90">Buy credits</Link>
+                  <Link to="/pricing" onClick={() => setCreditNotice(null)} className="rounded-lg px-2 py-2 text-xs font-semibold text-[#D4D4D8] transition-colors hover:text-white">View plans</Link>
+                  <button type="button" onClick={() => setCreditNotice(null)} className="ml-auto p-1 text-[#71717A] transition-colors hover:text-white" aria-label="Dismiss credit message"><X className="h-4 w-4" /></button>
+                </div>
+              </div>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

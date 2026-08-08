@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function ProtectedRoute() {
-  const { user, membershipStatus, onboardingComplete, isLoading } = useAuthStore();
+  const { user, membershipStatus, subscriptionTier, onboardingComplete, isLoading } = useAuthStore();
   const location = useLocation();
 
   if (isLoading) {
@@ -22,7 +22,7 @@ export default function ProtectedRoute() {
   // 2. User created account directly (membership_status = 'active' set on signup), OR
   // 3. DEV mode — no membership check when running locally
   const isDev = import.meta.env.DEV;
-  const hasAccess = ['active', 'trialing', 'past_due', 'completed'].includes(membershipStatus ?? '') || isDev;
+  const hasAccess = subscriptionTier === 'free' || ['active', 'trialing', 'past_due', 'completed'].includes(membershipStatus ?? '') || isDev;
 
   if (!hasAccess) {
     return <Navigate to="/expired" replace />;
