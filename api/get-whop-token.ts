@@ -9,6 +9,8 @@ export default function handler(request: Request) {
     status: 200,
     headers: {
       'content-type': 'application/json',
+      'cache-control': 'private, no-store, max-age=0',
+      'vary': 'x-whop-user-token',
     },
   });
 }

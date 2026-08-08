@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthIframe() {
   const [searchParams] = useSearchParams();
+  const { experienceId } = useParams();
   const navigate = useNavigate();
   const syncSession = useAuthStore((state) => state.syncSession);
   const [status, setStatus] = useState('Connecting to Whop...');
@@ -25,7 +26,8 @@ export default function AuthIframe() {
 
       if (!token) {
         try {
-          const res = await fetch('/api/get-whop-token');
+          // Whop injects x-whop-user-token only on same-origin requests.
+          const res = await fetch('/api/get-whop-token', { cache: 'no-store' });
 
           if (res.ok) {
             const data = await res.json();
@@ -43,7 +45,7 @@ export default function AuthIframe() {
         try {
           setStatus('Verifying your membership...');
           const { data, error: fnError } = await supabase.functions.invoke('whop-iframe-auth', {
-            body: { token },
+            body: { token, experienceId },
           });
 
           if (fnError) throw new Error(fnError.message);
@@ -77,7 +79,7 @@ export default function AuthIframe() {
     };
 
     run();
-  }, [searchParams, navigate, syncSession]);
+  }, [searchParams, experienceId, navigate, syncSession]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">

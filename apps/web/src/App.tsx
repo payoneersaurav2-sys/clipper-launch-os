@@ -62,6 +62,8 @@ export default function App() {
             <Route path="/signup"        element={<SignupPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/iframe"   element={<AuthIframe />} />
+            {/* Whop Experience View: configure this as /experiences/[experienceId] in Whop. */}
+            <Route path="/experiences/:experienceId/*" element={<AuthIframe />} />
             <Route path="/expired"       element={<ExpiredPage />} />
             <Route path="/onboarding"    element={<OnboardingPage />} />
 

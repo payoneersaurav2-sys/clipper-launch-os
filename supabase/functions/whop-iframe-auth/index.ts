@@ -16,7 +16,7 @@ serve(async (req) => {
   }
 
   try {
-    const { token } = await req.json();
+    const { token, experienceId } = await req.json();
     if (!token) throw new Error('No Whop token provided');
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -37,15 +37,35 @@ serve(async (req) => {
       throw new Error(`JWT verification failed: ${jwtErr.message}`);
     }
 
-    // 3 & 4. Run Whop profile fetch + Supabase user lookup IN PARALLEL
+    // 3 & 4. Verify the verified Whop user is entitled to this Experience.
+    // The Experience ID is provided by Whop in the Experience View URL. A
+    // server-side fallback supports a fixed Experience configuration.
     const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
+    const configuredExperienceId = Deno.env.get('WHOP_EXPERIENCE_ID') ?? '';
+    const resourceId = experienceId || configuredExperienceId;
+
+    if (!whopApiKey) throw new Error('Whop access verification is not configured');
+    if (!resourceId) throw new Error('Whop Experience ID is missing');
+
+    const accessResponse = await fetch(
+      `https://api.whop.com/api/v1/users/${encodeURIComponent(userId)}/access/${encodeURIComponent(resourceId)}`,
+      { headers: { 'Authorization': `Bearer ${whopApiKey}` } },
+    );
+    if (!accessResponse.ok) {
+      throw new Error(`Whop access check failed: ${accessResponse.status}`);
+    }
+    const access = await accessResponse.json();
+    if (!access.has_access || !['customer', 'admin'].includes(access.access_level)) {
+      return new Response(JSON.stringify({ error: 'Your Whop membership does not have access to Creator OS.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+      });
+    }
 
     const [profileRes, listData] = await Promise.all([
-      whopApiKey
-        ? fetch(`https://api.whop.com/api/v2/users/${userId}`, {
-            headers: { 'Authorization': `Bearer ${whopApiKey}` }
-          })
-        : Promise.resolve(null),
+      fetch(`https://api.whop.com/api/v2/users/${userId}`, {
+        headers: { 'Authorization': `Bearer ${whopApiKey}` }
+      }),
       supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
         .then(r => r.data),
     ]);
