@@ -63,7 +63,6 @@ export default function PricingPage() {
                 <div className="mt-3 min-h-[40px] text-[12px] leading-5 text-[#71717A]">{billing === 'annual' ? <><span>Annual plan: {money.format(plan.annualPrice)}/year</span><br /><span className="font-medium text-primary">Save {money.format(savings.amount)}/year &middot; {savings.percent}%</span></> : <>Billed monthly.<br /><span className="text-[#71717A]">Annual offer: {money.format(plan.annualPrice)}/year &middot; save {money.format(savings.amount)}.</span></>}</div>
               </div>
               <div className="mt-6">
-                {plan.includedPlan && <p className="mb-3 text-[12px] font-medium tracking-wide text-[#A1A1AA]">Everything in {plan.includedPlan}, plus:</p>}
               <ul className="space-y-4" aria-label={`${plan.name} capabilities`}>
                 {plan.features.map((feature) => <li key={feature} className="flex gap-3 text-[14px] leading-5 text-[#D4D4D8]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2.4} aria-hidden="true" />{feature}</li>)}
               </ul>

@@ -15,7 +15,6 @@ export type PricingPlan = {
   annualPrice: number;
   cta: string;
   features: string[];
-  includedPlan?: string;
   recommended?: boolean;
   checkout: Record<BillingInterval, CheckoutSlot>;
 };
@@ -40,22 +39,33 @@ export const unresolvedCheckoutMapping = {
   reason: 'Duplicates source #4. It is deliberately unassigned; confirm the Whop plan before using it.',
 } as const;
 
+const creatorFeatures = [
+  'Idea Studio and Hook Engine',
+  'Platform-ready Caption OS',
+  'Connected content workspace',
+];
+
+const proFeatures = [
+  ...creatorFeatures,
+  'Campaign planning and content generation',
+  'Clip Pipeline production workflow',
+  'Analytics and performance insights',
+];
+
 export const pricingPlans: PricingPlan[] = [
   {
     id: 'creator', name: 'Creator', positioning: 'Build your content engine.', monthlyPrice: 19, annualPrice: 190, cta: 'Start Creating',
-    features: ['Idea Studio and Hook Engine', 'Platform-ready Caption OS', 'Connected content workspace'],
+    features: creatorFeatures,
     checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[1], billing: 'annual', sourceIndex: 2 } },
   },
   {
     id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Start Pro', recommended: true,
-    includedPlan: 'Creator',
-    features: ['Campaign planning and content generation', 'Clip Pipeline production workflow', 'Analytics and performance insights'],
+    features: proFeatures,
     checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
   },
   {
     id: 'agency', name: 'Agency', positioning: 'Scale content across brands and clients.', monthlyPrice: 149, annualPrice: 1490, cta: 'Start Scaling',
-    includedPlan: 'Pro',
-    features: ['Campaign OS for content operations', 'Production-ready content workspaces', 'Analytics built for higher-volume workflows'],
+    features: [...proFeatures, 'Campaign OS for content operations', 'Production-ready content workspaces', 'Analytics built for higher-volume workflows'],
     checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
   },
 ];
