@@ -15,6 +15,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { ProductTour, useTour } from '@/components/ProductTour';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
+import { AppearanceSwitcher } from '@/components/AppearanceSwitcher';
 
 // ---- Nav groups ---------------------------------------------
 const navGroups = [
@@ -205,7 +206,7 @@ export default function DashboardLayout() {
           <motion.aside
             initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 h-full w-[280px] z-50 flex flex-col border-r border-white/[0.08] bg-[#080808] shadow-2xl lg:hidden"
+            className="os-sidebar fixed top-0 left-0 h-full w-[280px] z-50 flex flex-col border-r border-white/[0.08] bg-[#080808] shadow-2xl lg:hidden"
           >
             {/* Mobile drawer header */}
             <div className="flex h-16 items-center justify-between px-4 shrink-0">
@@ -222,7 +223,7 @@ export default function DashboardLayout() {
 
       {/* ---- Desktop Sidebar --------------------------------- */}
       <aside className={cn(
-        'hidden lg:flex flex-col border-r border-white/[0.06] bg-[linear-gradient(180deg,#0b0b0b_0%,#080808_45%)] transition-all duration-300 z-20 shrink-0',
+        'os-sidebar hidden lg:flex flex-col border-r border-white/[0.06] bg-[linear-gradient(180deg,#0b0b0b_0%,#080808_45%)] transition-all duration-300 z-20 shrink-0',
         collapsed ? 'w-[68px]' : 'w-[240px]'
       )}>
         {/* Logo + collapse toggle */}
@@ -256,6 +257,7 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <AppearanceSwitcher />
             <NotificationCenter />
           </div>
         </header>

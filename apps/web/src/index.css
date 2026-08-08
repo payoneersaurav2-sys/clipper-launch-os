@@ -69,6 +69,7 @@
 :root[data-theme='light'] .os-panel { background: #FFFFFF; border-color: rgba(24, 24, 27, 0.12); box-shadow: 0 12px 32px rgba(24, 24, 27, 0.08); }
 :root[data-theme='light'] .os-subtle-panel { background: #F3F3F5; border-color: rgba(24, 24, 27, 0.1); }
 :root[data-theme='light'] .os-skeleton { background: rgba(24, 24, 27, 0.08); }
+:root[data-theme='light'] .os-sidebar { background: linear-gradient(180deg, #FFFFFF 0%, #F4F4F7 56%, #EEEEF2 100%) !important; border-color: rgba(24, 24, 27, 0.12) !important; }
  
 @layer base {
   * {

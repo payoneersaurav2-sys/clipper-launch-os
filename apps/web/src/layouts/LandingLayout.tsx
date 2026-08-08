@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import Wordmark from '@/components/Wordmark';
 import { Menu, X } from 'lucide-react';
+import { AppearanceSwitcher } from '@/components/AppearanceSwitcher';
 
 const footerNav = [
   { label: 'Features', href: '/#features' },
@@ -53,6 +54,7 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 FAQ
               </Button>
             </Link>
+            <AppearanceSwitcher />
             <Link to="/login">
               <Button variant="ghost" className="text-[14px] font-medium text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-white/[0.03] px-3 lg:px-4 h-9 rounded-[10px]">
                 Sign In
@@ -99,6 +101,10 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                     Sign In
                   </Button>
                 </Link>
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-[13px] font-medium text-[#A1A1AA]">Appearance</span>
+                  <AppearanceSwitcher />
+                </div>
                 <Link to="/pricing" onClick={() => setMobileMenuOpen(false)}>
                   <Button className="w-full h-10 rounded-[10px] text-[14px] font-medium bg-primary text-white hover:bg-primary/90 mt-1">
                     View Plans
