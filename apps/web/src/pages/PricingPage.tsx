@@ -52,9 +52,9 @@ export default function PricingPage() {
           {pricingPlans.map((plan, index) => {
             const savings = annualSavings(plan);
             const checkoutUrl = plan.checkout[billing].url;
-            return <motion.article key={plan.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: reduceMotion ? 0 : 0.08 * index }} whileHover={reduceMotion ? undefined : { y: -5 }} className={`relative flex min-h-[500px] flex-col overflow-hidden rounded-[22px] border p-6 transition-shadow sm:p-7 ${plan.recommended ? 'border-primary/70 bg-[linear-gradient(145deg,rgba(124,58,237,0.16),#111111_36%,#111111)] shadow-[0_12px_45px_rgba(124,58,237,0.12)] lg:-translate-y-3 lg:min-h-[524px]' : 'border-white/[0.08] bg-[#111111] shadow-[0_16px_42px_rgba(0,0,0,0.15)] hover:border-white/[0.14]'}`}>
-              {plan.recommended && <><div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" /><span className="mb-7 inline-flex w-fit rounded-full border border-primary/40 bg-primary/15 px-2.5 py-1 text-[11px] font-semibold tracking-[0.12em] text-[#C4B5FD]">MOST POPULAR</span></>}
-              <div className={plan.recommended ? '' : 'pt-1'}>
+            return <motion.article key={plan.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: reduceMotion ? 0 : 0.08 * index }} whileHover={reduceMotion ? undefined : { y: -5 }} className={`relative flex min-h-[500px] flex-col overflow-hidden rounded-[22px] border p-6 transition-shadow sm:p-7 ${plan.recommended ? 'border-primary/70 bg-[linear-gradient(145deg,rgba(124,58,237,0.16),#111111_36%,#111111)] shadow-[0_12px_45px_rgba(124,58,237,0.12)]' : 'border-white/[0.08] bg-[#111111] shadow-[0_16px_42px_rgba(0,0,0,0.15)] hover:border-white/[0.14]'}`}>
+              {plan.recommended && <><div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" /><span className="absolute right-6 top-6 inline-flex rounded-full border border-primary/40 bg-primary/15 px-2.5 py-1 text-[11px] font-semibold tracking-[0.12em] text-[#C4B5FD] sm:right-7 sm:top-7">MOST POPULAR</span></>}
+              <div className="pt-1">
                 <h2 className="text-[22px] font-semibold tracking-tight">{plan.name}</h2>
                 <p className="mt-2 min-h-[48px] max-w-[260px] text-[15px] leading-relaxed tracking-tight text-[#A1A1AA]">{plan.positioning}</p>
               </div>
@@ -62,9 +62,12 @@ export default function PricingPage() {
                 <div className="flex items-end gap-2"><AnimatePresence mode="wait" initial={false}><motion.span key={`${plan.id}-${billing}`} initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="text-[45px] font-semibold leading-none tracking-[-0.06em]">{money.format(plan.monthlyPrice)}</motion.span></AnimatePresence><span className="mb-1 text-[14px] text-[#A1A1AA]">/month</span></div>
                 <div className="mt-3 min-h-[40px] text-[12px] leading-5 text-[#71717A]">{billing === 'annual' ? <><span>Annual plan: {money.format(plan.annualPrice)}/year</span><br /><span className="font-medium text-primary">Save {money.format(savings.amount)}/year &middot; {savings.percent}%</span></> : <>Billed monthly.<br /><span className="text-[#71717A]">Annual offer: {money.format(plan.annualPrice)}/year &middot; save {money.format(savings.amount)}.</span></>}</div>
               </div>
-              <ul className="mt-6 space-y-4" aria-label={`${plan.name} capabilities`}>
+              <div className="mt-6">
+                {plan.includedPlan && <p className="mb-3 text-[12px] font-medium tracking-wide text-[#A1A1AA]">Everything in {plan.includedPlan}, plus:</p>}
+              <ul className="space-y-4" aria-label={`${plan.name} capabilities`}>
                 {plan.features.map((feature) => <li key={feature} className="flex gap-3 text-[14px] leading-5 text-[#D4D4D8]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2.4} aria-hidden="true" />{feature}</li>)}
               </ul>
+              </div>
               <a href={checkoutUrl} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] ${plan.recommended ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.3)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.48)]' : 'border border-white/[0.1] bg-white/[0.04] text-white hover:border-primary/50 hover:bg-primary/15'}`}>{plan.cta}</a>
             </motion.article>;
           })}

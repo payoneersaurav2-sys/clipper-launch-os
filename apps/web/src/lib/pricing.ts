@@ -15,6 +15,7 @@ export type PricingPlan = {
   annualPrice: number;
   cta: string;
   features: string[];
+  includedPlan?: string;
   recommended?: boolean;
   checkout: Record<BillingInterval, CheckoutSlot>;
 };
@@ -47,11 +48,13 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Start Pro', recommended: true,
+    includedPlan: 'Creator',
     features: ['Campaign planning and content generation', 'Clip Pipeline production workflow', 'Analytics and performance insights'],
     checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
   },
   {
     id: 'agency', name: 'Agency', positioning: 'Scale content across brands and clients.', monthlyPrice: 149, annualPrice: 1490, cta: 'Start Scaling',
+    includedPlan: 'Pro',
     features: ['Campaign OS for content operations', 'Production-ready content workspaces', 'Analytics built for higher-volume workflows'],
     checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
   },
