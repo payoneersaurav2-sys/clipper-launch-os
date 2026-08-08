@@ -20,14 +20,21 @@ function AddClipModal({ campaignId, onClose }: { campaignId?: string; onClose: (
   const [title, setTitle] = useState('');
   const [platform, setPlatform] = useState('tiktok');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
-    await createClip.mutateAsync({ title, platform, campaign_id: campaignId, status: 'idea' });
-    setSaving(false);
-    onClose();
+    setError('');
+    try {
+      await createClip.mutateAsync({ title, platform, campaign_id: campaignId, status: 'idea' });
+      onClose();
+    } catch {
+      setError('Could not add this clip. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -51,6 +58,7 @@ function AddClipModal({ campaignId, onClose }: { campaignId?: string; onClose: (
               </button>
             ))}
           </div>
+          {error && <p role="alert" className="text-[12px] text-red-400">{error}</p>}
           <Button type="submit" disabled={saving || !title.trim()} className="w-full h-10 rounded-[10px] bg-primary text-white text-[13px]">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add Clip'}
           </Button>
@@ -66,7 +74,9 @@ function KanbanCard({ clip, onMove }: { clip: Clip; onMove: (id: string, status:
   return (
     <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -1 }} transition={{ duration: 0.15 }}
-      className="bg-[#161616] border border-white/[0.06] rounded-[12px] p-4 cursor-pointer hover:border-white/[0.12] transition-colors group">
+      draggable
+      onDragStartCapture={(event: React.DragEvent<HTMLDivElement>) => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', clip.id); }}
+      className="bg-[#161616] border border-white/[0.06] rounded-[12px] p-4 cursor-grab active:cursor-grabbing hover:border-white/[0.12] transition-colors group">
       <div className="flex items-start justify-between gap-2 mb-3">
         <p className="text-[13px] font-medium text-[#FAFAFA] leading-snug line-clamp-2">{clip.title}</p>
         <GripVertical className="h-4 w-4 text-[#71717A] shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -105,6 +115,7 @@ function KanbanCard({ clip, onMove }: { clip: Clip; onMove: (id: string, status:
 }
 
 function KanbanColumn({ stage, clips, onMove }: { stage: typeof STAGES[0]; clips: Clip[]; onMove: (id: string, status: ClipStatus) => void }) {
+  const [isDropTarget, setIsDropTarget] = useState(false);
   return (
     <div className="flex-shrink-0 w-64 flex flex-col">
       <div className="flex items-center gap-2 mb-3 px-1">
@@ -112,7 +123,10 @@ function KanbanColumn({ stage, clips, onMove }: { stage: typeof STAGES[0]; clips
         <span className="text-[12px] font-medium text-[#A1A1AA]">{stage.label}</span>
         <span className="ml-auto text-[11px] text-[#71717A] bg-white/[0.06] px-1.5 py-0.5 rounded-full">{clips.length}</span>
       </div>
-      <div className="flex-1 bg-[#0D0D0D] border border-white/[0.04] rounded-[14px] p-3 min-h-[200px] space-y-2">
+      <div onDragOver={event => { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; setIsDropTarget(true); }}
+        onDragLeave={() => setIsDropTarget(false)}
+        onDrop={event => { event.preventDefault(); setIsDropTarget(false); const clipId = event.dataTransfer.getData('text/plain'); if (clipId) onMove(clipId, stage.key); }}
+        className={`flex-1 bg-[#0D0D0D] border rounded-[14px] p-3 min-h-[200px] space-y-2 transition-colors ${isDropTarget ? 'border-primary/60 bg-primary/[0.04]' : 'border-white/[0.04]'}`}>
         <AnimatePresence>
           {clips.map(clip => (
             <KanbanCard key={clip.id} clip={clip} onMove={onMove} />
@@ -133,9 +147,15 @@ export default function ClipPipelinePage() {
   const [selectedCampaign, setSelectedCampaign] = useState<string | undefined>();
   const { data: clips, isLoading, updateClip } = useClips(selectedCampaign);
   const [showAdd, setShowAdd] = useState(false);
+  const [moveError, setMoveError] = useState('');
 
-  const handleMove = (id: string, status: ClipStatus) => {
-    updateClip.mutate({ id, patch: { status } });
+  const handleMove = async (id: string, status: ClipStatus) => {
+    setMoveError('');
+    try {
+      await updateClip.mutateAsync({ id, patch: { status } });
+    } catch {
+      setMoveError('Could not move this clip. Please try again.');
+    }
   };
 
   const clipsByStage = (key: ClipStatus) => clips?.filter(c => c.status === key) ?? [];
@@ -158,6 +178,8 @@ export default function ClipPipelinePage() {
           </Button>
         </div>
       </div>
+
+      {moveError && <p role="alert" className="rounded-[10px] border border-red-500/20 bg-red-500/10 px-3 py-2 text-[12px] text-red-400">{moveError}</p>}
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48"><Loader2 className="h-5 w-5 animate-spin text-[#71717A]" /></div>

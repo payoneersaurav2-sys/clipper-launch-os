@@ -23,18 +23,26 @@ const ALL_STATUSES = Object.keys(STATUS_CONFIG) as CampaignStatus[];
 const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter', 'universal'];
 
 // ---- Create Modal -------------------------------------------
-function CreateModal({ onClose }: { onClose: () => void }) {
-  const { createCampaign } = useCampaigns();
-  const [form, setForm] = useState({ title: '', brand: '', niche: '', platform: 'tiktok', goal: '', status: 'planning' as CampaignStatus });
+function CampaignModal({ campaign, onClose }: { campaign?: Campaign; onClose: () => void }) {
+  const { createCampaign, updateCampaign } = useCampaigns();
+  const [form, setForm] = useState({ title: campaign?.title ?? '', brand: campaign?.brand ?? '', niche: campaign?.niche ?? '', platform: campaign?.platform ?? 'tiktok', goal: campaign?.goal ?? '', status: campaign?.status ?? 'planning' as CampaignStatus });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return;
     setSaving(true);
-    await createCampaign.mutateAsync(form);
-    setSaving(false);
-    onClose();
+    setError('');
+    try {
+      if (campaign) await updateCampaign.mutateAsync({ id: campaign.id, patch: form });
+      else await createCampaign.mutateAsync(form);
+      onClose();
+    } catch {
+      setError(`Could not ${campaign ? 'save' : 'create'} this campaign. Please try again.`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -44,7 +52,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
       <motion.div initial={{ scale: 0.96, y: 8 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 8 }}
         className="w-full max-w-md bg-[#111111] border border-white/[0.08] rounded-t-[20px] sm:rounded-[20px] p-5 sm:p-7 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-[17px] font-semibold text-[#FAFAFA] tracking-tight">New Campaign</h3>
+          <h3 className="text-[17px] font-semibold text-[#FAFAFA] tracking-tight">{campaign ? 'Edit Campaign' : 'New Campaign'}</h3>
           <button onClick={onClose} className="text-[#71717A] hover:text-[#FAFAFA] transition-colors"><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -53,6 +61,14 @@ function CreateModal({ onClose }: { onClose: () => void }) {
             <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Finance Niche Sprint"
               className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] focus:border-primary/50" />
           </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] text-[#71717A]">Status</label>
+            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as CampaignStatus }))}
+              className="h-10 w-full rounded-[10px] bg-[#0D0D0D] border border-white/[0.08] px-3 text-[13px] text-[#FAFAFA] outline-none focus:border-primary/50">
+              {ALL_STATUSES.filter(status => status !== 'archived').map(status => <option key={status} value={status}>{STATUS_CONFIG[status].label}</option>)}
+            </select>
+          </div>
+          {error && <p role="alert" className="text-[12px] text-red-400">{error}</p>}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-[12px] text-[#71717A]">Brand / Client</label>
@@ -86,7 +102,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
               className="flex-1 h-10 rounded-[10px] border-white/[0.08] bg-transparent text-[#A1A1AA] hover:text-[#FAFAFA] text-[13px]">Cancel</Button>
             <Button type="submit" disabled={saving || !form.title.trim()}
               className="flex-1 h-10 rounded-[10px] bg-primary text-white hover:bg-primary/90 text-[13px]">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Campaign'}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : campaign ? 'Save Campaign' : 'Create Campaign'}
             </Button>
           </div>
         </form>
@@ -96,7 +112,7 @@ function CreateModal({ onClose }: { onClose: () => void }) {
 }
 
 // ---- Campaign Card ------------------------------------------
-function CampaignCard({ campaign }: { campaign: Campaign }) {
+function CampaignCard({ campaign, onEdit }: { campaign: Campaign; onEdit: (campaign: Campaign) => void }) {
   const { updateCampaign, deleteCampaign, duplicateCampaign } = useCampaigns();
   const [menuOpen, setMenuOpen] = useState(false);
   const cfg = STATUS_CONFIG[campaign.status] ?? STATUS_CONFIG.planning;
@@ -121,7 +137,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
               <motion.div initial={{ opacity: 0, scale: 0.95, y: -4 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                 className="absolute right-0 top-7 z-20 w-44 bg-[#161616] border border-white/[0.08] rounded-[12px] shadow-xl overflow-hidden py-1">
                 {[
-                  { icon: Pencil, label: 'Edit',      action: () => {} },
+                  { icon: Pencil, label: 'Edit',      action: () => { onEdit(campaign); setMenuOpen(false); } },
                   { icon: Copy,   label: 'Duplicate',  action: () => { duplicateCampaign.mutate(campaign); setMenuOpen(false); } },
                   { icon: Archive,label: 'Archive',    action: () => { updateCampaign.mutate({ id: campaign.id, patch: { status: 'archived' } }); setMenuOpen(false); } },
                   { icon: Trash2, label: 'Delete',     action: () => { deleteCampaign.mutate(campaign.id); setMenuOpen(false); } },
@@ -174,6 +190,7 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 export default function CampaignOSPage() {
   const { data: campaigns, isLoading } = useCampaigns();
   const [showCreate, setShowCreate] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<CampaignStatus | 'all'>('all');
 
   const visible = filter === 'all' ? campaigns : campaigns?.filter(c => c.status === filter);
@@ -226,13 +243,14 @@ export default function CampaignOSPage() {
       ) : (
         <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <AnimatePresence>
-            {visible?.map(c => <CampaignCard key={c.id} campaign={c} />)}
+            {visible?.map(c => <CampaignCard key={c.id} campaign={c} onEdit={setEditingCampaign} />)}
           </AnimatePresence>
         </motion.div>
       )}
 
       <AnimatePresence>
-        {showCreate && <CreateModal onClose={() => setShowCreate(false)} />}
+        {showCreate && <CampaignModal onClose={() => setShowCreate(false)} />}
+        {editingCampaign && <CampaignModal campaign={editingCampaign} onClose={() => setEditingCampaign(null)} />}
       </AnimatePresence>
     </div>
   );
