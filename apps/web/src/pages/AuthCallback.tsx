@@ -64,8 +64,7 @@ export default function AuthCallback() {
       return;
     }
 
-    const transaction = getStoredWhopTransaction(searchParams);
-    if (!transaction) {
+    if (!transaction.intent) {
       exchangeInProgress = false;
       navigate('/login?error=Your+Whop+sign-in+session+expired.+Please+try+again.');
       return;
