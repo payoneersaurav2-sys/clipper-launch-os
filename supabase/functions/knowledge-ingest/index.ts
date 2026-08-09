@@ -59,6 +59,33 @@ function extractTitleAndText(html: string) {
   return { title, text };
 }
 
+function chunkText(input: string, pageNumber?: number, sourceName?: string) {
+  const normalized = input.replace(/\s+/g, ' ').trim();
+  if (!normalized) return [];
+  const chunks: Array<{ content: string; pageNumber?: number; chunkIndex: number; metadata: Record<string, unknown> }> = [];
+  const maxChars = 1400;
+  const words = normalized.split(' ');
+  let current = '';
+  let chunkIndex = 0;
+
+  for (const word of words) {
+    const next = current ? `${current} ${word}` : word;
+    if (next.length > maxChars && current) {
+      chunks.push({ content: current.trim(), pageNumber, chunkIndex, metadata: { pageNumber, sourceName, chunkIndex } });
+      chunkIndex += 1;
+      current = word;
+    } else {
+      current = next;
+    }
+  }
+
+  if (current.trim()) {
+    chunks.push({ content: current.trim(), pageNumber, chunkIndex, metadata: { pageNumber, sourceName, chunkIndex } });
+  }
+
+  return chunks;
+}
+
 async function fetchWebsiteContent(url: string) {
   const response = await fetch(url, {
     headers: {
@@ -100,16 +127,24 @@ serve(async (req) => {
     if (!userId) return json({ error: 'Sign in again to ingest knowledge.' }, 401);
 
     const payload = await req.json();
-    const workspaceId = String(payload.workspace_id ?? '');
+    const workspaceId = String(payload.workspace_id ?? '').trim();
     const title = String(payload.title ?? '').trim();
     const url = String(payload.url ?? '').trim();
     const tags = Array.isArray(payload.tags) ? payload.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean) : [];
     const existingItemId = payload.existing_item_id ? String(payload.existing_item_id) : null;
+    const sourceType = String(payload.source_type ?? 'website').trim();
+    const content = String(payload.content ?? '').trim();
+    const sourceName = String((payload.source_name ?? title) || 'knowledge-source').trim();
+    const pageNumber = payload.page_number ? Number(payload.page_number) : null;
+    const fileType = String(payload.file_type ?? '').trim();
 
-    if (!workspaceId || !title || !url) return json({ error: 'Please provide a workspace, title, and URL.' }, 400);
+    if (!workspaceId || (!title && !sourceName)) return json({ error: 'Please provide a workspace and title.' }, 400);
 
-    const safeCheck = isSafeUrlCandidate(url);
-    if (!safeCheck.ok || !safeCheck.parsed) return json({ error: safeCheck.reason ?? 'The URL could not be validated.' }, 400);
+    if (sourceType === 'website') {
+      if (!url) return json({ error: 'Please provide a website URL.' }, 400);
+      const safeCheck = isSafeUrlCandidate(url);
+      if (!safeCheck.ok || !safeCheck.parsed) return json({ error: safeCheck.reason ?? 'The URL could not be validated.' }, 400);
+    }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: membershipData, error: membershipError } = await adminClient
@@ -120,22 +155,37 @@ serve(async (req) => {
       .maybeSingle();
     if (membershipError || !membershipData) return json({ error: 'You do not have access to that workspace.' }, 403);
 
-    const { title: extractedTitle, text } = await fetchWebsiteContent(safeCheck.parsed.toString());
-    const normalizedTitle = title || extractedTitle || 'Website source';
-    const cleanedText = text.slice(0, 24000);
+    let extractedTitle = title || sourceName;
+    let cleanedText = content;
+    let normalizedUrl = url || null;
+
+    if (sourceType === 'website') {
+      const safeCheck = isSafeUrlCandidate(url);
+      if (!safeCheck.ok || !safeCheck.parsed) throw new Error(safeCheck.reason ?? 'The URL could not be validated.');
+      const { title: fetchedTitle, text } = await fetchWebsiteContent(safeCheck.parsed.toString());
+      extractedTitle = fetchedTitle || title || sourceName;
+      cleanedText = text;
+      normalizedUrl = safeCheck.parsed.toString();
+    }
+
     const contentExcerpt = cleanedText.slice(0, 500);
 
     const itemPayload = {
       workspace_id: workspaceId,
-      title: normalizedTitle,
-      content: cleanedText,
-      file_type: 'website',
-      source_type: 'website',
-      source_url: safeCheck.parsed.toString(),
+      title: extractedTitle,
+      content: cleanedText.slice(0, 24000),
+      file_type: sourceType === 'website' ? 'website' : fileType || 'text',
+      source_type: sourceType,
+      source_url: normalizedUrl,
       ingestion_status: 'ready',
       ingestion_error: null,
       content_excerpt: contentExcerpt,
-      metadata: { source_url: safeCheck.parsed.toString(), fetched_at: new Date().toISOString(), host: safeCheck.parsed.host },
+      metadata: {
+        source_url: normalizedUrl,
+        fetched_at: new Date().toISOString(),
+        source_name: sourceName,
+        page_number: pageNumber,
+      },
       tags,
       updated_at: new Date().toISOString(),
     };
@@ -151,7 +201,33 @@ serve(async (req) => {
       record = data;
     }
 
-    return json({ item: record, message: 'Website source ingested successfully.' }, 200);
+    if (record?.id) {
+      await adminClient.from('knowledge_chunks').delete().eq('resource_id', record.id);
+      const chunks = chunkText(cleanedText, pageNumber ?? undefined, extractedTitle);
+      const chunkRows = chunks.map((chunk, index) => ({
+        workspace_id: workspaceId,
+        resource_id: record.id,
+        source_type: sourceType,
+        source_name: extractedTitle,
+        source_url: normalizedUrl,
+        page_number: chunk.metadata.pageNumber as number | null,
+        chunk_index: chunk.chunkIndex ?? index,
+        content: chunk.content,
+        metadata: {
+          resourceId: record.id,
+          sourceType: sourceType,
+          fileName: extractedTitle,
+          pageNumber: chunk.metadata.pageNumber ?? pageNumber ?? null,
+          chunkIndex: chunk.chunkIndex ?? index,
+          content: chunk.content,
+        },
+      }));
+      if (chunkRows.length) {
+        await adminClient.from('knowledge_chunks').insert(chunkRows);
+      }
+    }
+
+    return json({ item: record, message: 'Knowledge source ingested successfully.' }, 200);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'The website could not be ingested.';
     return json({ error: message }, 500);

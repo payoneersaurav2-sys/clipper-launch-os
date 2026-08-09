@@ -31,6 +31,18 @@ interface KnowledgeItem {
   metadata?: Record<string, unknown> | null;
 }
 
+interface KnowledgeChunk {
+  id: string;
+  resource_id: string;
+  source_type: string;
+  source_name: string;
+  source_url?: string | null;
+  page_number?: number | null;
+  chunk_index: number;
+  content: string;
+  metadata?: Record<string, unknown> | null;
+}
+
 function useKnowledge() {
   const { activeWorkspace } = useWorkspaceStore();
   const wsId = activeWorkspace?.id;
@@ -265,9 +277,35 @@ export function KnowledgeVault() {
     setAnswering(true);
     setAnswer('');
     setAnswerError('');
-    const context = items.slice(0, 5).map((item) => `[${item.title}]: ${item.content.slice(0, 800)}`).join('\n\n');
+
     try {
-      const result = await generateJSON<{ answer: string }>(
+      const { data: chunkRows, error: chunkError } = await supabase
+        .from('knowledge_chunks')
+        .select('*')
+        .eq('workspace_id', wsId)
+        .order('page_number', { ascending: true, nullsFirst: true })
+        .order('chunk_index', { ascending: true });
+
+      if (chunkError) throw chunkError;
+
+      const relevantChunks = (chunkRows ?? []) as KnowledgeChunk[];
+      const explicitPageMatch = question.match(/page\s+(\d+)/i);
+      const pageFilter = explicitPageMatch ? Number(explicitPageMatch[1]) : null;
+
+      const rankedChunks = relevantChunks.filter((chunk) => {
+        if (!pageFilter) return true;
+        return chunk.page_number === pageFilter;
+      }).slice(0, 8);
+
+      const context = rankedChunks.length > 0
+        ? rankedChunks.map((chunk) => {
+            const pageLabel = chunk.page_number ? ` [Page ${chunk.page_number}]` : '';
+            const sourceLabel = chunk.source_name || 'Knowledge source';
+            return `[Source: ${sourceLabel}${pageLabel}]\n${chunk.content}`;
+          }).join('\n\n')
+        : items.slice(0, 5).map((item) => `[${item.title}]: ${item.content.slice(0, 800)}`).join('\n\n');
+
+      const result = await generateJSON<{ answer: string; sources?: string[]; confidence?: number }>(
         buildKnowledgeAnswerPrompt({
           question: question.trim(),
           context,
@@ -276,9 +314,14 @@ export function KnowledgeVault() {
         }),
         { category: 'custom', promptSummary: 'Answer from saved knowledge' },
       );
-      setAnswer(result.answer);
-    } catch {
-      setAnswerError('We could not answer that right now. Please try again.');
+      const sources = result.sources ?? [];
+      setAnswer(result.answer || 'I could not find relevant content in your Knowledge Vault for that question.');
+      if (sources.length) {
+        setAnswer((prev) => `${prev}\n\nSources:\n${sources.map((source) => `- ${source}`).join('\n')}`);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'We could not answer that right now. Please try again.';
+      setAnswerError(message);
     } finally {
       setAnswering(false);
     }
