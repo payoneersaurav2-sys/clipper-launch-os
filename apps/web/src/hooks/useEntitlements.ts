@@ -23,9 +23,10 @@ export function useEntitlements() {
       if (error) throw error;
       const result = (data ?? {}) as RpcEntitlements;
       const tier = normalizePlanTier(result.tier);
+      const fallbackTier = normalizePlanTier(subscriptionTier);
+
       if (result.status !== 'active' || !tier) {
-        const fallbackTier = normalizePlanTier(subscriptionTier) ?? undefined;
-        if (user && membershipStatus && membershipStatus !== 'inactive' && fallbackTier && fallbackTier !== 'free') {
+        if (user && fallbackTier && fallbackTier !== 'free' && membershipStatus !== 'inactive') {
           return {
             status: 'active',
             tier: fallbackTier,
@@ -37,14 +38,15 @@ export function useEntitlements() {
         return { status: result.status === 'unsubscribed' ? 'unsubscribed' : 'unknown' };
       }
 
-      // Use server values when available. The local config provides a safe
-      // rendering fallback during a rolling migration, never authorization.
+      const capabilities = normalizeCapabilities(result.capabilities);
+      const limits = normalizeLimits(result.limits);
       const fallback = planEntitlements[tier];
+
       return {
         status: 'active',
         tier,
-        capabilities: normalizeCapabilities(result.capabilities) ?? fallback.capabilities,
-        limits: normalizeLimits(result.limits) ?? fallback.limits,
+        capabilities: capabilities ?? fallback.capabilities,
+        limits: limits ?? fallback.limits,
         membershipExpiresAt: result.membershipExpiresAt ?? null,
       };
     },
