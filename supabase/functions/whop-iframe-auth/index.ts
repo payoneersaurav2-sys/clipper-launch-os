@@ -25,11 +25,12 @@ async function resolveWhopPlan(
   whopUserId: string,
 ) {
   const membershipsResponse = await fetch(
-    `https://api.whop.com/api/v1/memberships?user_id=${encodeURIComponent(whopUserId)}&first=100&order=created_at&direction=desc`,
+    `https://api.whop.com/api/v2/memberships?user_id=${encodeURIComponent(whopUserId)}&per_page=100`,
     { headers: { Authorization: `Bearer ${whopApiKey}` } },
   );
   if (!membershipsResponse.ok) {
-    throw new Error(`Whop membership lookup failed: ${membershipsResponse.status}`);
+    const errorBody = await membershipsResponse.text();
+    throw new Error(`Whop membership lookup failed: ${membershipsResponse.status} - ${errorBody}`);
   }
   const memberships = ((await membershipsResponse.json()).data ?? []) as WhopMembership[];
   const candidates = memberships.filter((membership) => ACCESS_GRANTING_STATUSES.has(membership.status));
