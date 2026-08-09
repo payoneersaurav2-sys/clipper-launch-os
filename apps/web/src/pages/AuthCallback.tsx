@@ -64,7 +64,9 @@ export default function AuthCallback() {
 
     if (!code) {
       exchangeInProgress = false;
-      navigate('/login?error=No+authorization+code+provided');
+      // Dump the entire URL so we can see what Supabase actually sent back
+      const dump = encodeURIComponent(`URL: ${window.location.href}`);
+      navigate(`/login?error=No+authorization+code+provided.+${dump}`);
       return;
     }
 
