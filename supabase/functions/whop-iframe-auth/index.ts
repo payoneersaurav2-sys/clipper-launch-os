@@ -100,7 +100,7 @@ serve(async (req) => {
     if (!access.has_access || !['customer', 'admin'].includes(access.access_level)) {
       return new Response(JSON.stringify({ error: 'Your Whop membership does not have access to Creator OS.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
+        status: 200,
       });
     }
 
@@ -110,7 +110,7 @@ serve(async (req) => {
     if (!resolvedPlan) {
       return new Response(JSON.stringify({ error: 'Your Whop access is valid, but no active Creator OS plan could be resolved.' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 403,
+        status: 200,
       });
     }
 
