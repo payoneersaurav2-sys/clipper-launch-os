@@ -66,6 +66,7 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [form, setForm] = useState({
     niche: '',
     platform: '',
@@ -90,6 +91,7 @@ export default function OnboardingPage() {
   const handleFinish = async () => {
     if (!user) return;
     setSaving(true);
+    setSaveError(null);
     try {
       // Step 1: Guarantee the public.users row exists before anything else.
       // This prevents the FK violation for users who came through Whop OAuth
@@ -107,9 +109,7 @@ export default function OnboardingPage() {
 
       if (upsertErr) {
         console.error("Failed to upsert user:", upsertErr);
-        alert("Failed to save your profile. Please try again.");
-        setSaving(false);
-        return;
+        throw upsertErr;
       }
 
       // Step 2: Now that the user row exists, create the workspace safely
@@ -117,9 +117,9 @@ export default function OnboardingPage() {
 
       useAuthStore.setState({ onboardingComplete: true });
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to finish onboarding:", err);
-      alert(err.message || "Something went wrong. Please try again.");
+      setSaveError('We could not finish setting up your workspace. Please retry in a moment.');
       setSaving(false);
     }
   };
@@ -172,6 +172,12 @@ export default function OnboardingPage() {
             )}
 
             {/* CTA */}
+            {saveError && (
+              <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} role="alert"
+                className="rounded-[12px] border border-primary/25 bg-primary/[0.07] px-3.5 py-3 text-[12px] leading-5 text-[#D4D4D8]">
+                {saveError}
+              </motion.div>
+            )}
             <div className="flex items-center gap-3 pt-2">
               {step > 0 && (
                 <Button variant="outline" onClick={() => setStep(s => s - 1)}
@@ -191,20 +197,7 @@ export default function OnboardingPage() {
         </AnimatePresence>
 
         <p className="text-center text-[12px] text-[#71717A] mt-6">
-          <button 
-            disabled={saving}
-            onClick={async () => {
-              if (!user) return;
-              setSaving(true);
-              await supabase.from('users').update({ onboarding_complete: true }).eq('id', user.id);
-              // Force local state update so ProtectedRoute sees it
-              useAuthStore.setState({ onboardingComplete: true });
-              navigate('/dashboard');
-            }} 
-            className="hover:text-[#FAFAFA] transition-colors"
-          >
-            Skip for now →
-          </button>
+          Complete these quick steps to personalise Creator OS and create your workspace.
         </p>
       </div>
     </div>

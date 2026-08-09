@@ -8,6 +8,7 @@ interface AuthState {
   membershipStatus: string | null;
   subscriptionTier: string | null;
   whopId: string | null;
+  avatarUrl: string | null;
   onboardingComplete: boolean | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   membershipStatus: null,
   subscriptionTier: null,
   whopId: null,
+  avatarUrl: null,
   onboardingComplete: null,
   isLoading: true,
   setUser: (user) => set({ user }),
@@ -31,12 +33,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     let status = null;
     let tier = null;
     let whopId = null;
+    let avatarUrl = null;
     let onboarded = null;
 
     if (session?.user) {
       const { data } = await supabase
         .from('users')
-        .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id')
+        .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url')
         .eq('id', session.user.id)
         .single();
       if (data) {
@@ -44,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         status = expired ? 'inactive' : data.membership_status;
         tier = expired ? 'free' : data.subscription_tier;
         whopId = data.whop_id;
+        avatarUrl = data.avatar_url;
         onboarded = data.onboarding_complete;
       }
     }
@@ -54,13 +58,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       membershipStatus: status,
       subscriptionTier: tier,
       whopId,
+      avatarUrl,
       onboardingComplete: onboarded,
       isLoading: false,
     });
   },
   signOut: async () => {
     await supabase.auth.signOut();
-    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, onboardingComplete: null });
+    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null });
   },
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession();

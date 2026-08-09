@@ -38,7 +38,7 @@ const HookEngine     = lazy(() => import('./components/modules/HookEngine').then
 const CaptionOS      = lazy(() => import('./components/modules/CaptionOS').then(m => ({ default: m.CaptionOS })));
 const LaunchCenter   = lazy(() => import('./components/modules/LaunchCenter').then(m => ({ default: m.LaunchCenter })));
 const KnowledgeVault = lazy(() => import('./components/modules/KnowledgeVault').then(m => ({ default: m.KnowledgeVault })));
-const PromptLibrary  = lazy(() => import('./components/modules/StubModules').then(m => ({ default: m.PromptLibrary })));
+const PromptLibrary  = lazy(() => import('./components/modules/PromptLibrary').then(m => ({ default: m.PromptLibrary })));
 
 function PageLoader() {
   return (

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { User, Bell, Shield, Database, Trash2, Save, Loader2 } from 'lucide-react';
+import { User, Bell, Shield, Database, Trash2, Save, Loader2, Camera } from 'lucide-react';
 
 const TABS = [
   { id: 'profile',       label: 'Profile',       icon: User },
@@ -39,8 +39,11 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 function ProfileTab() {
   const { user } = useAuthStore();
   const [name, setName] = useState(user?.email?.split('@')[0] ?? '');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.user_metadata?.avatar_url ?? null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarInput = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
     if (!user) return;
@@ -48,6 +51,35 @@ function ProfileTab() {
     await supabase.from('users').update({ full_name: name }).eq('id', user.id);
     setSaving(false); setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith('image/') || file.size > 5 * 1024 * 1024) {
+      setAvatarError('Choose an image under 5 MB.');
+      return;
+    }
+    setAvatarError(null);
+    setSaving(true);
+    const extension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+    const path = `${user.id}/avatar.${extension}`;
+    const { error: uploadError } = await supabase.storage.from('user-avatars').upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type });
+    if (uploadError) {
+      setAvatarError('We could not upload your avatar. Please try again.');
+      setSaving(false);
+      return;
+    }
+    const { data } = supabase.storage.from('user-avatars').getPublicUrl(path);
+    const nextUrl = `${data.publicUrl}?v=${Date.now()}`;
+    const { error: updateError } = await supabase.from('users').update({ avatar_url: nextUrl }).eq('id', user.id);
+    if (updateError) setAvatarError('Your image uploaded, but we could not save it to your profile.');
+    else {
+      setAvatarUrl(nextUrl);
+      useAuthStore.setState({ avatarUrl: nextUrl });
+    }
+    setSaving(false);
+    event.target.value = '';
   };
 
   return (
@@ -65,12 +97,15 @@ function ProfileTab() {
 
       <Section title="Avatar">
         <div className="flex items-center gap-5">
-          <div className="h-16 w-16 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[24px] font-bold text-primary">
-            {name.charAt(0).toUpperCase()}
+          <div className="h-16 w-16 overflow-hidden rounded-full border border-primary/30 bg-primary/20 flex items-center justify-center text-[24px] font-bold text-primary">
+            {avatarUrl ? <img src={avatarUrl} alt="Your profile avatar" className="h-full w-full object-cover" /> : name.charAt(0).toUpperCase()}
           </div>
           <div>
             <p className="text-[13px] text-[#FAFAFA] mb-1">Profile picture</p>
-            <p className="text-[12px] text-[#71717A]">Avatar upload coming soon. Using initial for now.</p>
+            <p className="text-[12px] text-[#71717A]">JPG, PNG, WebP, or GIF up to 5 MB.</p>
+            <input ref={avatarInput} onChange={handleAvatar} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" />
+            <Button type="button" variant="ghost" size="sm" disabled={saving} onClick={() => avatarInput.current?.click()} className="mt-2 h-8 px-0 text-primary hover:bg-transparent hover:text-primary/80"><Camera className="mr-1.5 h-3.5 w-3.5" />Change photo</Button>
+            {avatarError && <p className="mt-2 text-xs text-[#D4D4D8]">{avatarError}</p>}
           </div>
         </div>
       </Section>

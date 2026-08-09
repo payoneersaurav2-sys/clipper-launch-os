@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import { buildKnowledgeAnswerPrompt } from '@/lib/ai-services';
 import { useAI } from '@/hooks/useAI';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ interface KnowledgeItem {
   file_type: string;
   tags: string[];
   created_at: string;
+  file_url?: string | null;
 }
 
 function useKnowledge() {
@@ -62,36 +64,61 @@ function useKnowledge() {
 
 function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) {
   const { addItem } = useKnowledge();
+  const { user } = useAuthStore();
   const [mode, setMode] = useState<'text' | 'url'>('text');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [url, setUrl] = useState('');
   const [tags, setTags] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setFormError('Choose a file under 10 MB.');
+      return;
+    }
+    setFormError(null);
+    setSelectedFile(file);
     const text = await file.text();
     setTitle(file.name.replace(/\.[^/.]+$/, ''));
-    setContent(text.slice(0, 10000)); // cap at 10k chars
+    setContent(file.type === 'application/pdf' ? '' : text.slice(0, 10000)); // PDFs are stored safely but require extracted text to inform AI.
     setMode('text');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || (!content.trim() && !url.trim())) return;
+    if (!title.trim() || (!content.trim() && !url.trim() && !selectedFile)) return;
     setSaving(true);
-    await addItem.mutateAsync({
-      workspace_id: wsId,
-      title: title.trim(),
-      content: content.trim() || url.trim(),
-      file_type: mode === 'url' ? 'url' : 'text',
-      tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-    });
-    setSaving(false);
-    onClose();
+    setFormError(null);
+    try {
+      let fileUrl: string | undefined;
+      if (selectedFile) {
+        if (!user) throw new Error('Sign in again before uploading a file.');
+        const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '-');
+        const path = `${user.id}/${wsId}/${crypto.randomUUID()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage.from('knowledge-assets').upload(path, selectedFile, { upsert: false, contentType: selectedFile.type || 'application/octet-stream' });
+        if (uploadError) throw uploadError;
+        fileUrl = path;
+      }
+      await addItem.mutateAsync({
+        workspace_id: wsId,
+        title: title.trim(),
+        content: content.trim() || url.trim() || `Attached source: ${selectedFile?.name ?? 'file'}`,
+        file_url: fileUrl,
+        file_type: mode === 'url' ? 'url' : (selectedFile?.name.split('.').pop()?.toLowerCase() ?? 'text'),
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      });
+      onClose();
+    } catch {
+      setFormError('We could not save this resource. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -127,8 +154,9 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
               <input ref={fileRef} type="file" accept=".txt,.md,.pdf" onChange={handleFile} className="hidden" />
               <button type="button" onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-2 text-[12px] text-[#71717A] hover:text-primary transition-colors">
-                <Upload className="h-3.5 w-3.5" />Upload file (.txt, .md, .pdf)
+                <Upload className="h-3.5 w-3.5" />{selectedFile ? selectedFile.name : 'Upload file (.txt, .md, .pdf)'}
               </button>
+              <p className="text-[11px] leading-4 text-[#71717A]">Text files are available to AI immediately. PDFs are retained as private source files; paste relevant text to make them searchable.</p>
             </>
           ) : (
             <Input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" type="url"
@@ -137,11 +165,12 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
 
           <Input value={tags} onChange={e => setTags(e.target.value)} placeholder="Tags (comma separated)"
             className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A]" />
+          {formError && <p className="rounded-[10px] border border-primary/20 bg-primary/[0.06] px-3 py-2 text-[12px] text-[#D4D4D8]">{formError}</p>}
 
           <div className="flex gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}
               className="flex-1 h-10 rounded-[10px] border-white/[0.06] bg-transparent text-[#A1A1AA] text-[13px]">Cancel</Button>
-            <Button type="submit" disabled={saving || !title.trim() || (!content.trim() && !url.trim())}
+            <Button type="submit" disabled={saving || !title.trim() || (!content.trim() && !url.trim() && !selectedFile)}
               className="flex-1 h-10 rounded-[10px] bg-primary text-white hover:bg-primary/90 text-[13px]">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Add to Vault'}
             </Button>

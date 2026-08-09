@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Check, Link2, Sparkles } from 'lucide-react';
 import { CREDIT_PACKS } from '@/lib/credits';
 import { useCredits } from '@/hooks/useCredits';
@@ -31,6 +32,11 @@ export default function CreditStorePage() {
           <p className="mt-1 text-[11px] text-muted-foreground">{balance?.tier === 'free' ? 'Your one-time free balance' : 'Subscription and purchased credits'}</p>
         </section>
       </header>
+      {balance?.tier === 'free' ? (
+        <section className="relative overflow-hidden rounded-[20px] border border-primary/25 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,.18),transparent_45%),#111111] p-6 sm:p-8">
+          <div className="max-w-xl"><p className="text-[11px] font-semibold uppercase tracking-[.16em] text-primary">Your next step</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Unlock your full creator workflow.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Your free credits are designed to help you experience CreatorOS. Upgrade to Creator for a recurring monthly allowance and more room to build.</p><Link to="/pricing" className="mt-5 inline-flex h-11 items-center justify-center rounded-[11px] bg-primary px-5 text-sm font-semibold text-white shadow-[0_0_22px_rgba(124,58,237,.25)] transition hover:bg-primary/90">View Creator plans</Link></div>
+        </section>
+      ) : <>
       {!whopId && (
         <section className="flex flex-col justify-between gap-4 rounded-2xl border border-primary/25 bg-primary/[0.05] p-5 sm:flex-row sm:items-center">
           <div className="flex gap-3"><Link2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><div><h2 className="text-sm font-semibold text-foreground">Connect Whop before checkout</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">This securely delivers verified purchases to this CreatorOS account.</p></div></div>
@@ -58,6 +64,7 @@ export default function CreditStorePage() {
           );
         })}
       </div>
+      </>}
     </div>
   );
 }

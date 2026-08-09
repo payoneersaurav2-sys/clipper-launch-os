@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { 
   LayoutDashboard, Lightbulb, PenTool, Type, Rocket, 
   Video, Library, TerminalSquare, LineChart, Settings,
-  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag, Menu, X, Coins
+  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag, Menu, X, Coins, Sparkles, ArrowUpRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -62,7 +62,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
   const location = useLocation();
   const navigate = useNavigate();
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { signOut, user } = useAuthStore();
+  const { signOut, user, avatarUrl } = useAuthStore();
 
   const isActive = (href: string) =>
     href === '/dashboard' ? location.pathname === href : location.pathname.startsWith(href);
@@ -126,8 +126,8 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
       {/* User / logout */}
       <div className="p-3 border-t border-white/[0.06]">
         <div className={cn('flex items-center gap-3 p-2 rounded-[10px] hover:bg-white/[0.04] transition-colors cursor-pointer group', collapsed && 'justify-center')}>
-          <div className="h-7 w-7 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[12px] font-medium text-primary shrink-0">
-            {user?.email?.charAt(0).toUpperCase() || 'C'}
+          <div className="h-7 w-7 overflow-hidden rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[12px] font-medium text-primary shrink-0">
+            {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : (user?.email?.charAt(0).toUpperCase() || 'C')}
           </div>
           {!collapsed && (
             <>
@@ -158,6 +158,7 @@ export default function DashboardLayout() {
   const { showTour, completeTour } = useTour();
   const location = useLocation();
   const { data: creditBalance } = useCredits();
+  const lowCreditPromptShown = useRef(false);
 
   useWorkspaces();
 
@@ -174,6 +175,16 @@ export default function DashboardLayout() {
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  useEffect(() => {
+    const available = creditBalance?.available;
+    if (lowCreditPromptShown.current || available === undefined || available <= 0) return;
+    const threshold = creditBalance?.tier === 'free' ? 25 : 50;
+    if (available <= threshold) {
+      lowCreditPromptShown.current = true;
+      setCreditNotice(`Only ${available} credits remain.`);
+    }
+  }, [creditBalance?.available, creditBalance?.tier]);
 
   useEffect(() => {
     const handleCreditRequirement = (event: Event) => {
@@ -304,26 +315,23 @@ export default function DashboardLayout() {
 
       <AnimatePresence>
         {creditNotice && (
-          <motion.aside
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            role="alert"
-            className="fixed bottom-5 right-5 z-[70] w-[min(390px,calc(100vw-2.5rem))] rounded-2xl border border-primary/35 bg-[#121014]/95 p-4 shadow-2xl backdrop-blur-xl"
-          >
-            <div className="flex gap-3">
-              <Coins className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[#FAFAFA]">Not enough CreatorOS credits</p>
-                <p className="mt-1 text-xs leading-5 text-[#A1A1AA]">{creditNotice.replace(/^\[INSUFFICIENT_CREDITS\]\s*/, '')}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <Link to="/dashboard/credits" onClick={() => setCreditNotice(null)} className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90">Buy credits</Link>
-                  <Link to="/pricing" onClick={() => setCreditNotice(null)} className="rounded-lg px-2 py-2 text-xs font-semibold text-[#D4D4D8] transition-colors hover:text-white">View plans</Link>
-                  <button type="button" onClick={() => setCreditNotice(null)} className="ml-auto p-1 text-[#71717A] transition-colors hover:text-white" aria-label="Dismiss credit message"><X className="h-4 w-4" /></button>
-                </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[70] flex items-end justify-center bg-black/55 p-3 backdrop-blur-sm sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-labelledby="credit-upgrade-title" onClick={() => setCreditNotice(null)}>
+            <motion.section initial={{ opacity: 0, y: 16, scale: .98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16 }} transition={{ duration: .18 }} onClick={event => event.stopPropagation()} className="relative w-full max-w-md overflow-hidden rounded-[22px] border border-white/[0.11] bg-[#111111] p-6 shadow-[0_24px_80px_rgba(0,0,0,.6)] sm:p-7">
+              <div className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" />
+              <button type="button" onClick={() => setCreditNotice(null)} className="absolute right-4 top-4 rounded-lg p-1.5 text-[#71717A] transition-colors hover:bg-white/[0.06] hover:text-white" aria-label="Close"><X className="h-4 w-4" /></button>
+              <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10"><Sparkles className="h-5 w-5 text-primary" /></div>
+              <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-primary">CreatorOS capacity</p>
+              <h2 id="credit-upgrade-title" className="mt-2 text-[22px] font-semibold tracking-tight text-[#FAFAFA]">{creditBalance?.tier === 'free' ? 'Keep your momentum going' : creditBalance?.tier === 'creator' ? 'Ready for more capacity?' : 'Add more creative capacity'}</h2>
+              <p className="mt-2 text-sm leading-6 text-[#A1A1AA]">{creditBalance?.tier === 'free' ? 'You’ve experienced CreatorOS. Upgrade to unlock a larger monthly creative allowance and keep your workflow moving.' : creditNotice.replace(/^\[INSUFFICIENT_CREDITS\]\s*/, '')}</p>
+              <div className="mt-6 space-y-2">
+                {creditBalance?.tier === 'free' ? <Link to="/pricing" onClick={() => setCreditNotice(null)} className="flex h-11 w-full items-center justify-center gap-2 rounded-[11px] bg-primary text-sm font-semibold text-white shadow-[0_0_22px_rgba(124,58,237,.25)] transition hover:bg-primary/90">Explore Creator plans <ArrowUpRight className="h-4 w-4" /></Link> : <>
+                  {creditBalance?.tier === 'creator' && <Link to="/pricing" onClick={() => setCreditNotice(null)} className="flex h-11 w-full items-center justify-center gap-2 rounded-[11px] bg-primary text-sm font-semibold text-white shadow-[0_0_22px_rgba(124,58,237,.25)] transition hover:bg-primary/90">Upgrade to Pro <ArrowUpRight className="h-4 w-4" /></Link>}
+                  <Link to="/dashboard/credits" onClick={() => setCreditNotice(null)} className="flex h-11 w-full items-center justify-center rounded-[11px] border border-white/[0.1] bg-white/[0.03] text-sm font-semibold text-[#FAFAFA] transition hover:bg-white/[0.07]">Add credits</Link>
+                </>}
+                <button type="button" onClick={() => setCreditNotice(null)} className="h-9 w-full text-xs font-medium text-[#71717A] transition hover:text-[#D4D4D8]">Maybe later</button>
               </div>
-            </div>
-          </motion.aside>
+            </motion.section>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
