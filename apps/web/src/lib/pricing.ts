@@ -39,18 +39,24 @@ export const unresolvedCheckoutMapping = {
   reason: 'Duplicates source #4. It is deliberately unassigned; confirm the Whop plan before using it.',
 } as const;
 
-const creatorFeatures = [
+const baseFeatures = [
   'Idea Studio and Hook Engine',
   'Platform-ready Caption OS',
   'Core Campaign OS and Clip Pipeline',
-  '1 workspace · 10 active campaigns',
 ];
 
-const proFeatures = [
-  ...creatorFeatures,
+const creatorFeatures = [
+  ...baseFeatures,
   '3 workspaces · 50 active campaigns',
   '30-item content batches',
   'Higher AI workflow capacity',
+];
+
+const proFeatures = [
+  ...baseFeatures,
+  '10 workspaces · 250 active campaigns',
+  '50-item content batches',
+  'Highest AI workflow capacity',
 ];
 
 export const pricingPlans: PricingPlan[] = [
@@ -66,7 +72,7 @@ export const pricingPlans: PricingPlan[] = [
   },
   {
     id: 'agency', name: 'Agency', positioning: 'Scale content across brands and clients.', monthlyPrice: 149, annualPrice: 1490, cta: 'Start Scaling',
-    features: [...proFeatures, '10 workspaces · 250 active campaigns', '50-item content batches', 'Highest AI workflow capacity'],
+    features: proFeatures, // Agency has the same capacity limits as Pro in the current configuration
     checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
   },
 ];

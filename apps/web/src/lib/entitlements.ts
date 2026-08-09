@@ -30,6 +30,12 @@ export type Entitlements = {
 /**
  * Client-side mirror for rendering and helpful upgrade guidance only.
  * The database migration is authoritative for every enforceable limit.
+ *
+ * Tier summary:
+ *   free    — all core tools, 1 workspace, 10 active campaigns
+ *   creator — 3 workspaces, 50 active campaigns, 30-item batches
+ *   pro     — 10 workspaces, 250 active campaigns, 50-item batches
+ *   agency  — same capacity as pro, higher monthly credit allowance
  */
 export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities; limits: PlanLimits }> = {
   free: {
@@ -42,7 +48,7 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       batch_generation: false,
       multi_workspace: false,
     },
-    limits: { workspaces: 1, active_campaigns: 1, ai_generations_per_month: 0, content_batch_size: 5, max_output_tokens: 4000 },
+    limits: { workspaces: 1, active_campaigns: 10, ai_generations_per_month: 0, content_batch_size: 5, max_output_tokens: 4000 },
   },
   creator: {
     capabilities: {
@@ -51,10 +57,10 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       clip_pipeline: true,
       basic_analytics: true,
       scheduling: true,
-      batch_generation: false,
-      multi_workspace: false,
+      batch_generation: true,
+      multi_workspace: true,
     },
-    limits: { workspaces: 1, active_campaigns: 10, ai_generations_per_month: 250, content_batch_size: 10, max_output_tokens: 4000 },
+    limits: { workspaces: 3, active_campaigns: 50, ai_generations_per_month: 250, content_batch_size: 30, max_output_tokens: 4000 },
   },
   pro: {
     capabilities: {
@@ -66,7 +72,7 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       batch_generation: true,
       multi_workspace: true,
     },
-    limits: { workspaces: 3, active_campaigns: 50, ai_generations_per_month: 1000, content_batch_size: 30, max_output_tokens: 8000 },
+    limits: { workspaces: 10, active_campaigns: 250, ai_generations_per_month: 1000, content_batch_size: 50, max_output_tokens: 8000 },
   },
   agency: {
     capabilities: {
@@ -94,6 +100,7 @@ export function hasEntitlement(
 }
 
 export function requiredPlanFor(feature: EntitlementFeature): PlanTier {
-  if (feature === 'batch_generation' || feature === 'multi_workspace') return 'pro';
+  // batch_generation and multi_workspace unlock at creator tier (not pro).
+  if (feature === 'batch_generation' || feature === 'multi_workspace') return 'creator';
   return 'creator';
 }
