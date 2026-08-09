@@ -112,8 +112,34 @@ export default function OnboardingPage() {
         throw upsertErr;
       }
 
-      // Step 2: Now that the user row exists, create the workspace safely
-      await createWorkspace.mutateAsync(form.workspaceName || 'My Workspace');
+      // Step 2: Query Supabase directly (bypass TanStack cache) to get the
+      // true live workspace count. The useWorkspaces hook auto-creates a
+      // workspace in its useEffect, so by the time the user reaches step 7
+      // a workspace may already exist. A free account is capped at 1, so we
+      // must rename rather than INSERT to avoid PLAN_LIMIT_REACHED.
+      const targetName = form.workspaceName.trim() || 'My Workspace';
+      const { data: liveWorkspaces, error: wsQueryErr } = await supabase
+        .from('workspaces')
+        .select('id')
+        .is('deleted_at', null)
+        .limit(1);
+
+      if (wsQueryErr) {
+        console.error("Failed to query workspaces:", wsQueryErr);
+        throw wsQueryErr;
+      }
+
+      if (liveWorkspaces && liveWorkspaces.length > 0) {
+        // Workspace already exists — rename it to the user's chosen name.
+        const { error: renameErr } = await supabase
+          .from('workspaces')
+          .update({ name: targetName })
+          .eq('id', liveWorkspaces[0].id);
+        if (renameErr) throw renameErr;
+      } else {
+        // No workspace yet — create one fresh.
+        await createWorkspace.mutateAsync(targetName);
+      }
 
       useAuthStore.setState({ onboardingComplete: true });
       navigate('/dashboard');
