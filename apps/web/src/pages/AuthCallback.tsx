@@ -40,13 +40,14 @@ export default function AuthCallback() {
       return;
     }
 
-    const socialProvider = searchParams.get('provider');
-    if (socialProvider === 'google' || socialProvider === 'facebook') {
+    // Detect Supabase social OAuth (Google etc.) — no Whop state stored means it's a social redirect
+    const transaction = getStoredWhopTransaction(searchParams);
+    if (!transaction) {
       (async () => {
         try {
-          setStatus(`Connecting ${socialProvider === 'google' ? 'Google' : 'Facebook'}...`);
+          setStatus('Connecting your account...');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error || !data.user || !data.session) throw error ?? new Error('No social account session was created.');
+          if (error || !data.user || !data.session) throw error ?? new Error('No session was created.');
           const { data: profile, error: profileError } = await supabase.from('users').upsert({
             id: data.user.id,
             full_name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? data.user.email?.split('@')[0] ?? 'Creator',
@@ -57,7 +58,7 @@ export default function AuthCallback() {
           navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
         } catch (err: unknown) {
           exchangeInProgress = false;
-          navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Social sign-in failed')}`);
+          navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
         }
       })();
       return;

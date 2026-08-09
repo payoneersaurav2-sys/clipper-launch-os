@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Eager
 import LandingLayout   from './layouts/LandingLayout';
@@ -106,7 +105,5 @@ function CreatorOSRoutes() {
 }
 
 export default function App() {
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  if (!googleClientId) return <CreatorOSRoutes />;
-  return <GoogleOAuthProvider clientId={googleClientId}><CreatorOSRoutes /></GoogleOAuthProvider>;
+  return <CreatorOSRoutes />;
 }
