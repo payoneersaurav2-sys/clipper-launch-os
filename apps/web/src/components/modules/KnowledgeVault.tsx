@@ -107,11 +107,10 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
       throw new Error('Sign in again to ingest knowledge.');
     }
 
-    if (currentSession.access_token) {
-      return currentSession.access_token;
-    }
-
     if (!currentSession.refresh_token) {
+      if (currentSession.access_token) {
+        return currentSession.access_token;
+      }
       throw new Error('Sign in again to ingest knowledge.');
     }
 
@@ -121,16 +120,13 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
       throw new Error('Sign in again to ingest knowledge.');
     }
 
-    if (refreshedData?.session) {
-      setSession(refreshedData.session);
-    }
-
-    const finalSession = refreshedData?.session ?? currentSession;
-    const accessToken = finalSession?.access_token;
-    if (!accessToken) {
+    if (!refreshedData?.session?.access_token) {
+      console.error('supabase.auth.refreshSession returned no access token', refreshedData);
       throw new Error('Sign in again to ingest knowledge.');
     }
-    return accessToken;
+
+    setSession(refreshedData.session);
+    return refreshedData.session.access_token;
   };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {

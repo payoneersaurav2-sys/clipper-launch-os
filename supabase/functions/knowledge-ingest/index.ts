@@ -4,7 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'Authorization, X-Client-Info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
 };
 
 function json(body: unknown, status = 200) {
@@ -242,23 +243,32 @@ serve(async (req) => {
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) return json({ ...buildError('CONFIG_MISSING', 'Knowledge ingestion is not configured.' ) }, 503);
 
-    const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { apikey: supabaseAnonKey, authorization: authHeader },
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: {
+        headers: {
+          Authorization: authHeader,
+        },
+      },
     });
-    if (!userResponse.ok) {
-      const responseText = await userResponse.text().catch(() => 'Unable to parse auth user response');
-      console.warn('knowledge-ingest auth validation failed', { status: userResponse.status, responseText });
+
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.warn('knowledge-ingest auth validation failed', { authError, authData });
       return json({
         ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
-        debug: { authHeaderPresent: Boolean(authHeader), userResponseStatus: userResponse.status, userResponseText: responseText.slice(0, 200) },
+        debug: {
+          authHeaderPresent: Boolean(authHeader),
+          authError: authError?.message ?? null,
+          user: authData?.user ?? null,
+        },
       }, 401);
     }
-    const user = await userResponse.json();
-    const userId = user.user?.id as string | undefined;
+
+    const userId = authData.user.id;
     if (!userId) {
       return json({
         ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
-        debug: { authHeaderPresent: Boolean(authHeader), userResponseStatus: userResponse.status, user: user ?? null },
+        debug: { authHeaderPresent: Boolean(authHeader), user: authData.user ?? null },
       }, 401);
     }
 
