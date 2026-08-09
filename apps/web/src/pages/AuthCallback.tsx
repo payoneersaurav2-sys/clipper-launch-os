@@ -71,6 +71,9 @@ export default function AuthCallback() {
     if (!transaction) {
       (async () => {
         try {
+          if (!code) {
+            throw new Error('Authentication failed because no OAuth code was returned.');
+          }
           setStatus('Connecting your account...');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error || !data.user || !data.session) throw error ?? new Error('No session was created.');

@@ -1,15 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-import { useAuthStore } from '@/stores/useAuthStore';
 import { Loader2 } from 'lucide-react';
 
 type GoogleSignInButtonProps = { onError: (message: string) => void };
 
 /** Custom-branded Google sign-in button using Supabase OAuth redirect. */
 export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
-  const navigate = useNavigate();
-  const syncSession = useAuthStore((state) => state.syncSession);
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {

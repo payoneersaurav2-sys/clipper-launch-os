@@ -9,7 +9,8 @@ export type CreditOperation =
   | 'campaign_content_plan'
   | 'storyboard_script'
   | 'analytics_analysis'
-  | 'knowledge_answer';
+  | 'knowledge_answer'
+  | 'prompt_library_execution';
 
 export const CREDIT_COSTS: Record<CreditOperation, { credits: number; measuredP95CostUsd: number }> = {
   idea_generation: { credits: 21, measuredP95CostUsd: 0.0020922 },
@@ -23,6 +24,7 @@ export const CREDIT_COSTS: Record<CreditOperation, { credits: number; measuredP9
   storyboard_script: { credits: 4, measuredP95CostUsd: 0.00036225 },
   analytics_analysis: { credits: 5, measuredP95CostUsd: 0.0004401 },
   knowledge_answer: { credits: 3, measuredP95CostUsd: 0.00028065 },
+  prompt_library_execution: { credits: 4, measuredP95CostUsd: 0.0003402 },
 };
 
 export type CreditPack = {
