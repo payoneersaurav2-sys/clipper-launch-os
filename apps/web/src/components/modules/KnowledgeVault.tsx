@@ -125,7 +125,7 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
         if (!/^https?:\/\//i.test(normalizedUrl)) {
           throw new Error('Enter a valid https:// URL to ingest.');
         }
-        const { data, error } = await supabase.functions.invoke<{ item: KnowledgeItem; message?: string }>('knowledge-ingest', {
+        const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
           body: {
             workspace_id: wsId,
             title: title.trim(),
@@ -134,6 +134,9 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
           },
         });
         if (error) throw new Error((error as { message?: string }).message ?? 'The website could not be ingested.');
+        if (data?.success === false) {
+          throw new Error(data.error?.message ?? data.message ?? 'The website could not be ingested.');
+        }
         if (!data?.item) throw new Error('The website could not be ingested.');
         onClose();
         return;
@@ -331,7 +334,7 @@ export function KnowledgeVault() {
     if (!wsId || item.source_type !== 'website' || !item.source_url) return;
     setRefreshingId(item.id);
     try {
-      const { data, error } = await supabase.functions.invoke<{ item: KnowledgeItem; message?: string }>('knowledge-ingest', {
+      const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
         body: {
           workspace_id: wsId,
           existing_item_id: item.id,
@@ -340,7 +343,9 @@ export function KnowledgeVault() {
           tags: item.tags ?? [],
         },
       });
-      if (error || !data?.item) throw new Error((error as { message?: string }).message ?? 'The website could not be refreshed.');
+      if (error) throw new Error((error as { message?: string }).message ?? 'The website could not be refreshed.');
+      if (data?.success === false) throw new Error(data.error?.message ?? data.message ?? 'The website could not be refreshed.');
+      if (!data?.item) throw new Error('The website could not be refreshed.');
       await queryClient.invalidateQueries({ queryKey: ['knowledge', wsId] });
     } catch {
       setAnswerError('The website could not be refreshed right now.');
