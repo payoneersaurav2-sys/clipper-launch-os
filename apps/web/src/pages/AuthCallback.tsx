@@ -34,16 +34,20 @@ export default function AuthCallback() {
     }
 
     const code = searchParams.get('code');
-    const hash = window.location.hash;
-
-    // Detect Supabase implicit flow (Google OAuth returns #access_token=... instead of ?code=...)
-    if (!code && hash && hash.includes('access_token=')) {
+    // If no code and no Whop transaction, it might be a Supabase implicit flow where
+    // the supabase-js client already stripped the #access_token from the URL.
+    if (!code && !getStoredWhopTransaction(searchParams)) {
       (async () => {
         try {
-          setStatus('Connecting your account...');
-          // Supabase JS client automatically parses the hash and sets the session. We just wait for it.
+          setStatus('Verifying session...');
+          // Check if Supabase successfully established the session in the background
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          if (sessionError || !session) throw sessionError ?? new Error('Session could not be retrieved from URL.');
+          
+          if (sessionError || !session) {
+            exchangeInProgress = false;
+            navigate(`/login?error=Authentication+failed+or+was+cancelled.`);
+            return;
+          }
           
           const { data: profile, error: profileError } = await supabase.from('users').upsert({
             id: session.user.id,
@@ -59,14 +63,6 @@ export default function AuthCallback() {
           navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
         }
       })();
-      return;
-    }
-
-    if (!code) {
-      exchangeInProgress = false;
-      // Dump the entire URL so we can see what Supabase actually sent back
-      const dump = encodeURIComponent(`URL: ${window.location.href}`);
-      navigate(`/login?error=No+authorization+code+provided.+${dump}`);
       return;
     }
 
