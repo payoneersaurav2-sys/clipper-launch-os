@@ -98,15 +98,56 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
   },
 };
 
+export function normalizePlanTier(value: unknown): PlanTier | undefined {
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'free' || normalized === 'creator' || normalized === 'pro' || normalized === 'agency') {
+    return normalized;
+  }
+  return undefined;
+}
+
+function normalizeBoolean(value: unknown): boolean {
+  return value === true || value === 'true' || value === 1 || value === '1';
+}
+
+export function normalizeCapabilities(capabilities: unknown): PlanCapabilities | null {
+  if (!capabilities || typeof capabilities !== 'object') return null;
+  const raw = capabilities as Record<string, unknown>;
+  return {
+    core_ai: normalizeBoolean(raw.core_ai),
+    campaigns: normalizeBoolean(raw.campaigns),
+    clip_pipeline: normalizeBoolean(raw.clip_pipeline),
+    basic_analytics: normalizeBoolean(raw.basic_analytics),
+    scheduling: normalizeBoolean(raw.scheduling),
+    batch_generation: normalizeBoolean(raw.batch_generation),
+    multi_workspace: normalizeBoolean(raw.multi_workspace),
+    knowledge_vault: normalizeBoolean(raw.knowledge_vault),
+    prompt_library: normalizeBoolean(raw.prompt_library),
+  };
+}
+
+export function normalizeLimits(limits: unknown): PlanLimits | null {
+  if (!limits || typeof limits !== 'object') return null;
+  const raw = limits as Record<string, unknown>;
+  return {
+    workspaces: Number(raw.workspaces ?? 0),
+    active_campaigns: Number(raw.active_campaigns ?? 0),
+    ai_generations_per_month: Number(raw.ai_generations_per_month ?? 0),
+    content_batch_size: Number(raw.content_batch_size ?? 0),
+    max_output_tokens: Number(raw.max_output_tokens ?? 0),
+  };
+}
+
 export function isPlanTier(value: unknown): value is PlanTier {
-  return value === 'free' || value === 'creator' || value === 'pro' || value === 'agency';
+  return normalizePlanTier(value) !== undefined;
 }
 
 export function hasEntitlement(
   entitlements: Entitlements | null | undefined,
   feature: EntitlementFeature,
 ) {
-  return entitlements?.status === 'active' && entitlements.capabilities?.[feature] === true;
+  return entitlements?.status === 'active' && normalizeBoolean(entitlements.capabilities?.[feature]);
 }
 
 export function requiredPlanFor(feature: EntitlementFeature): PlanTier {
