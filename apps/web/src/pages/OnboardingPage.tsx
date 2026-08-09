@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
@@ -63,6 +63,12 @@ export default function OnboardingPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { createWorkspace } = useWorkspaces();
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
