@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import BrandMark from '@/components/BrandMark';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [success, setSuccess] = useState('');
   const [whopLoading, setWhopLoading] = useState(false);
-  const [socialLoading, setSocialLoading] = useState(false);
+  const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,18 +85,6 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setSocialLoading(true);
-    setErr('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?provider=google` },
-    });
-    if (error) {
-      setSocialLoading(false);
-      setErr(error.message);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6 animate-in fade-in zoom-in-95 duration-500 font-sans text-[#FAFAFA] w-full max-w-[380px] mx-auto p-8 rounded-[20px] bg-[#111111] border border-white/[0.06] shadow-xl">
@@ -160,11 +149,9 @@ export default function LoginPage() {
       </div>
 
       {/* Whop OAuth */}
-      <button type="button" onClick={handleGoogleLogin} disabled={socialLoading || whopLoading || loading}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-[12px] border border-white/[0.10] bg-white text-[14px] font-semibold text-[#171717] transition-colors hover:bg-[#F4F4F5] disabled:cursor-not-allowed disabled:opacity-65">
-        <span className="text-[18px] font-bold text-[#4285F4]" aria-hidden="true">G</span>
-        {socialLoading ? 'Redirecting to Googleâ€¦' : 'Continue with Google'}
-      </button>
+      {googleConfigured ? <GoogleSignInButton onError={setErr} /> : (
+        <p className="text-center text-xs text-[#71717A]">Google sign-in is being configured.</p>
+      )}
       <WhopOAuthButton onClick={handleWhopLogin} loading={whopLoading} />
 
       {/* Toggle login/signup */}
