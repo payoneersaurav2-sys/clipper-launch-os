@@ -227,7 +227,15 @@ export default function DashboardHome() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] text-[#A1A1AA] line-clamp-1">{gen.promptSummary}</p>
-                    <p className="text-[11px] text-[#71717A] capitalize">{gen.category} · {gen.usage.totalTokens} tokens</p>
+                    <p className="text-[11px] text-[#71717A] capitalize">
+                      {gen.category} · {
+                        gen.category === 'idea' ? 21 :
+                        gen.category === 'hook' ? 6 :
+                        gen.category === 'caption' ? 3 :
+                        gen.category === 'campaign' ? 18 :
+                        gen.category === 'analytics' ? 5 : 1
+                      } credits
+                    </p>
                   </div>
                   {gen.isFavorite && <Star className="h-3.5 w-3.5 text-primary shrink-0 fill-primary" />}
                 </div>
