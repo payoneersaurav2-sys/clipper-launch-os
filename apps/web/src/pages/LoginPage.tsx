@@ -132,6 +132,9 @@ export default function LoginPage() {
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-white/[0.06]" />
         <span className="text-[12px] text-[#71717A]">or</span>
+        <div className="flex-1 h-px bg-white/[0.06]" />
+      </div>
+
       {/* Whop OAuth (Only for returning users) */}
       {mode === 'login' && (
         <WhopOAuthButton
