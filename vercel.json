@@ -8,7 +8,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.whop.com; form-action 'self' https://whop.com https://*.whop.com; frame-ancestors 'self' https://whop.com https://*.whop.com; worker-src 'self' blob:; upgrade-insecure-requests"
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.whop.com https://accounts.google.com https://oauth2.googleapis.com; frame-src 'self' https://accounts.google.com; form-action 'self' https://whop.com https://*.whop.com; frame-ancestors 'self' https://whop.com https://*.whop.com; worker-src 'self' blob:; upgrade-insecure-requests"
         },
         {
           "key": "X-Content-Type-Options",
