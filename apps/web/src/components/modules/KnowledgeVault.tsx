@@ -135,15 +135,20 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
         if (!/^https?:\/\//i.test(normalizedUrl)) {
           throw new Error('Enter a valid https:// URL to ingest.');
         }
-          const authHeaders = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
-          const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
-            body: {
-              workspace_id: wsId,
-              title: title.trim(),
-              url: normalizedUrl,
-              tags: normalizeTags(tags),
-            },
-            headers: authHeaders,
+        const authHeaders = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
+        const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
+          body: {
+            workspace_id: wsId,
+            title: title.trim(),
+            url: normalizedUrl,
+            tags: normalizeTags(tags),
+          },
+          headers: authHeaders,
+        });
+        if (error) throw new Error(formatFunctionError(error, data));
+        if (data?.success === false) {
+          throw new Error(formatFunctionError(null, data));
+        }
         if (!data?.item) throw new Error('The website could not be ingested.');
         onClose();
         return;
@@ -366,6 +371,20 @@ export function KnowledgeVault() {
   };
 
   return (
+    <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div>
+          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Knowledge Vault</h2>
+          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Your AI&apos;s long-term memory. Add text, files, or website sources and keep them ready for generation.</p>
+        </div>
+        {credits?.tier !== 'free' && (
+          <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px] self-start sm:self-auto shrink-0">
+            <Plus className="h-4 w-4 mr-1.5" />Add Knowledge
+          </Button>
+        )}
+      </div>
+
+      {credits?.tier === 'free' ? (
         <div className="mt-8">
           <UpgradePrompt
             feature="Knowledge Vault"
