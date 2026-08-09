@@ -5,6 +5,8 @@
 // ============================================================
 
 import { useState, useRef, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { CREDITS_QUERY_KEY } from '@/hooks/useCredits';
 import { AIPromptContext, AIResponse, AIError, GenerationCategory } from '@clipper/core/src/ai/types';
 import { requestAI } from '@/lib/ai-api';
 import { useHistoryStore } from '@/stores/useHistoryStore';
@@ -47,6 +49,7 @@ export function useAI() {
     lastResponse: null,
   });
 
+  const queryClient = useQueryClient();
   const abortRef = useRef<AbortController | null>(null);
   const addRecord  = useHistoryStore(s => s.addRecord);
   const getForCtx  = useMemoryStore(s => s.getForContext);
@@ -106,6 +109,10 @@ export function useAI() {
         });
       }
 
+      // Invalidate the credit balance immediately so the UI reflects the
+      // deduction without needing a page refresh.
+      queryClient.invalidateQueries({ queryKey: CREDITS_QUERY_KEY });
+
       setState(s => ({ ...s, isGenerating: false, lastResponse: response }));
       return response;
 
@@ -113,11 +120,13 @@ export function useAI() {
       const msg = err instanceof AIError ? `[${err.code}] ${err.message}` : String(err.message ?? err);
       if (err instanceof AIError && err.code === 'INSUFFICIENT_CREDITS') {
         window.dispatchEvent(new CustomEvent('creator-os-credit-required', { detail: msg }));
+        // Also refresh balance on insufficient credits so the UI shows 0.
+        queryClient.invalidateQueries({ queryKey: CREDITS_QUERY_KEY });
       }
       setState(s => ({ ...s, isGenerating: false, error: msg }));
       throw err;
     }
-  }, [settings, activeWorkspace, getForCtx, getTemperatureForCreativity, getMaxTokensForLength, addRecord]);
+  }, [settings, activeWorkspace, getForCtx, getTemperatureForCreativity, getMaxTokensForLength, addRecord, queryClient]);
 
   // ---- Streaming generate -----------------------------------
   const generateStream = useCallback(async (
@@ -170,6 +179,10 @@ export function useAI() {
         });
       }
 
+      // Invalidate the credit balance immediately so the UI reflects the
+      // deduction without needing a page refresh.
+      queryClient.invalidateQueries({ queryKey: CREDITS_QUERY_KEY });
+
       setState(s => ({ ...s, isGenerating: false, isStreaming: false, lastResponse: response }));
       return response;
 
@@ -178,6 +191,8 @@ export function useAI() {
         const msg = err instanceof AIError ? `[${err.code}] ${err.message}` : String(err.message ?? err);
         if (err instanceof AIError && err.code === 'INSUFFICIENT_CREDITS') {
           window.dispatchEvent(new CustomEvent('creator-os-credit-required', { detail: msg }));
+          // Also refresh balance on insufficient credits so the UI shows 0.
+          queryClient.invalidateQueries({ queryKey: CREDITS_QUERY_KEY });
         }
         setState(s => ({ ...s, isGenerating: false, isStreaming: false, error: msg }));
       } else {
@@ -185,7 +200,7 @@ export function useAI() {
       }
       throw err;
     }
-  }, [settings, activeWorkspace, getForCtx, getTemperatureForCreativity, getMaxTokensForLength, addRecord]);
+  }, [settings, activeWorkspace, getForCtx, getTemperatureForCreativity, getMaxTokensForLength, addRecord, queryClient]);
 
   // ---- JSON generate helper (auto-parse + validate) ---------
   const generateJSON = useCallback(async <T>(

@@ -11,12 +11,15 @@ export type CreditBalance = {
   purchased: number;
 };
 
+/** Shared query key — import this wherever you need to invalidate credit balance. */
+export const CREDITS_QUERY_KEY = ['creator-os-credits'] as const;
+
 export function useCredits() {
   const { user } = useAuthStore();
   return useQuery({
-    queryKey: ['creator-os-credits', user?.id],
+    queryKey: [...CREDITS_QUERY_KEY, user?.id],
     enabled: Boolean(user),
-    staleTime: 20_000,
+    // No staleTime: balance is always fresh after an explicit invalidation.
     queryFn: async (): Promise<CreditBalance> => {
       const { data, error } = await supabase.rpc('creator_os_credit_balance');
       if (error) throw error;
