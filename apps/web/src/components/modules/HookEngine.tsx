@@ -30,8 +30,11 @@ export function HookEngine() {
   const [isCreating, setIsCreating] = useState(false);
   const [scores, setScores] = useState<Record<string, any>>({});
   const [scoringId, setScoringId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const ws = { id: activeWorkspace?.id ?? 'default', name: activeWorkspace?.name ?? 'Workspace' };
+  const ws = activeWorkspace
+    ? { id: activeWorkspace.id, name: activeWorkspace.name }
+    : null;
 
   if (!latestIdea) {
     return (
@@ -53,6 +56,11 @@ export function HookEngine() {
 
   const handleGenerate = async () => {
     clearError();
+    setMessage(null);
+    if (!ws) {
+      setMessage('Select or create a workspace before generating hooks.');
+      return;
+    }
     const data = await generateJSON<{ hooks: any[] }>(
       buildGenerateHooksPrompt({
         workspaceId: ws.id, workspaceName: ws.name,
@@ -67,6 +75,10 @@ export function HookEngine() {
   };
 
   const handleScore = async (hook: any) => {
+    if (!ws) {
+      setMessage('Select or create a workspace before scoring a hook.');
+      return;
+    }
     setScoringId(hook.id);
     const data = await generateJSON<any>(
       buildScoreHookPrompt({ workspaceId: ws.id, workspaceName: ws.name, hookContent: hook.content }),
@@ -91,7 +103,11 @@ export function HookEngine() {
         </Button>
       </div>
 
-      {error && <div className="p-4 rounded-[12px] bg-red-500/10 border border-red-500/20 text-[13px] text-red-400">{error}</div>}
+      {(error || message) && (
+        <div className={`p-4 rounded-[12px] border text-[13px] ${error ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
+          {error || message}
+        </div>
+      )}
 
       <form onSubmit={handleCreate} className="flex gap-3">
         <Input

@@ -16,7 +16,7 @@ ALTER TABLE public.ai_usage_events
 INSERT INTO public.subscription_plan_config (tier, capabilities, limits)
 VALUES (
   'free',
-  '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":false,"multi_workspace":false}'::jsonb,
+  '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":false,"multi_workspace":false,"knowledge_vault":false,"prompt_library":false}'::jsonb,
   '{"workspaces":1,"active_campaigns":1,"content_batch_size":5,"max_output_tokens":4000,"monthly_credits":0}'::jsonb
 )
 ON CONFLICT (tier) DO UPDATE

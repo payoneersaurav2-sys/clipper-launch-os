@@ -27,6 +27,13 @@ async function invokeEntitlementRpc(
   return response.json();
 }
 
+type PremiumFeature = 'knowledge_vault' | 'prompt_library';
+
+const operationToPremiumFeature: Record<string, PremiumFeature | null> = {
+  knowledge_answer: 'knowledge_vault',
+  prompt_library_execution: 'prompt_library',
+};
+
 function parseModelJson(content: string): unknown | null {
   const trimmed = content.trim();
   const candidates = [
@@ -70,6 +77,23 @@ export default async function handler(request: Request) {
     const { context } = await request.json() as { context?: AIPromptContext };
     if (!context?.systemPrompt || !context?.developerPrompt || !context?.taskContext?.workspace?.id) return json({ error: 'Invalid AI request.', code: 'PROVIDER_OFFLINE' }, 400);
     const operation = String(context.billingOperation ?? '').slice(0, 64);
+    const requiredPremiumFeature = operationToPremiumFeature[operation];
+    if (requiredPremiumFeature) {
+      try {
+        const entitlements = await invokeEntitlementRpc(
+          supabaseUrl,
+          supabaseAnonKey,
+          authorization,
+          'current_creator_os_entitlements',
+          {},
+        );
+        if (entitlements?.status !== 'active' || entitlements?.capabilities?.[requiredPremiumFeature] !== true) {
+          return json({ error: 'This AI feature requires a Creator subscription to use.', code: 'SUBSCRIPTION_REQUIRED' }, 403);
+        }
+      } catch {
+        return json({ error: 'Creator OS could not verify your plan. Please try again.', code: 'PLAN_NOT_RESOLVED' }, 503);
+      }
+    }
     let reservation: CreditReservation;
     try {
       reservation = await invokeEntitlementRpc(

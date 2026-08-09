@@ -28,6 +28,21 @@ async function fetchSupabaseUser(supabaseUrl: string, supabaseAnonKey: string, a
   return body?.user ?? null;
 }
 
+async function fetchEntitlements(supabaseUrl: string, supabaseAnonKey: string, authHeader: string) {
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/current_creator_os_entitlements`, {
+    method: 'POST',
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: authHeader,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  });
+  if (!response.ok) return null;
+  const body = await response.json().catch(() => null);
+  return body;
+}
+
 function isPrivateIpAddress(ip: string) {
   if (/^127\./.test(ip)) return true;
   if (/^0\./.test(ip)) return true;
@@ -294,6 +309,11 @@ serve(async (req) => {
     const pageNumber = payload.page_number ? Number(payload.page_number) : null;
 
     if (!workspaceId || (!title && !sourceName)) return json({ ...buildError('VALIDATION_FAILED', 'Please provide a workspace and title.' ) }, 400);
+
+    const entitlements = await fetchEntitlements(supabaseUrl, supabaseAnonKey, authHeader);
+    if (!entitlements?.status || entitlements?.capabilities?.knowledge_vault !== true) {
+      return json({ ...buildError('SUBSCRIPTION_REQUIRED', 'Knowledge Vault requires a Creator subscription.' ) }, 403);
+    }
 
     if (sourceType === 'website') {
       if (!url) return json({ ...buildError('VALIDATION_FAILED', 'Please provide a website URL.' ) }, 400);

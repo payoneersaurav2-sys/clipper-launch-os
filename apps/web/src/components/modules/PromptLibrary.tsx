@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { AIPromptContext } from '@clipper/core/src/ai/types';
-import { requestAI } from '@/lib/ai-api';
+import { useAI } from '@/hooks/useAI';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCredits } from '@/hooks/useCredits';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import {
   compilePromptTemplate,
   createPrompt,
@@ -144,11 +145,12 @@ function PromptEditor({ initial, seed, onClose }: { initial?: SavedPromptRow; se
   );
 }
 
-function UsePromptModal({ prompt, onClose, onSaveAsPrompt }: { prompt: SavedPromptRow; onClose: () => void; onSaveAsPrompt: (prompt: SavedPromptRow, result: string) => void }) {
+function UsePromptModal({ prompt, onClose, onSaveAsPrompt, canUsePromptLibrary }: { prompt: SavedPromptRow; onClose: () => void; onSaveAsPrompt: (prompt: SavedPromptRow, result: string) => void; canUsePromptLibrary: boolean }) {
   const { activeWorkspace } = useWorkspaceStore();
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
   const { data: credits } = useCredits();
+  const { generate, isGenerating } = useAI();
   const [values, setValues] = useState<Record<string, string>>({});
   const [result, setResult] = useState<string | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -165,6 +167,11 @@ function UsePromptModal({ prompt, onClose, onSaveAsPrompt }: { prompt: SavedProm
   }, [variables.join('|')]);
 
   const runPrompt = async () => {
+    if (!canUsePromptLibrary) {
+      setError('Upgrade to Creator to run saved prompts.');
+      setIsRunning(false);
+      return;
+    }
     if (!activeWorkspace || !user) {
       setError('Sign in and choose a workspace before running prompts.');
       return;
@@ -192,7 +199,7 @@ function UsePromptModal({ prompt, onClose, onSaveAsPrompt }: { prompt: SavedProm
         temperature: 0.75,
         maxTokens: 1800,
       };
-      const response = await requestAI(context);
+      const response = await generate(context);
       setResult(response.content);
       await incrementPromptUsage(prompt.id);
       await queryClient.invalidateQueries({ queryKey: ['prompts', activeWorkspace?.id, user?.id] });
@@ -300,8 +307,8 @@ function UsePromptModal({ prompt, onClose, onSaveAsPrompt }: { prompt: SavedProm
               )}
             </div>
 
-            <Button onClick={runPrompt} disabled={isRunning} className="w-full">
-              {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}Run prompt
+            <Button onClick={runPrompt} disabled={isRunning || isGenerating} className="w-full">
+              {isRunning || isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}Run prompt
             </Button>
           </div>
         </div>
@@ -311,9 +318,11 @@ function UsePromptModal({ prompt, onClose, onSaveAsPrompt }: { prompt: SavedProm
 }
 
 export function PromptLibrary() {
-  const { data: credits } = useCredits();
-  const { activeWorkspace } = useWorkspaceStore();
   const { user } = useAuthStore();
+  const { data: entitlements, isLoading: entitlementsLoading } = useEntitlements();
+  const canUsePromptLibrary = entitlements?.capabilities?.prompt_library === true;
+  const isPromptLibraryDisabled = Boolean(user) && !entitlementsLoading && !canUsePromptLibrary;
+  const { activeWorkspace } = useWorkspaceStore();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<'all' | PromptCategory>('all');
@@ -328,7 +337,7 @@ export function PromptLibrary() {
 
   const { data: prompts = [], isLoading } = useQuery({
     queryKey: ['prompts', activeWorkspace?.id, user?.id],
-    enabled: Boolean(activeWorkspace && user),
+    enabled: Boolean(activeWorkspace && user && canUsePromptLibrary),
     queryFn: async () => fetchWorkspacePrompts(activeWorkspace!.id),
   });
 
@@ -386,33 +395,42 @@ export function PromptLibrary() {
   }, [category, filter, prompts, query, sortBy]);
 
   const openEditor = (prompt?: SavedPromptRow, seed?: PromptEditorSeed) => {
+    if (!canUsePromptLibrary) return;
     setEditing(prompt);
     setEditorSeed(seed);
     setEditorOpen(true);
   };
 
   const openUseModal = (prompt: SavedPromptRow) => {
+    if (!canUsePromptLibrary) return;
     setActivePrompt(prompt);
     setUsePromptOpen(true);
   };
 
-  return (
-    <div className="mx-auto max-w-6xl space-y-7 animate-in fade-in duration-500">
-      <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Prompt Intelligence</p>
-          <h2 className="mt-2 text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Prompt Library</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#71717A]">Save your best AI instructions, reuse them across Creator OS, and run them with variables and your existing credit system.</p>
+  if (isPromptLibraryDisabled) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-7 animate-in fade-in duration-500">
+        <div className="rounded-[18px] border border-white/[0.06] bg-[#111111]/70 p-8">
+          <div className="mb-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">Prompt Intelligence</p>
+            <h2 className="mt-2 text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Prompt Library</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#71717A]">Save your best AI instructions, reuse them across Creator OS, and run them with variables and your existing credit system.</p>
+          </div>
+
+          <div className="space-y-5">
+            <UpgradePrompt feature="Prompt Library" requiredPlan="creator" description="Unlock prompt execution, workspace-scoped prompt storage, and reusable AI workflows with a Creator subscription." />
+            <Button disabled className="h-11 rounded-[12px] px-5 bg-white/5 text-[#71717A] border border-white/[0.08]">
+              <Plus className="mr-2 h-4 w-4" />New prompt
+            </Button>
+            <p className="text-sm text-[#71717A]">Creator subscription members can save prompts, automate instructions, and run prompt executions directly from the library.</p>
+          </div>
         </div>
-        <Button onClick={() => openEditor(undefined, undefined)}>
-          <Plus className="mr-2 h-4 w-4" />New prompt
-        </Button>
       </div>
+    );
+  }
 
-      {credits?.status !== 'active' && (
-        <UpgradePrompt feature="Prompt Library" requiredPlan="creator" description="Unlock prompt execution, workspace-scoped prompt storage, and reusable AI workflows with a Creator subscription." />
-      )}
-
+  return (
+    <div className="space-y-8 max-w-6xl animate-in fade-in duration-500">
       <div className="flex flex-col gap-3 rounded-[18px] border border-white/[0.06] bg-[#111111]/70 p-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#71717A]" />
@@ -516,7 +534,12 @@ export function PromptLibrary() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button onClick={() => openUseModal(prompt)} className="flex items-center gap-2">
+                <Button
+                  disabled={!canUsePromptLibrary}
+                  title={canUsePromptLibrary ? undefined : 'Upgrade to Creator to execute saved prompts.'}
+                  onClick={() => openUseModal(prompt)}
+                  className="flex items-center gap-2"
+                >
                   <Zap className="h-4 w-4" />Use
                 </Button>
                 <Button variant="outline" onClick={() => copyPrompt(prompt)} className="flex items-center gap-2">
@@ -548,6 +571,7 @@ export function PromptLibrary() {
         {usePromptOpen && activePrompt && (
           <UsePromptModal
             prompt={activePrompt}
+            canUsePromptLibrary={canUsePromptLibrary}
             onClose={() => {
               setUsePromptOpen(false);
               setActivePrompt(undefined);

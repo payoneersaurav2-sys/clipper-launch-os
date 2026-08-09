@@ -32,8 +32,11 @@ export function CaptionOS() {
   const [platform, setPlatform] = useState('tiktok');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isVariants, setIsVariants] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const ws = { id: activeWorkspace?.id ?? 'default', name: activeWorkspace?.name ?? 'Workspace' };
+  const ws = activeWorkspace
+    ? { id: activeWorkspace.id, name: activeWorkspace.name }
+    : null;
 
   if (!latestIdea) return (
     <div className="space-y-4 animate-in fade-in duration-500">
@@ -53,6 +56,11 @@ export function CaptionOS() {
 
   const handleGenerate = async () => {
     clearError();
+    setMessage(null);
+    if (!ws) {
+      setMessage('Select or create a workspace before generating captions.');
+      return;
+    }
     const data = await generateJSON<any>(
       buildGenerateCaptionPrompt({ workspaceId: ws.id, workspaceName: ws.name, ideaTitle: latestIdea.title, platform }),
       { category: 'caption', promptSummary: `Caption: ${latestIdea.title}` }
@@ -63,6 +71,11 @@ export function CaptionOS() {
 
   const handleVariants = async () => {
     clearError();
+    setMessage(null);
+    if (!ws) {
+      setMessage('Select or create a workspace before generating caption variants.');
+      return;
+    }
     setIsVariants(true);
     const data = await generateJSON<{ variants: any[] }>(
       buildCaptionVariantsPrompt({ workspaceId: ws.id, workspaceName: ws.name, ideaTitle: latestIdea.title, platforms: PLATFORMS }),
@@ -103,7 +116,11 @@ export function CaptionOS() {
         </div>
       </div>
 
-      {error && <div className="p-4 rounded-[12px] bg-red-500/10 border border-red-500/20 text-[13px] text-red-400">{error}</div>}
+      {(error || message) && (
+        <div className={`p-4 rounded-[12px] border text-[13px] ${error ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'}`}>
+          {error || message}
+        </div>
+      )}
 
       <div className="flex gap-2 flex-wrap">
         {PLATFORMS.map(p => (

@@ -18,13 +18,22 @@ export function LaunchCenter() {
   const [platform, setPlatform] = useState('tiktok');
   const [duration, setDuration] = useState(7);
   const [plan, setPlan] = useState<any>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const ws = { id: activeWorkspace?.id ?? 'default', name: activeWorkspace?.name ?? 'Workspace' };
+  const ws = activeWorkspace
+    ? { id: activeWorkspace.id, name: activeWorkspace.name }
+    : null;
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!topic.trim()) return;
+    if (!ws) {
+      setPlan(null);
+      setLocalError('Select or create a workspace before generating a campaign plan.');
+      return;
+    }
     clearError();
+    setLocalError(null);
     const data = await generateJSON<any>(
       buildCampaignPlanPrompt({ workspaceId: ws.id, workspaceName: ws.name, topic, platform, durationDays: duration, goal }),
       { category: 'campaign', promptSummary: `Campaign: ${topic}` }
@@ -39,7 +48,7 @@ export function LaunchCenter() {
         <p className="text-[14px] text-[#71717A] mt-1">Plan your content campaigns with AI strategy.</p>
       </div>
 
-      {error && <div className="p-4 rounded-[12px] bg-red-500/10 border border-red-500/20 text-[13px] text-red-400">{error}</div>}
+      {(error || localError) && <div className="p-4 rounded-[12px] bg-red-500/10 border border-red-500/20 text-[13px] text-red-400">{error || localError}</div>}
 
       {/* Setup form */}
       <div className="p-6 rounded-[18px] bg-[#111111] border border-white/[0.06] space-y-5">

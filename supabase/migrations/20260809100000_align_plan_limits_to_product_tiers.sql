@@ -17,7 +17,9 @@ SET
     "basic_analytics": true,
     "scheduling": true,
     "batch_generation": false,
-    "multi_workspace": false
+    "multi_workspace": false,
+    "knowledge_vault": false,
+    "prompt_library": false
   }'::jsonb,
   limits = '{
     "workspaces": 1,
@@ -39,7 +41,9 @@ SET
     "basic_analytics": true,
     "scheduling": true,
     "batch_generation": true,
-    "multi_workspace": true
+    "multi_workspace": true,
+    "knowledge_vault": true,
+    "prompt_library": true
   }'::jsonb,
   limits = '{
     "workspaces": 3,
@@ -62,7 +66,9 @@ SET
     "basic_analytics": true,
     "scheduling": true,
     "batch_generation": true,
-    "multi_workspace": true
+    "multi_workspace": true,
+    "knowledge_vault": true,
+    "prompt_library": true
   }'::jsonb,
   limits = '{
     "workspaces": 10,
@@ -85,7 +91,9 @@ SET
     "basic_analytics": true,
     "scheduling": true,
     "batch_generation": true,
-    "multi_workspace": true
+    "multi_workspace": true,
+    "knowledge_vault": true,
+    "prompt_library": true
   }'::jsonb,
   limits = '{
     "workspaces": 10,

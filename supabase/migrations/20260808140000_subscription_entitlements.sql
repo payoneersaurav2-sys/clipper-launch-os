@@ -30,13 +30,13 @@ CREATE TABLE IF NOT EXISTS public.whop_plan_mappings (
 INSERT INTO public.subscription_plan_config (tier, capabilities, limits)
 VALUES
   ('creator',
-    '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":false,"multi_workspace":false}'::jsonb,
+    '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":false,"multi_workspace":false,"knowledge_vault":true,"prompt_library":true}'::jsonb,
     '{"workspaces":1,"active_campaigns":10,"ai_generations_per_month":250,"content_batch_size":10,"max_output_tokens":4000}'::jsonb),
   ('pro',
-    '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":true,"multi_workspace":true}'::jsonb,
+    '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":true,"multi_workspace":true,"knowledge_vault":true,"prompt_library":true}'::jsonb,
     '{"workspaces":3,"active_campaigns":50,"ai_generations_per_month":1000,"content_batch_size":30,"max_output_tokens":8000}'::jsonb),
   ('agency',
-    '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":true,"multi_workspace":true}'::jsonb,
+    '{"core_ai":true,"campaigns":true,"clip_pipeline":true,"basic_analytics":true,"scheduling":true,"batch_generation":true,"multi_workspace":true,"knowledge_vault":true,"prompt_library":true}'::jsonb,
     '{"workspaces":10,"active_campaigns":250,"ai_generations_per_month":3000,"content_batch_size":50,"max_output_tokens":8000}'::jsonb)
 ON CONFLICT (tier) DO UPDATE
 SET capabilities = EXCLUDED.capabilities, limits = EXCLUDED.limits, updated_at = NOW();

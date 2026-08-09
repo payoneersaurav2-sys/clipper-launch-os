@@ -21,7 +21,9 @@ export function IdeaStudio() {
   const [expanded, setExpanded] = useState<Record<string, any>>({});
   const [generationNotice, setGenerationNotice] = useState<string | null>(null);
 
-  const ws = { id: activeWorkspace?.id ?? 'default', name: activeWorkspace?.name ?? 'Workspace' };
+  const ws = activeWorkspace
+    ? { id: activeWorkspace.id, name: activeWorkspace.name, niche: activeWorkspace.niche, platform: activeWorkspace.platform }
+    : null;
 
   const sendTo = (path: string, idea: any) => {
     navigate(`/dashboard/${path}`, { state: { ideaId: idea.id, ideaTitle: idea.title } });
@@ -39,7 +41,7 @@ export function IdeaStudio() {
   const handleAIGenerate = async () => {
     clearError();
     setGenerationNotice(null);
-    if (!activeWorkspace) {
+    if (!ws) {
       setGenerationNotice('Choose or create a workspace before generating ideas.');
       return;
     }
@@ -48,8 +50,8 @@ export function IdeaStudio() {
         buildGenerateIdeasPrompt({
           workspaceId: ws.id,
           workspaceName: ws.name,
-          niche: activeWorkspace.niche ?? undefined,
-          platform: activeWorkspace.platform ?? undefined,
+          niche: ws.niche ?? undefined,
+          platform: ws.platform ?? undefined,
         }),
         { category: 'idea', promptSummary: 'Generate viral ideas' }
       );
@@ -66,13 +68,17 @@ export function IdeaStudio() {
   };
 
   const handleExpand = async (idea: any) => {
+    if (!ws) {
+      setGenerationNotice('Choose or create a workspace before expanding an idea.');
+      return;
+    }
     setExpandingId(idea.id);
     const data = await generateJSON<any>(
       buildExpandIdeaPrompt({ 
         workspaceId: ws.id, 
         workspaceName: ws.name, 
         ideaTitle: idea.title,
-        platform: activeWorkspace?.platform ?? undefined,
+        platform: ws.platform ?? undefined,
       }),
       { category: 'idea', promptSummary: `Expand: ${idea.title}` }
     );

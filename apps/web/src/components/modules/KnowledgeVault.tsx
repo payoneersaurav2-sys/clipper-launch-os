@@ -7,13 +7,13 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { buildKnowledgeAnswerPrompt } from '@/lib/ai-services';
 import { useAI } from '@/hooks/useAI';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Upload, FileText, Trash2, Search, Sparkles, Loader2,
   BookOpen, Plus, X, RefreshCw, Globe2, FileCheck2,
 } from 'lucide-react';
-import { useCredits } from '@/hooks/useCredits';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 interface KnowledgeItem {
@@ -92,7 +92,7 @@ async function getValidAccessToken(currentSession: Session | null, setSession: (
   return newSession.access_token;
 }
 
-function useKnowledge() {
+function useKnowledge(enabled = true) {
   const { activeWorkspace } = useWorkspaceStore();
   const wsId = activeWorkspace?.id;
   const qc = useQueryClient();
@@ -109,7 +109,7 @@ function useKnowledge() {
       if (error) throw error;
       return data ?? [];
     },
-    enabled: !!wsId,
+    enabled: !!wsId && enabled,
   });
 
   const addItem = useMutation({
@@ -321,8 +321,10 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
 }
 
 export function KnowledgeVault() {
-  const { data: credits } = useCredits();
-  const { data: items, isLoading, deleteItem, wsId } = useKnowledge();
+  const { data: entitlements, isLoading: entitlementsLoading } = useEntitlements();
+  const hasKnowledgeVault = entitlements?.capabilities?.knowledge_vault === true;
+  const isKnowledgeVaultDisabled = Boolean(entitlements && !hasKnowledgeVault);
+  const { data: items, isLoading, deleteItem, wsId } = useKnowledge(hasKnowledgeVault);
   const { activeWorkspace } = useWorkspaceStore();
   const { session, setSession } = useAuthStore();
   const queryClient = useQueryClient();
@@ -444,14 +446,14 @@ export function KnowledgeVault() {
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Knowledge Vault</h2>
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Your AI&apos;s long-term memory. Add text, files, or website sources and keep them ready for generation.</p>
         </div>
-        {credits?.tier !== 'free' && (
+        {hasKnowledgeVault && (
           <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px] self-start sm:self-auto shrink-0">
             <Plus className="h-4 w-4 mr-1.5" />Add Knowledge
           </Button>
         )}
       </div>
 
-      {credits?.tier === 'free' ? (
+      {(isKnowledgeVaultDisabled || (!entitlementsLoading && !hasKnowledgeVault)) ? (
         <div className="mt-8">
           <UpgradePrompt
             feature="Knowledge Vault"
@@ -461,7 +463,7 @@ export function KnowledgeVault() {
         </div>
       ) : (
         <>
-          {items && items.length > 0 && (
+          {hasKnowledgeVault && items && items.length > 0 && (
             <div className="p-6 rounded-[18px] bg-primary/[0.06] border border-primary/20 space-y-3">
               <p className="text-[13px] font-medium text-primary flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />Ask your knowledge base
@@ -470,7 +472,7 @@ export function KnowledgeVault() {
                 <Input value={question} onChange={(e) => setQuestion(e.target.value)}
                   placeholder="e.g. What is my brand tone?" onKeyDown={(e) => e.key === 'Enter' && handleAsk()}
                   className="h-10 rounded-[10px] bg-[#0D0D0D] border-white/[0.08] text-[#FAFAFA] placeholder:text-[#71717A] flex-1" />
-                <Button onClick={handleAsk} disabled={answering || !question.trim()}
+                <Button onClick={handleAsk} disabled={!hasKnowledgeVault || answering || !question.trim()}
                   className="h-10 rounded-[10px] px-5 bg-primary text-white text-[13px]">
                   {answering ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Ask'}
                 </Button>
@@ -491,83 +493,87 @@ export function KnowledgeVault() {
             </div>
           )}
 
-          <div className="relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search knowledge…"
-              className="h-10 pl-10 rounded-[12px] bg-[#111111] border-white/[0.06] text-[#FAFAFA] placeholder:text-[#71717A]" />
-          </div>
+          {hasKnowledgeVault && (
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717A]" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search knowledge…"
+                className="h-10 pl-10 rounded-[12px] bg-[#111111] border-white/[0.06] text-[#FAFAFA] placeholder:text-[#71717A]" />
+            </div>
+          )}
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {[...Array(3)].map((_, index) => <div key={index} className="h-40 rounded-[16px] bg-[#111111] animate-pulse" />)}
-            </div>
-          ) : !filtered?.length ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="h-14 w-14 rounded-[16px] bg-primary/10 flex items-center justify-center mb-5">
-                <BookOpen className="h-6 w-6 text-primary" />
+          {hasKnowledgeVault && (
+            isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {[...Array(3)].map((_, index) => <div key={index} className="h-40 rounded-[16px] bg-[#111111] animate-pulse" />)}
               </div>
-              <h3 className="text-[17px] font-semibold text-[#FAFAFA] mb-2">{search ? 'No results' : 'Vault is empty'}</h3>
-              <p className="text-[14px] text-[#71717A] max-w-sm mb-6">
-                {search ? 'Try a different search term.' : 'Add text, files, or a website source. The AI will reference them automatically.'}
-              </p>
-              {!search && (
-                <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white text-[13px]">
-                  <Plus className="h-4 w-4 mr-1.5" />Add First Resource
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <AnimatePresence>
-                {filtered.map((item) => {
-                  const sourceLabel = item.source_type === 'website' ? 'Website' : item.source_type === 'file' ? 'File' : 'Text';
-                  const sourceBadgeClass = item.ingestion_status === 'failed'
-                    ? 'bg-red-500/10 text-red-400'
-                    : item.ingestion_status === 'processing'
-                      ? 'bg-amber-500/10 text-amber-400'
-                      : 'bg-emerald-500/10 text-emerald-400';
-                  const Icon = item.source_type === 'website' ? Globe2 : item.source_type === 'file' ? FileCheck2 : FileText;
-                  return (
-                    <motion.div key={item.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                      className="group p-5 rounded-[16px] bg-[#111111] border border-white/[0.06] hover:border-white/[0.12] transition-colors relative">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="h-8 w-8 rounded-[8px] bg-primary/10 flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          {item.source_type === 'website' && (
-                            <button onClick={() => handleRefresh(item)} disabled={refreshingId === item.id}
-                              className="text-[#71717A] hover:text-primary transition-all p-1 disabled:opacity-60">
-                              {refreshingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            ) : !filtered?.length ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="h-14 w-14 rounded-[16px] bg-primary/10 flex items-center justify-center mb-5">
+                  <BookOpen className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="text-[17px] font-semibold text-[#FAFAFA] mb-2">{search ? 'No results' : 'Vault is empty'}</h3>
+                <p className="text-[14px] text-[#71717A] max-w-sm mb-6">
+                  {search ? 'Try a different search term.' : 'Add text, files, or a website source. The AI will reference them automatically.'}
+                </p>
+                {!search && (
+                  <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white text-[13px]">
+                    <Plus className="h-4 w-4 mr-1.5" />Add First Resource
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <AnimatePresence>
+                  {filtered.map((item) => {
+                    const sourceLabel = item.source_type === 'website' ? 'Website' : item.source_type === 'file' ? 'File' : 'Text';
+                    const sourceBadgeClass = item.ingestion_status === 'failed'
+                      ? 'bg-red-500/10 text-red-400'
+                      : item.ingestion_status === 'processing'
+                        ? 'bg-amber-500/10 text-amber-400'
+                        : 'bg-emerald-500/10 text-emerald-400';
+                    const Icon = item.source_type === 'website' ? Globe2 : item.source_type === 'file' ? FileCheck2 : FileText;
+                    return (
+                      <motion.div key={item.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                        className="group p-5 rounded-[16px] bg-[#111111] border border-white/[0.06] hover:border-white/[0.12] transition-colors relative">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="h-8 w-8 rounded-[8px] bg-primary/10 flex items-center justify-center shrink-0">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {item.source_type === 'website' && (
+                              <button onClick={() => handleRefresh(item)} disabled={refreshingId === item.id}
+                                className="text-[#71717A] hover:text-primary transition-all p-1 disabled:opacity-60">
+                                {refreshingId === item.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                              </button>
+                            )}
+                            <button onClick={() => deleteItem.mutate(item.id)}
+                              className="text-[#71717A] hover:text-red-400 transition-all p-1">
+                              <Trash2 className="h-3.5 w-3.5" />
                             </button>
-                          )}
-                          <button onClick={() => deleteItem.mutate(item.id)}
-                            className="text-[#71717A] hover:text-red-400 transition-all p-1">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight line-clamp-1">{item.title}</h4>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${sourceBadgeClass}`}>{sourceLabel}</span>
-                      </div>
-                      <p className="text-[12px] text-[#71717A] line-clamp-3 leading-relaxed">{item.content_excerpt ?? item.content}</p>
-                      {item.ingestion_status === 'failed' && item.ingestion_error ? (
-                        <p className="text-[11px] text-red-400 mt-2">{item.ingestion_error}</p>
-                      ) : null}
-                      {item.tags?.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {item.tags.map((tag) => (
-                            <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-[#71717A] capitalize">{tag}</span>
-                          ))}
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight line-clamp-1">{item.title}</h4>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full ${sourceBadgeClass}`}>{sourceLabel}</span>
                         </div>
-                      )}
-                      <p className="text-[10px] text-[#71717A] mt-3">{new Date(item.created_at).toLocaleDateString()}</p>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
+                        <p className="text-[12px] text-[#71717A] line-clamp-3 leading-relaxed">{item.content_excerpt ?? item.content}</p>
+                        {item.ingestion_status === 'failed' && item.ingestion_error ? (
+                          <p className="text-[11px] text-red-400 mt-2">{item.ingestion_error}</p>
+                        ) : null}
+                        {item.tags?.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mt-3">
+                            {item.tags.map((tag) => (
+                              <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-white/[0.06] text-[#71717A] capitalize">{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-[10px] text-[#71717A] mt-3">{new Date(item.created_at).toLocaleDateString()}</p>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )
           )}
 
           <AnimatePresence>

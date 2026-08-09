@@ -7,7 +7,9 @@ export type EntitlementFeature =
   | 'basic_analytics'
   | 'scheduling'
   | 'batch_generation'
-  | 'multi_workspace';
+  | 'multi_workspace'
+  | 'knowledge_vault'
+  | 'prompt_library';
 
 export type PlanCapabilities = Record<EntitlementFeature, boolean>;
 
@@ -47,6 +49,8 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       scheduling: true,
       batch_generation: false,
       multi_workspace: false,
+      knowledge_vault: false,
+      prompt_library: false,
     },
     limits: { workspaces: 1, active_campaigns: 10, ai_generations_per_month: 0, content_batch_size: 5, max_output_tokens: 4000 },
   },
@@ -59,6 +63,8 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       scheduling: true,
       batch_generation: true,
       multi_workspace: true,
+      knowledge_vault: true,
+      prompt_library: true,
     },
     limits: { workspaces: 3, active_campaigns: 50, ai_generations_per_month: 250, content_batch_size: 30, max_output_tokens: 4000 },
   },
@@ -71,6 +77,8 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       scheduling: true,
       batch_generation: true,
       multi_workspace: true,
+      knowledge_vault: true,
+      prompt_library: true,
     },
     limits: { workspaces: 10, active_campaigns: 250, ai_generations_per_month: 1000, content_batch_size: 50, max_output_tokens: 8000 },
   },
@@ -83,6 +91,8 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       scheduling: true,
       batch_generation: true,
       multi_workspace: true,
+      knowledge_vault: true,
+      prompt_library: true,
     },
     limits: { workspaces: 10, active_campaigns: 250, ai_generations_per_month: 3000, content_batch_size: 50, max_output_tokens: 8000 },
   },
