@@ -39,8 +39,8 @@ export function useEntitlements() {
       }
 
       const fallback = planEntitlements[tier];
-      const capabilities = normalizeCapabilities(result.capabilities, fallback);
-      const limits = normalizeLimits(result.limits, fallback);
+      const capabilities = normalizeCapabilities(result.capabilities, fallback.capabilities);
+      const limits = normalizeLimits(result.limits, fallback.limits);
 
       return {
         status: 'active',

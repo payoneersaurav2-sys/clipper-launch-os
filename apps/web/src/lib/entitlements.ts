@@ -117,7 +117,8 @@ function normalizeCapability(value: unknown, fallback: boolean): boolean {
 }
 
 export function normalizeCapabilities(capabilities: unknown, fallback: PlanCapabilities): PlanCapabilities | null {
-  if (!capabilities || typeof capabilities !== 'object') return null;
+  if (capabilities === null || capabilities === undefined) return null;
+  if (typeof capabilities !== 'object') return null;
   const raw = capabilities as Record<string, unknown>;
   return {
     core_ai: normalizeCapability(raw.core_ai, fallback.core_ai),
@@ -133,7 +134,8 @@ export function normalizeCapabilities(capabilities: unknown, fallback: PlanCapab
 }
 
 export function normalizeLimits(limits: unknown, fallback: PlanLimits): PlanLimits | null {
-  if (!limits || typeof limits !== 'object') return null;
+  if (limits === null || limits === undefined) return null;
+  if (typeof limits !== 'object') return null;
   const raw = limits as Record<string, unknown>;
   return {
     workspaces: Number(raw.workspaces ?? fallback.workspaces),
