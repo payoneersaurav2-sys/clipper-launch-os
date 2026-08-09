@@ -14,6 +14,7 @@ interface PkceTransaction {
   codeVerifier: string;
   state: string;
   nonce: string;
+  intent: 'sign_in' | 'link_account';
 }
 
 function base64UrlEncode(bytes: Uint8Array): string {
@@ -34,11 +35,12 @@ async function createS256Challenge(verifier: string): Promise<string> {
   return base64UrlEncode(new Uint8Array(digest));
 }
 
-export async function buildWhopOAuthUrl(): Promise<string> {
+export async function buildWhopOAuthUrl(intent: PkceTransaction['intent'] = 'sign_in'): Promise<string> {
   const transaction: PkceTransaction = {
     codeVerifier: randomString(32),
     state: randomString(16),
     nonce: randomString(16),
+    intent,
   };
 
   sessionStorage.setItem(PKCE_STORAGE_KEY, JSON.stringify(transaction));
@@ -63,6 +65,10 @@ export async function buildWhopOAuthUrl(): Promise<string> {
  * the flow instead of accidentally reusing an authorization code.
  */
 export function getStoredCodeVerifier(searchParams: URLSearchParams): string | null {
+  return getStoredWhopTransaction(searchParams)?.codeVerifier ?? null;
+}
+
+export function getStoredWhopTransaction(searchParams: URLSearchParams): Pick<PkceTransaction, 'codeVerifier' | 'intent'> | null {
   const rawTransaction = sessionStorage.getItem(PKCE_STORAGE_KEY);
   sessionStorage.removeItem(PKCE_STORAGE_KEY);
 
@@ -79,7 +85,7 @@ export function getStoredCodeVerifier(searchParams: URLSearchParams): string | n
     ) {
       return null;
     }
-    return transaction.codeVerifier;
+    return { codeVerifier: transaction.codeVerifier, intent: transaction.intent === 'link_account' ? 'link_account' : 'sign_in' };
   } catch {
     return null;
   }

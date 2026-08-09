@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { BillingInterval, annualSavings, pricingPlans, unresolvedCheckoutMapping, validatePricingConfiguration } from '@/lib/pricing';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingInterval>('monthly');
   const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
+  const { user, whopId } = useAuthStore();
+
+  const beginCheckout = (checkoutUrl: string) => {
+    if (!user) { navigate('/login'); return; }
+    if (!whopId) { navigate('/dashboard/credits'); return; }
+    window.location.assign(checkoutUrl);
+  };
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -69,7 +79,7 @@ export default function PricingPage() {
                 {plan.features.map((feature) => <li key={feature} className="flex gap-3 text-[14px] leading-5 text-[#D4D4D8]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2.4} aria-hidden="true" />{feature}</li>)}
               </ul>
               </div>
-              <a href={checkoutUrl} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] ${plan.recommended ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.3)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.48)]' : 'border border-white/[0.1] bg-white/[0.04] text-white hover:border-primary/50 hover:bg-primary/15'}`}>{plan.cta}</a>
+              <button type="button" onClick={() => beginCheckout(checkoutUrl)} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#111111] ${plan.recommended ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.3)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.48)]' : 'border border-white/[0.1] bg-white/[0.04] text-white hover:border-primary/50 hover:bg-primary/15'}`}>{!user ? 'Sign in to start' : !whopId ? 'Connect Whop to start' : plan.cta}</button>
             </motion.article>;
           })}
         </div>

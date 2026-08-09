@@ -26,6 +26,7 @@ export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [success, setSuccess] = useState('');
   const [whopLoading, setWhopLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +81,19 @@ export default function LoginPage() {
     } catch {
       setWhopLoading(false);
       setErr('We could not start Whop sign-in. Please try again.');
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setSocialLoading(true);
+    setErr('');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback?provider=google` },
+    });
+    if (error) {
+      setSocialLoading(false);
+      setErr(error.message);
     }
   };
 
@@ -146,6 +160,11 @@ export default function LoginPage() {
       </div>
 
       {/* Whop OAuth */}
+      <button type="button" onClick={handleGoogleLogin} disabled={socialLoading || whopLoading || loading}
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-[12px] border border-white/[0.10] bg-white text-[14px] font-semibold text-[#171717] transition-colors hover:bg-[#F4F4F5] disabled:cursor-not-allowed disabled:opacity-65">
+        <span className="text-[18px] font-bold text-[#4285F4]" aria-hidden="true">G</span>
+        {socialLoading ? 'Redirecting to Googleâ€¦' : 'Continue with Google'}
+      </button>
       <WhopOAuthButton onClick={handleWhopLogin} loading={whopLoading} />
 
       {/* Toggle login/signup */}
