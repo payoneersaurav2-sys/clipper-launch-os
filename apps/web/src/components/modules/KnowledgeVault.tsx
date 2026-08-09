@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { buildKnowledgeAnswerPrompt } from '@/lib/ai-services';
@@ -88,7 +88,7 @@ function normalizeTags(raw: string) {
 
 function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) {
   const { addItem } = useKnowledge();
-  const { user, session } = useAuthStore();
+  const { user, session, setSession } = useAuthStore();
   const [mode, setMode] = useState<'text' | 'file' | 'website'>('text');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -98,6 +98,40 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const getValidAccessToken = async () => {
+    const { data: currentSessionData } = await supabase.auth.getSession();
+    const currentSession = currentSessionData?.session ?? session;
+
+    if (!currentSession) {
+      throw new Error('Sign in again to ingest knowledge.');
+    }
+
+    if (currentSession.access_token) {
+      return currentSession.access_token;
+    }
+
+    if (!currentSession.refresh_token) {
+      throw new Error('Sign in again to ingest knowledge.');
+    }
+
+    const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession({ refresh_token: currentSession.refresh_token });
+    if (refreshError) {
+      console.error('supabase.auth.refreshSession failed', refreshError);
+      throw new Error('Sign in again to ingest knowledge.');
+    }
+
+    if (refreshedData?.session) {
+      setSession(refreshedData.session);
+    }
+
+    const finalSession = refreshedData?.session ?? currentSession;
+    const accessToken = finalSession?.access_token;
+    if (!accessToken) {
+      throw new Error('Sign in again to ingest knowledge.');
+    }
+    return accessToken;
+  };
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,13 +149,17 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
   };
 
   const formatFunctionError = (error: unknown, data?: { success?: boolean; message?: string; error?: { message?: string } }) => {
-    const supabaseError = error as { message?: string; details?: string; hint?: string };
-    return supabaseError?.message
+    const supabaseError = error as { message?: string; details?: string; hint?: string; name?: string; status?: number };
+    const message = supabaseError?.message
       || supabaseError?.details
       || supabaseError?.hint
       || data?.error?.message
       || data?.message
       || 'The website could not be ingested.';
+    if (supabaseError?.name || supabaseError?.status) {
+      return `${message} ${supabaseError.name ?? ''}${supabaseError.status ? ` (${supabaseError.status})` : ''}`.trim();
+    }
+    return message;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,21 +173,35 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
         if (!/^https?:\/\//i.test(normalizedUrl)) {
           throw new Error('Enter a valid https:// URL to ingest.');
         }
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token ?? session?.access_token;
-        if (!accessToken) throw new Error('Sign in again to ingest knowledge.');
-        const authHeaders = { Authorization: `Bearer ${accessToken}` };
-        const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
-          body: {
+        const accessToken = await getValidAccessToken();
+        const invokeUrl = `${supabaseUrl}/functions/v1/knowledge-ingest`;
+        console.debug('Invoking knowledge-ingest', { wsId, normalizedUrl, authTokenLength: accessToken.length, invokeUrl });
+        const response = await fetch(invokeUrl, {
+          method: 'POST',
+          mode: 'cors',
+          credentials: 'omit',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             workspace_id: wsId,
             title: title.trim(),
             url: normalizedUrl,
             tags: normalizeTags(tags),
-          },
-          headers: authHeaders,
+          }),
         });
-        if (error) throw new Error(formatFunctionError(error, data));
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          console.error('knowledge-ingest invoke error', response.status, data);
+          throw new Error(formatFunctionError(null, data));
+        }
         if (data?.success === false) {
+          console.error('knowledge-ingest returned failure', data);
+          throw new Error(formatFunctionError(null, data));
+        }
+        if (data?.success === false) {
+          console.error('knowledge-ingest returned failure', data);
           throw new Error(formatFunctionError(null, data));
         }
         if (!data?.item) throw new Error('The website could not be ingested.');
@@ -350,22 +402,34 @@ export function KnowledgeVault() {
     if (!wsId || item.source_type !== 'website' || !item.source_url) return;
     setRefreshingId(item.id);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token ?? session?.access_token;
-      if (!accessToken) throw new Error('Sign in again to ingest knowledge.');
-      const authHeaders = { Authorization: `Bearer ${accessToken}` };
-      const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
-        body: {
+      const accessToken = await getValidAccessToken();
+      const invokeUrl = `${supabaseUrl}/functions/v1/knowledge-ingest`;
+      console.debug('Refreshing knowledge-ingest', { wsId, itemId: item.id, sourceUrl: item.source_url, authTokenLength: accessToken.length, invokeUrl });
+      const response = await fetch(invokeUrl, {
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'omit',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           workspace_id: wsId,
           existing_item_id: item.id,
           title: item.title,
           url: item.source_url,
           tags: item.tags ?? [],
-        },
-        headers: authHeaders,
+        }),
       });
-      if (error) throw new Error(formatFunctionError(error, data));
-      if (data?.success === false) throw new Error(formatFunctionError(null, data));
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        console.error('knowledge-ingest refresh error', response.status, data);
+        throw new Error(formatFunctionError(null, data));
+      }
+      if (data?.success === false) {
+        console.error('knowledge-ingest refresh returned failure', data);
+        throw new Error(formatFunctionError(null, data));
+      }
       if (!data?.item) throw new Error('The website could not be refreshed.');
       await queryClient.invalidateQueries({ queryKey: ['knowledge', wsId] });
     } catch (error) {

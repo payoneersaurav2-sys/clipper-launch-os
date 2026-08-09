@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -227,7 +228,14 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) return json({ ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.' ) }, 401);
+    const authHeaderPreview = authHeader?.startsWith('Bearer ') ? `${authHeader.slice(0, 20)}...` : authHeader;
+    console.log('knowledge-ingest received request', { method: req.method, authHeaderPresent: Boolean(authHeader), authHeaderPreview });
+    if (!authHeader?.startsWith('Bearer ')) {
+      return json({
+        ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
+        debug: { authHeaderPresent: Boolean(authHeader), authHeaderPrefix: authHeader?.split(' ')[0] ?? null },
+      }, 401);
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
@@ -237,10 +245,22 @@ serve(async (req) => {
     const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
       headers: { apikey: supabaseAnonKey, authorization: authHeader },
     });
-    if (!userResponse.ok) return json({ ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.' ) }, 401);
+    if (!userResponse.ok) {
+      const responseText = await userResponse.text().catch(() => 'Unable to parse auth user response');
+      console.warn('knowledge-ingest auth validation failed', { status: userResponse.status, responseText });
+      return json({
+        ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
+        debug: { authHeaderPresent: Boolean(authHeader), userResponseStatus: userResponse.status, userResponseText: responseText.slice(0, 200) },
+      }, 401);
+    }
     const user = await userResponse.json();
     const userId = user.user?.id as string | undefined;
-    if (!userId) return json({ ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.' ) }, 401);
+    if (!userId) {
+      return json({
+        ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
+        debug: { authHeaderPresent: Boolean(authHeader), userResponseStatus: userResponse.status, user: user ?? null },
+      }, 401);
+    }
 
     const payload = await req.json();
     const workspaceId = String(payload.workspace_id ?? '').trim();
