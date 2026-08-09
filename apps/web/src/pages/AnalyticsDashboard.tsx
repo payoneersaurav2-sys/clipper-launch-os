@@ -9,6 +9,8 @@ import {
   Star, BarChart2, Activity, Target 
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useCredits } from '@/hooks/useCredits';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 // ---- Animated counter ---------------------------------------
 function Counter({ value, prefix = '', suffix = '', duration = 1.2 }: { value: number; prefix?: string; suffix?: string; duration?: number }) {
@@ -88,6 +90,7 @@ function PlatformBar({ platform, pct, count }: { platform: string; pct: number; 
 }
 
 export default function AnalyticsDashboard() {
+  const { data: credits } = useCredits();
   const { data: campaigns } = useCampaigns();
   const { data: ideas } = useClipIdeas();
   const { data: stats } = useAnalyticsStats();
@@ -110,8 +113,18 @@ export default function AnalyticsDashboard() {
         <p className="text-[14px] text-[#71717A] mt-1">Workspace performance at a glance.</p>
       </div>
 
-      {/* Top stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {credits?.tier === 'free' ? (
+        <div className="mt-8">
+          <UpgradePrompt
+            feature="Advanced Analytics"
+            requiredPlan="creator"
+            description="Track performance, AI usage, and calculate ROI across all your workspaces to scale your content engine."
+          />
+        </div>
+      ) : (
+        <>
+          {/* Top stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6">
         <StatCard icon={Layers}   label="Active Campaigns"  value={activeCampaigns} />
         <StatCard icon={Zap}      label="Ideas Generated"   value={totalIdeas} />
         <StatCard icon={Activity} label="AI Generations"    value={genCount}         sparkValues={sparkData.length > 1 ? sparkData : undefined} />
@@ -160,6 +173,8 @@ export default function AnalyticsDashboard() {
           <div><p className="text-[22px] font-semibold text-[#FAFAFA]">{favCount}</p><p className="text-[12px] text-[#71717A]">Saved to Favourites</p></div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

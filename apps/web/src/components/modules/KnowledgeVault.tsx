@@ -12,6 +12,8 @@ import {
   Upload, FileText, Trash2, Search, Sparkles, Loader2, 
   BookOpen, Plus, X, Link as LinkIcon
 } from 'lucide-react';
+import { useCredits } from '@/hooks/useCredits';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 interface KnowledgeItem {
   id: string;
@@ -182,6 +184,7 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
 }
 
 export function KnowledgeVault() {
+  const { data: credits } = useCredits();
   const { data: items, isLoading, deleteItem, wsId } = useKnowledge();
   const { activeWorkspace } = useWorkspaceStore();
   const [showAdd, setShowAdd] = useState(false);
@@ -228,12 +231,24 @@ export function KnowledgeVault() {
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Knowledge Vault</h2>
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Your AI's long-term memory. Upload resources, brand guides, or notes.</p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px] self-start sm:self-auto shrink-0">
-          <Plus className="h-4 w-4 mr-1.5" />Add Knowledge
-        </Button>
+        {credits?.tier !== 'free' && (
+          <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px] self-start sm:self-auto shrink-0">
+            <Plus className="h-4 w-4 mr-1.5" />Add Knowledge
+          </Button>
+        )}
       </div>
 
-      {/* AI Ask section */}
+      {credits?.tier === 'free' ? (
+        <div className="mt-8">
+          <UpgradePrompt
+            feature="Knowledge Vault"
+            requiredPlan="creator"
+            description="Give the AI long-term memory. Upload brand guides, PDFs, and links so every generation is perfectly aligned with your unique style."
+          />
+        </div>
+      ) : (
+        <>
+          {/* AI Ask section */}
       {items && items.length > 0 && (
         <div className="p-6 rounded-[18px] bg-primary/[0.06] border border-primary/20 space-y-3">
           <p className="text-[13px] font-medium text-primary flex items-center gap-2">
@@ -325,6 +340,8 @@ export function KnowledgeVault() {
       <AnimatePresence>
         {showAdd && wsId && <AddItemModal wsId={wsId} onClose={() => setShowAdd(false)} />}
       </AnimatePresence>
+        </>
+      )}
     </div>
   );
 }
