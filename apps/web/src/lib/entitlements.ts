@@ -111,31 +111,36 @@ function normalizeBoolean(value: unknown): boolean {
   return value === true || value === 'true' || value === 1 || value === '1';
 }
 
-export function normalizeCapabilities(capabilities: unknown): PlanCapabilities | null {
+function normalizeCapability(value: unknown, fallback: boolean): boolean {
+  if (value === undefined || value === null) return fallback;
+  return normalizeBoolean(value);
+}
+
+export function normalizeCapabilities(capabilities: unknown, fallback: PlanCapabilities): PlanCapabilities | null {
   if (!capabilities || typeof capabilities !== 'object') return null;
   const raw = capabilities as Record<string, unknown>;
   return {
-    core_ai: normalizeBoolean(raw.core_ai),
-    campaigns: normalizeBoolean(raw.campaigns),
-    clip_pipeline: normalizeBoolean(raw.clip_pipeline),
-    basic_analytics: normalizeBoolean(raw.basic_analytics),
-    scheduling: normalizeBoolean(raw.scheduling),
-    batch_generation: normalizeBoolean(raw.batch_generation),
-    multi_workspace: normalizeBoolean(raw.multi_workspace),
-    knowledge_vault: normalizeBoolean(raw.knowledge_vault),
-    prompt_library: normalizeBoolean(raw.prompt_library),
+    core_ai: normalizeCapability(raw.core_ai, fallback.core_ai),
+    campaigns: normalizeCapability(raw.campaigns, fallback.campaigns),
+    clip_pipeline: normalizeCapability(raw.clip_pipeline, fallback.clip_pipeline),
+    basic_analytics: normalizeCapability(raw.basic_analytics, fallback.basic_analytics),
+    scheduling: normalizeCapability(raw.scheduling, fallback.scheduling),
+    batch_generation: normalizeCapability(raw.batch_generation, fallback.batch_generation),
+    multi_workspace: normalizeCapability(raw.multi_workspace, fallback.multi_workspace),
+    knowledge_vault: normalizeCapability(raw.knowledge_vault, fallback.knowledge_vault),
+    prompt_library: normalizeCapability(raw.prompt_library, fallback.prompt_library),
   };
 }
 
-export function normalizeLimits(limits: unknown): PlanLimits | null {
+export function normalizeLimits(limits: unknown, fallback: PlanLimits): PlanLimits | null {
   if (!limits || typeof limits !== 'object') return null;
   const raw = limits as Record<string, unknown>;
   return {
-    workspaces: Number(raw.workspaces ?? 0),
-    active_campaigns: Number(raw.active_campaigns ?? 0),
-    ai_generations_per_month: Number(raw.ai_generations_per_month ?? 0),
-    content_batch_size: Number(raw.content_batch_size ?? 0),
-    max_output_tokens: Number(raw.max_output_tokens ?? 0),
+    workspaces: Number(raw.workspaces ?? fallback.workspaces),
+    active_campaigns: Number(raw.active_campaigns ?? fallback.active_campaigns),
+    ai_generations_per_month: Number(raw.ai_generations_per_month ?? fallback.ai_generations_per_month),
+    content_batch_size: Number(raw.content_batch_size ?? fallback.content_batch_size),
+    max_output_tokens: Number(raw.max_output_tokens ?? fallback.max_output_tokens),
   };
 }
 

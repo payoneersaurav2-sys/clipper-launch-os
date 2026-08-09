@@ -38,9 +38,9 @@ export function useEntitlements() {
         return { status: result.status === 'unsubscribed' ? 'unsubscribed' : 'unknown' };
       }
 
-      const capabilities = normalizeCapabilities(result.capabilities);
-      const limits = normalizeLimits(result.limits);
       const fallback = planEntitlements[tier];
+      const capabilities = normalizeCapabilities(result.capabilities, fallback);
+      const limits = normalizeLimits(result.limits, fallback);
 
       return {
         status: 'active',
