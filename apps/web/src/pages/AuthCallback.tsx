@@ -34,13 +34,41 @@ export default function AuthCallback() {
     }
 
     const code = searchParams.get('code');
+    const hash = window.location.hash;
+
+    // Detect Supabase implicit flow (Google OAuth returns #access_token=... instead of ?code=...)
+    if (!code && hash && hash.includes('access_token=')) {
+      (async () => {
+        try {
+          setStatus('Connecting your account...');
+          // Supabase JS client automatically parses the hash and sets the session. We just wait for it.
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError || !session) throw sessionError ?? new Error('Session could not be retrieved from URL.');
+          
+          const { data: profile, error: profileError } = await supabase.from('users').upsert({
+            id: session.user.id,
+            full_name: session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? session.user.email?.split('@')[0] ?? 'Creator',
+            avatar_url: session.user.user_metadata?.avatar_url ?? null,
+          }, { onConflict: 'id' }).select('onboarding_complete').single();
+          if (profileError) throw profileError;
+          
+          await syncSession(session);
+          navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
+        } catch (err: unknown) {
+          exchangeInProgress = false;
+          navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
+        }
+      })();
+      return;
+    }
+
     if (!code) {
       exchangeInProgress = false;
       navigate('/login?error=No+authorization+code+provided');
       return;
     }
 
-    // Detect Supabase social OAuth (Google etc.) — no Whop state stored means it's a social redirect
+    // Detect Supabase social OAuth (Google PKCE flow) — no Whop state stored means it's a social redirect
     const transaction = getStoredWhopTransaction(searchParams);
     if (!transaction) {
       (async () => {
