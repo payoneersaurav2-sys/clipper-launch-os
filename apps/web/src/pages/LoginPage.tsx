@@ -4,8 +4,6 @@ import { Input } from '@/components/ui/input';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { buildWhopOAuthUrl } from '@/lib/whopPkce';
-import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import BrandMark from '@/components/BrandMark';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
@@ -26,7 +24,6 @@ export default function LoginPage() {
   const [err, setErr] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [success, setSuccess] = useState('');
-  const [whopLoading, setWhopLoading] = useState(false);
   const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,17 +69,6 @@ export default function LoginPage() {
     }
     setLoading(false);
     navigate('/dashboard');
-  };
-
-  const handleWhopLogin = async () => {
-    setWhopLoading(true);
-    try {
-      const url = await buildWhopOAuthUrl();
-      window.location.assign(url);
-    } catch {
-      setWhopLoading(false);
-      setErr('We could not start Whop sign-in. Please try again.');
-    }
   };
 
 
@@ -148,11 +134,9 @@ export default function LoginPage() {
         <div className="flex-1 h-px bg-white/[0.06]" />
       </div>
 
-      {/* Whop OAuth */}
       {googleConfigured ? <GoogleSignInButton onError={setErr} /> : (
         <p className="text-center text-xs text-[#71717A]">Google sign-in is being configured.</p>
       )}
-      <WhopOAuthButton onClick={handleWhopLogin} loading={whopLoading} />
 
       {/* Toggle login/signup */}
       <div className="text-center text-[13px] text-[#71717A]">
