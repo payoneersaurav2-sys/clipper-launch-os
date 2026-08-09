@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -174,6 +175,34 @@ function NotificationsTab() {
 
 // ---- Security Tab ------------------------------------------
 function SecurityTab() {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!user) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      // Delete all user data then sign out — Supabase cascade handles DB rows
+      // We sign out first to clear the session, then the auth user row is
+      // cleaned by the Supabase service role via the admin API.
+      // Since we only have the anon key client-side, we delete data then sign out.
+      await supabase.from('credit_lots').delete().eq('user_id', user.id);
+      await supabase.from('credit_transactions').delete().eq('user_id', user.id);
+      await supabase.from('workspace_members').delete().eq('user_id', user.id);
+      await supabase.from('workspaces').delete().eq('owner_id', user.id);
+      await supabase.from('users').delete().eq('id', user.id);
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (err) {
+      setDeleting(false);
+      setDeleteError('Could not delete your account. Please contact support.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Section title="API Access">
@@ -191,11 +220,56 @@ function SecurityTab() {
             <p className="text-[13px] font-medium text-red-400">Delete Account</p>
             <p className="text-[12px] text-[#71717A]">Permanently delete your account and all data.</p>
           </div>
-          <Button variant="outline" className="h-9 rounded-[10px] border-red-500/30 bg-red-500/[0.06] text-red-400 hover:bg-red-500/10 text-[12px]">
+          <Button
+            variant="outline"
+            onClick={() => { setShowConfirm(true); setDeleteError(null); }}
+            className="h-9 rounded-[10px] border-red-500/30 bg-red-500/[0.06] text-red-400 hover:bg-red-500/10 text-[12px]"
+          >
             <Trash2 className="h-3.5 w-3.5 mr-1.5" />Delete Account
           </Button>
         </div>
+        {deleteError && (
+          <p className="text-[12px] text-red-400 mt-2">{deleteError}</p>
+        )}
       </Section>
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm mx-4 bg-[#111111] border border-white/[0.08] rounded-[18px] p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-[10px] bg-red-500/10 flex items-center justify-center shrink-0">
+                <Trash2 className="h-4 w-4 text-red-400" />
+              </div>
+              <div>
+                <p className="text-[14px] font-semibold text-[#FAFAFA]">Delete your account?</p>
+                <p className="text-[12px] text-[#71717A] mt-0.5">This action is permanent and cannot be undone.</p>
+              </div>
+            </div>
+            <p className="text-[12px] text-[#A1A1AA] leading-relaxed">
+              All your workspaces, campaigns, ideas, captions, credits, and account data will be permanently deleted.
+            </p>
+            {deleteError && <p className="text-[12px] text-red-400">{deleteError}</p>}
+            <div className="flex gap-3 pt-1">
+              <Button
+                variant="outline"
+                onClick={() => setShowConfirm(false)}
+                disabled={deleting}
+                className="flex-1 h-10 rounded-[10px] border-white/[0.08] bg-transparent text-[#A1A1AA] text-[13px]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 h-10 rounded-[10px] bg-red-500 hover:bg-red-600 text-white text-[13px] font-medium"
+              >
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Yes, delete everything'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
