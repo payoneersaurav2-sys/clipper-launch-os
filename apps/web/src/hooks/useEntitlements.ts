@@ -12,7 +12,7 @@ type RpcEntitlements = {
 };
 
 export function useEntitlements() {
-  const { user } = useAuthStore();
+  const { user, membershipStatus, subscriptionTier } = useAuthStore();
 
   return useQuery({
     queryKey: ['entitlements', user?.id],
@@ -24,6 +24,16 @@ export function useEntitlements() {
       const result = (data ?? {}) as RpcEntitlements;
       const tier = normalizePlanTier(result.tier);
       if (result.status !== 'active' || !tier) {
+        const fallbackTier = normalizePlanTier(subscriptionTier) ?? undefined;
+        if (user && membershipStatus && membershipStatus !== 'inactive' && fallbackTier && fallbackTier !== 'free') {
+          return {
+            status: 'active',
+            tier: fallbackTier,
+            capabilities: planEntitlements[fallbackTier].capabilities,
+            limits: planEntitlements[fallbackTier].limits,
+            membershipExpiresAt: null,
+          };
+        }
         return { status: result.status === 'unsubscribed' ? 'unsubscribed' : 'unknown' };
       }
 
