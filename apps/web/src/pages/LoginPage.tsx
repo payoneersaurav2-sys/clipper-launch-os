@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import BrandMark from '@/components/BrandMark';
+import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
 export default function LoginPage() {
@@ -131,8 +132,21 @@ export default function LoginPage() {
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-white/[0.06]" />
         <span className="text-[12px] text-[#71717A]">or</span>
-        <div className="flex-1 h-px bg-white/[0.06]" />
-      </div>
+      {/* Whop OAuth (Only for returning users) */}
+      {mode === 'login' && (
+        <WhopOAuthButton
+          onClick={async () => {
+            try {
+              const { buildWhopOAuthUrl } = await import('@/lib/whopPkce');
+              const url = await buildWhopOAuthUrl();
+              window.location.assign(url);
+            } catch {
+              setErr('We could not start Whop sign-in. Please try again.');
+            }
+          }}
+          loading={false}
+        />
+      )}
 
       {googleConfigured ? <GoogleSignInButton onError={setErr} /> : (
         <p className="text-center text-xs text-[#71717A]">Google sign-in is being configured.</p>
