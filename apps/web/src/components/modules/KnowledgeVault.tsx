@@ -88,7 +88,7 @@ function normalizeTags(raw: string) {
 
 function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) {
   const { addItem } = useKnowledge();
-  const { user } = useAuthStore();
+  const { user, session } = useAuthStore();
   const [mode, setMode] = useState<'text' | 'file' | 'website'>('text');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -114,6 +114,16 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
     setMode('file');
   };
 
+  const formatFunctionError = (error: unknown, data?: { success?: boolean; message?: string; error?: { message?: string } }) => {
+    const supabaseError = error as { message?: string; details?: string; hint?: string };
+    return supabaseError?.message
+      || supabaseError?.details
+      || supabaseError?.hint
+      || data?.error?.message
+      || data?.message
+      || 'The website could not be ingested.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || (!content.trim() && !url.trim() && !selectedFile)) return;
@@ -125,18 +135,15 @@ function AddItemModal({ wsId, onClose }: { wsId: string; onClose: () => void }) 
         if (!/^https?:\/\//i.test(normalizedUrl)) {
           throw new Error('Enter a valid https:// URL to ingest.');
         }
-        const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
-          body: {
-            workspace_id: wsId,
-            title: title.trim(),
-            url: normalizedUrl,
-            tags: normalizeTags(tags),
-          },
-        });
-        if (error) throw new Error((error as { message?: string }).message ?? 'The website could not be ingested.');
-        if (data?.success === false) {
-          throw new Error(data.error?.message ?? data.message ?? 'The website could not be ingested.');
-        }
+          const authHeaders = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
+          const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
+            body: {
+              workspace_id: wsId,
+              title: title.trim(),
+              url: normalizedUrl,
+              tags: normalizeTags(tags),
+            },
+            headers: authHeaders,
         if (!data?.item) throw new Error('The website could not be ingested.');
         onClose();
         return;
@@ -260,6 +267,7 @@ export function KnowledgeVault() {
   const { data: credits } = useCredits();
   const { data: items, isLoading, deleteItem, wsId } = useKnowledge();
   const { activeWorkspace } = useWorkspaceStore();
+  const { session } = useAuthStore();
   const queryClient = useQueryClient();
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState('');
@@ -334,6 +342,7 @@ export function KnowledgeVault() {
     if (!wsId || item.source_type !== 'website' || !item.source_url) return;
     setRefreshingId(item.id);
     try {
+      const authHeaders = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined;
       const { data, error } = await supabase.functions.invoke<{ success?: boolean; item?: KnowledgeItem; message?: string; error?: { message?: string } }>('knowledge-ingest', {
         body: {
           workspace_id: wsId,
@@ -342,33 +351,21 @@ export function KnowledgeVault() {
           url: item.source_url,
           tags: item.tags ?? [],
         },
+        headers: authHeaders,
       });
-      if (error) throw new Error((error as { message?: string }).message ?? 'The website could not be refreshed.');
-      if (data?.success === false) throw new Error(data.error?.message ?? data.message ?? 'The website could not be refreshed.');
+      if (error) throw new Error(formatFunctionError(error, data));
+      if (data?.success === false) throw new Error(formatFunctionError(null, data));
       if (!data?.item) throw new Error('The website could not be refreshed.');
       await queryClient.invalidateQueries({ queryKey: ['knowledge', wsId] });
-    } catch {
-      setAnswerError('The website could not be refreshed right now.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'The website could not be refreshed right now.';
+      setAnswerError(message);
     } finally {
       setRefreshingId(null);
     }
   };
 
   return (
-    <div className="space-y-8 max-w-5xl animate-in fade-in duration-500">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <div>
-          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Knowledge Vault</h2>
-          <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Your AI&apos;s long-term memory. Add text, files, or website sources and keep them ready for generation.</p>
-        </div>
-        {credits?.tier !== 'free' && (
-          <Button onClick={() => setShowAdd(true)} className="h-10 rounded-[12px] px-5 bg-primary text-white hover:bg-primary/90 text-[13px] self-start sm:self-auto shrink-0">
-            <Plus className="h-4 w-4 mr-1.5" />Add Knowledge
-          </Button>
-        )}
-      </div>
-
-      {credits?.tier === 'free' ? (
         <div className="mt-8">
           <UpgradePrompt
             feature="Knowledge Vault"
