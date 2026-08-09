@@ -25,18 +25,49 @@ CREATE INDEX IF NOT EXISTS idx_prompts_user_favorite ON public.prompts (user_id,
 
 ALTER TABLE public.prompts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their workspace prompts" ON public.prompts FOR SELECT
-  USING (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'prompts'
+      AND policyname = 'Users can view their workspace prompts'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can view their workspace prompts" ON public.prompts FOR SELECT USING (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id))';
+  END IF;
 
-CREATE POLICY "Users can insert prompts into their workspace" ON public.prompts FOR INSERT
-  WITH CHECK (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id));
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'prompts'
+      AND policyname = 'Users can insert prompts into their workspace'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can insert prompts into their workspace" ON public.prompts FOR INSERT WITH CHECK (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id))';
+  END IF;
 
-CREATE POLICY "Users can update their own workspace prompts" ON public.prompts FOR UPDATE
-  USING (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id))
-  WITH CHECK (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id));
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'prompts'
+      AND policyname = 'Users can update their own workspace prompts'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can update their own workspace prompts" ON public.prompts FOR UPDATE USING (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id)) WITH CHECK (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id))';
+  END IF;
 
-CREATE POLICY "Users can delete their own workspace prompts" ON public.prompts FOR DELETE
-  USING (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id));
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'prompts'
+      AND policyname = 'Users can delete their own workspace prompts'
+  ) THEN
+    EXECUTE 'CREATE POLICY "Users can delete their own workspace prompts" ON public.prompts FOR DELETE USING (auth.uid() = user_id AND public.user_belongs_to_workspace(workspace_id))';
+  END IF;
+END
+$$;
 
 INSERT INTO public.creator_os_credit_operations (operation, credits, measured_p95_cost_usd)
 VALUES ('prompt_library_execution', 4, 0.00034020)
