@@ -15,6 +15,19 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function fetchSupabaseUser(supabaseUrl: string, supabaseAnonKey: string, authHeader: string) {
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: authHeader,
+    },
+  });
+
+  if (!response.ok) return null;
+  const body = await response.json().catch(() => null);
+  return body?.user ?? null;
+}
+
 function isPrivateIpAddress(ip: string) {
   if (/^127\./.test(ip)) return true;
   if (/^0\./.test(ip)) return true;
@@ -244,31 +257,29 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) return json({ ...buildError('CONFIG_MISSING', 'Knowledge ingestion is not configured.' ) }, 503);
 
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: authHeader,
-        },
-      },
+      auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      console.warn('knowledge-ingest auth validation failed', { authError, authData });
+    const user = await fetchSupabaseUser(supabaseUrl, supabaseAnonKey, authHeader);
+    if (!user?.id) {
+      console.warn('knowledge-ingest auth validation failed', {
+        authHeaderPresent: Boolean(authHeader),
+        authStatus: user ? 'invalid-user' : 'unauthorized',
+      });
       return json({
         ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
         debug: {
           authHeaderPresent: Boolean(authHeader),
-          authError: authError?.message ?? null,
-          user: authData?.user ?? null,
+          authStatus: user ? 'invalid-user' : 'unauthorized',
         },
       }, 401);
     }
 
-    const userId = authData.user.id;
+    const userId = user.id;
     if (!userId) {
       return json({
         ...buildError('AUTH_REQUIRED', 'Sign in again to ingest knowledge.'),
-        debug: { authHeaderPresent: Boolean(authHeader), user: authData.user ?? null },
+        debug: { authHeaderPresent: Boolean(authHeader), user: null },
       }, 401);
     }
 
@@ -291,13 +302,29 @@ serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
-    const { data: membershipData, error: membershipError } = await adminClient
-      .from('workspace_members')
-      .select('workspace_id')
-      .eq('user_id', userId)
-      .eq('workspace_id', workspaceId)
-      .maybeSingle();
-    if (membershipError || !membershipData) return json({ ...buildError('AUTH_FAILED', 'You do not have access to that workspace.' ) }, 403);
+    const [{ data: membershipData, error: membershipError }, { data: workspaceData, error: workspaceError }] = await Promise.all([
+      adminClient
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', userId)
+        .eq('workspace_id', workspaceId)
+        .maybeSingle(),
+      adminClient
+        .from('workspaces')
+        .select('id')
+        .eq('id', workspaceId)
+        .eq('owner_id', userId)
+        .maybeSingle(),
+    ]);
+
+    if (membershipError || workspaceError) {
+      console.error('knowledge-ingest workspace authorization lookup failed', { membershipError, workspaceError });
+      return json({ ...buildError('AUTH_FAILED', 'You do not have access to that workspace.' ) }, 403);
+    }
+
+    if (!membershipData && !workspaceData) {
+      return json({ ...buildError('AUTH_FAILED', 'You do not have access to that workspace.' ) }, 403);
+    }
 
     const normalizedUrl = url || null;
     const initialMeta = {

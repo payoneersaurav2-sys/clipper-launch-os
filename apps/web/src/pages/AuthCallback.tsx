@@ -127,10 +127,11 @@ export default function AuthCallback() {
 
         if (data?.access_token) {
           setStatus('Authenticated! Loading your OS...');
-          const { data: authData, error: authError } = await supabase.auth.setSession({
+          const setSessionPayload: { access_token: string; refresh_token: string } = {
             access_token: data.access_token,
             refresh_token: data.refresh_token ?? '',
-          });
+          };
+          const { data: authData, error: authError } = await supabase.auth.setSession(setSessionPayload);
           if (authError) throw authError;
           if (!authData?.session) throw new Error('Supabase did not create a session.');
           await syncSession(authData.session);
