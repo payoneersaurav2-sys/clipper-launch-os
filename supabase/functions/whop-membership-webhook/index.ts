@@ -19,6 +19,9 @@ type WhopEvent = {
     plan?: { id?: string | null } | null;
     user?: { id?: string | null } | null;
     membership?: { id?: string | null } | null;
+    passthrough?: string | null;
+    custom_fields?: { user_id?: string | null } | null;
+    metadata?: { user_id?: string | null } | null;
     usd_total?: number | null;
   };
 };
@@ -56,7 +59,7 @@ async function getMembership(whopApiKey: string, membershipId: string) {
   return await response.json() as Membership;
 }
 
-async function syncMembership(admin: ReturnType<typeof createClient>, membership: Membership, whopApiKey?: string) {
+async function syncMembership(admin: ReturnType<typeof createClient>, membership: Membership, whopApiKey?: string, explicitUserId?: string | null) {
   if (!membership.user_id) return;
   const { data: mapping, error: mappingError } = await admin
     .from('whop_plan_mappings').select('tier').eq('whop_plan_id', membership.plan_id).maybeSingle();
@@ -66,10 +69,26 @@ async function syncMembership(admin: ReturnType<typeof createClient>, membership
   if (!mapping?.tier) return;
 
   const active = ACCESS_GRANTING_STATUSES.has(membership.status);
+
+  let profileId: string | null = null;
+
+  if (explicitUserId) {
+    const { data: directProfile, error: directProfileError } = await admin.from('users').select('id').eq('id', explicitUserId).maybeSingle();
+    if (directProfileError) throw new Error('Direct passthrough profile lookup failed');
+    if (directProfile?.id) {
+      profileId = directProfile.id;
+      const { error: whopUpdateError } = await admin.from('users').update({
+        whop_id: membership.user_id,
+        updated_at: new Date().toISOString(),
+      }).eq('id', profileId);
+      if (whopUpdateError) throw new Error('Passthrough profile update failed');
+    }
+  }
+
   const { data: whopProfile, error: whopProfileError } = await admin.from('users').select('id').eq('whop_id', membership.user_id).maybeSingle();
   if (whopProfileError) throw new Error('Profile lookup failed');
 
-  let profileId = whopProfile?.id ?? null;
+  if (!profileId) profileId = whopProfile?.id ?? null;
 
   if (!profileId && whopApiKey) {
     try {
@@ -145,8 +164,12 @@ serve(async (request) => {
   if (priorEvent) return new Response('OK', { status: 200 });
 
   try {
+    const explicitUserId = typeof event.data?.passthrough === 'string' && event.data.passthrough.trim().length > 0
+      ? event.data.passthrough.trim()
+      : event.data?.custom_fields?.user_id ?? event.data?.metadata?.user_id ?? null;
+
     if (event.type.startsWith('membership.')) {
-      await syncMembership(admin, await getMembership(whopApiKey, event.data.id), whopApiKey);
+      await syncMembership(admin, await getMembership(whopApiKey, event.data.id), whopApiKey, explicitUserId);
     } else if (event.type === 'payment.succeeded') {
       const planId = event.data.plan?.id ?? '';
       const whopUserId = event.data.user?.id ?? '';
@@ -173,7 +196,7 @@ serve(async (request) => {
       } else if (event.data.membership?.id) {
         // Subscription renewal payments are also a reliable opportunity to grant
         // the next allocation. The grant reference makes replays harmless.
-        await syncMembership(admin, await getMembership(whopApiKey, event.data.membership.id), whopApiKey);
+        await syncMembership(admin, await getMembership(whopApiKey, event.data.membership.id), whopApiKey, explicitUserId);
       }
     }
   } catch (error) {

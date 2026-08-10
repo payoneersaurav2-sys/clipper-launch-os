@@ -9,8 +9,20 @@ import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 
 export default function CreditStorePage() {
   const { data: balance, isLoading } = useCredits();
-  const whopId = useAuthStore((state) => state.whopId);
+  const { whopId, user } = useAuthStore();
   const [linkingWhop, setLinkingWhop] = useState(false);
+
+  const checkoutWithPassthrough = (checkoutUrl: string) => {
+    if (!user?.id) return checkoutUrl;
+    try {
+      const nextUrl = new URL(checkoutUrl);
+      nextUrl.searchParams.set('passthrough', user.id);
+      return nextUrl.toString();
+    } catch {
+      const separator = checkoutUrl.includes('?') ? '&' : '?';
+      return `${checkoutUrl}${separator}passthrough=${encodeURIComponent(user.id)}`;
+    }
+  };
 
   const connectWhop = async () => {
     setLinkingWhop(true);
@@ -59,7 +71,7 @@ export default function CreditStorePage() {
                 <li className="flex gap-2"><Check className="h-3.5 w-3.5 text-primary" />Rolls over</li>
                 <li className="flex gap-2"><Check className="h-3.5 w-3.5 text-primary" />Applied only after verified payment</li>
               </ul>
-              <Button className="mt-auto h-11 w-full" onClick={() => whopId ? window.location.assign(pack.checkoutUrl) : connectWhop()} disabled={linkingWhop}>{whopId ? 'Buy Credits' : 'Connect Whop to Buy'}</Button>
+              <Button className="mt-auto h-11 w-full" onClick={() => whopId ? window.location.assign(checkoutWithPassthrough(pack.checkoutUrl)) : connectWhop()} disabled={linkingWhop}>{whopId ? 'Buy Credits' : 'Connect Whop to Buy'}</Button>
             </article>
           );
         })}

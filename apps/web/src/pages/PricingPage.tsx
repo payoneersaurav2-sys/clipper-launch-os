@@ -14,6 +14,18 @@ export default function PricingPage() {
   const navigate = useNavigate();
   const { user, whopId } = useAuthStore();
 
+  const checkoutWithPassthrough = (checkoutUrl: string) => {
+    if (!user?.id) return checkoutUrl;
+    try {
+      const nextUrl = new URL(checkoutUrl);
+      nextUrl.searchParams.set('passthrough', user.id);
+      return nextUrl.toString();
+    } catch {
+      const separator = checkoutUrl.includes('?') ? '&' : '?';
+      return `${checkoutUrl}${separator}passthrough=${encodeURIComponent(user.id)}`;
+    }
+  };
+
   const beginCheckout = async (checkoutUrl: string) => {
     if (!user) { navigate('/login'); return; }
     if (!whopId) {
@@ -25,7 +37,8 @@ export default function PricingPage() {
       }
       return;
     }
-    window.location.assign(checkoutUrl);
+    const signedCheckoutUrl = checkoutWithPassthrough(checkoutUrl);
+    window.location.assign(signedCheckoutUrl);
   };
 
   useEffect(() => {
