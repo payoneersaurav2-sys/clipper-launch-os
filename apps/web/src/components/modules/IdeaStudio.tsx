@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
+import { useWorkspacePrompts, useWorkspaceKnowledge } from '@/hooks/useWorkflowResources';
 import { useAI } from '@/hooks/useAI';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { buildGenerateIdeasPrompt, buildExpandIdeaPrompt } from '@/lib/ai-services';
@@ -25,8 +26,26 @@ export function IdeaStudio() {
     ? { id: activeWorkspace.id, name: activeWorkspace.name, niche: activeWorkspace.niche, platform: activeWorkspace.platform }
     : null;
 
+  const { data: prompts } = useWorkspacePrompts();
+  const { data: knowledge } = useWorkspaceKnowledge();
+
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [selectedPromptTitle, setSelectedPromptTitle] = useState<string | undefined>(undefined);
+  const [selectedPromptContent, setSelectedPromptContent] = useState<string | undefined>(undefined);
+  const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>([]);
+  const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
+
   const sendTo = (path: string, idea: any) => {
-    navigate(`/dashboard/${path}`, { state: { ideaId: idea.id, ideaTitle: idea.title } });
+    navigate(`/dashboard/${path}`, {
+      state: {
+        ideaId: idea.id,
+        ideaTitle: idea.title,
+        selectedPromptId,
+        selectedPromptTitle,
+        selectedPrompt: selectedPromptContent,
+        selectedKnowledgeSnippets,
+      },
+    });
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -92,6 +111,62 @@ export function IdeaStudio() {
         <div>
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Idea Studio</h2>
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Generate, capture and expand content ideas.</p>
+        </div>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-[#111111] px-2.5 py-1.5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]">
+            <label className="text-[11px] uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</label>
+            <select
+              value={selectedPromptId ?? ''}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                setSelectedPromptId(id);
+                const p = prompts?.find((x: any) => x.id === id);
+                setSelectedPromptTitle(p?.title);
+                setSelectedPromptContent(p?.content);
+              }}
+              className="h-8 rounded-full border border-white/[0.05] bg-[#0D0D0D] text-[#FAFAFA] px-3 text-[12px] outline-none focus:border-primary/50"
+            >
+              <option value="">No prompt</option>
+              {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsKnowledgeOpen((open) => !open)}
+              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.06] bg-[#111111] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(255,255,255,0.02)]"
+            >
+              <span>{selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
+            </button>
+            {isKnowledgeOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-72 max-h-64 overflow-auto rounded-[14px] border border-white/[0.08] bg-[#111111] p-2 shadow-2xl ring-1 ring-primary/10">
+                {knowledge && knowledge.length > 0 ? knowledge.map((k: any) => {
+                  const value = k.content_excerpt ?? k.content ?? '';
+                  const checked = selectedKnowledgeSnippets.includes(value);
+                  return (
+                    <label key={k.id} className="flex cursor-pointer items-start gap-2 rounded-[10px] px-2 py-2 hover:bg-white/[0.03]">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const val = value;
+                          setSelectedKnowledgeSnippets((prev) => e.target.checked ? [...prev, val] : prev.filter((x) => x !== val));
+                        }}
+                        className="mt-0.5 accent-primary"
+                      />
+                      <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
+                        <span className="mb-0.5 block font-medium text-[#FAFAFA]">{k.title}</span>
+                        <span className="text-[#A1A1AA]">{(k.content_excerpt ?? k.content ?? '').slice(0, 110)}{((k.content_excerpt ?? k.content ?? '').length > 110 ? '…' : '')}</span>
+                      </span>
+                    </label>
+                  );
+                }) : (
+                  <div className="px-3 py-2 text-[12px] text-[#71717A]">No knowledge items yet.</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <Button
           onClick={handleAIGenerate}

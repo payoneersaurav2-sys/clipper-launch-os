@@ -197,7 +197,7 @@ function SecurityTab() {
       await supabase.from('users').delete().eq('id', user.id);
       await supabase.auth.signOut();
       navigate('/login');
-    } catch (err) {
+    } catch {
       setDeleting(false);
       setDeleteError('Could not delete your account. Please contact support.');
     }

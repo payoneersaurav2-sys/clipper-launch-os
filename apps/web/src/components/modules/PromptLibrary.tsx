@@ -59,7 +59,7 @@ function PromptEditor({ initial, seed, onClose }: { initial?: SavedPromptRow; se
     setCategory(initial?.category ?? seed?.category ?? 'General');
     setTags((initial?.tags ?? seed?.tags ?? []).join(', '));
     setFavorite(Boolean(initial?.favorite ?? seed?.favorite));
-  }, [initial?.id, seed?.title, seed?.description, seed?.content, seed?.category, seed?.favorite, seed?.tags]);
+  }, [initial, seed]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -164,7 +164,7 @@ function UsePromptModal({ prompt, onClose, onSaveAsPrompt, canUsePromptLibrary }
     setValues(Object.fromEntries(variables.map((variable) => [variable, ''])));
     setResult(null);
     setError(null);
-  }, [variables.join('|')]);
+  }, [variables]);
 
   const runPrompt = async () => {
     if (!canUsePromptLibrary) {

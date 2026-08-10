@@ -4,12 +4,13 @@ import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useCaptions } from '@/hooks/useCaptions';
 import { useAI } from '@/hooks/useAI';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useWorkspacePrompts, useWorkspaceKnowledge } from '@/hooks/useWorkflowResources';
 import { buildGenerateCaptionPrompt, buildCaptionVariantsPrompt } from '@/lib/ai-services';
 import EmptyState from '@/components/EmptyState';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Loader2, Sparkles, Copy, Check, Layers } from 'lucide-react';
+import { Plus, Loader2, Sparkles, Copy, Check, Layers, ChevronDown } from 'lucide-react';
 
 const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter'];
 
@@ -18,11 +19,20 @@ export function CaptionOS() {
   const navigate = useNavigate();
   const { data: ideas } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
+  const { data: prompts } = useWorkspacePrompts();
+  const { data: knowledge } = useWorkspaceKnowledge();
 
   const passedId = (location.state as any)?.ideaId;
-  const selectedPromptTitle = (location.state as any)?.selectedPromptTitle as string | undefined;
-  const selectedPrompt = (location.state as any)?.selectedPrompt as string | undefined;
-  const selectedKnowledgeSnippets = (location.state as any)?.selectedKnowledgeSnippets as string[] | undefined;
+  const passedPromptId = (location.state as any)?.selectedPromptId as string | undefined;
+  const selectedPromptTitleFromState = (location.state as any)?.selectedPromptTitle as string | undefined;
+  const selectedPromptFromState = (location.state as any)?.selectedPrompt as string | undefined;
+  const selectedKnowledgeSnippetsFromState = (location.state as any)?.selectedKnowledgeSnippets as string[] | undefined;
+
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(passedPromptId ?? null);
+  const [selectedPromptTitle, setSelectedPromptTitle] = useState<string | undefined>(selectedPromptTitleFromState);
+  const [selectedPrompt, setSelectedPrompt] = useState<string | undefined>(selectedPromptFromState);
+  const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>(selectedKnowledgeSnippetsFromState ?? []);
+  const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
 
   const latestIdea = passedId
     ? ideas?.find(i => i.id === passedId) ?? ideas?.[0]
@@ -112,18 +122,69 @@ export function CaptionOS() {
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Caption OS</h2>
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1 truncate">Context: <span className="text-[#A1A1AA]">{latestIdea.title}</span></p>
         </div>
-        <div className="flex gap-2 self-start sm:self-auto">
-          <Button onClick={handleVariants} disabled={isGenerating || isVariants} variant="outline"
-            className="h-10 rounded-[12px] border-white/[0.06] bg-[#111111] text-[#FAFAFA] hover:bg-white/[0.05] text-[13px]">
-            {isVariants ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Layers className="h-4 w-4 mr-2" />}
-            <span className="hidden sm:inline">All Platforms</span>
-            <span className="inline sm:hidden">All</span>
-          </Button>
-          <Button onClick={handleGenerate} disabled={isGenerating}
-            className="h-10 rounded-[12px] px-4 sm:px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] text-[13px]">
-            {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-2" />}
-            <span className="hidden sm:inline">Generate</span>
-          </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-[#111111] px-2.5 py-1.5">
+            <label className="text-[11px] uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</label>
+            <select
+              value={selectedPromptId ?? ''}
+              onChange={(e) => {
+                const id = e.target.value || null;
+                setSelectedPromptId(id);
+                const p = prompts?.find((x: any) => x.id === id);
+                setSelectedPromptTitle(p?.title);
+                setSelectedPrompt(p?.content);
+              }}
+              className="h-8 rounded-full border border-white/[0.05] bg-[#0D0D0D] text-[#FAFAFA] px-3 text-[12px] outline-none focus:border-primary/50"
+            >
+              <option value="">No prompt</option>
+              {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsKnowledgeOpen((open) => !open)}
+              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.06] bg-[#111111] px-3 text-[12px] text-[#FAFAFA]"
+            >
+              <span>{selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
+            </button>
+            {isKnowledgeOpen && (
+              <div className="absolute right-0 z-20 mt-2 w-72 max-h-64 overflow-auto rounded-[14px] border border-white/[0.08] bg-[#111111] p-2 shadow-2xl ring-1 ring-primary/10">
+                {knowledge && knowledge.length > 0 ? knowledge.map((k: any) => {
+                  const value = k.content_excerpt ?? k.content ?? '';
+                  const checked = selectedKnowledgeSnippets.includes(value);
+                  return (
+                    <label key={k.id} className="flex cursor-pointer items-start gap-2 rounded-[10px] px-2 py-2 hover:bg-white/[0.03]">
+                      <input type="checkbox" checked={checked} onChange={(e) => {
+                        const val = value;
+                        setSelectedKnowledgeSnippets((prev) => e.target.checked ? [...prev, val] : prev.filter((x) => x !== val));
+                      }} className="mt-0.5 accent-primary" />
+                      <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
+                        <span className="mb-0.5 block font-medium text-[#FAFAFA]">{k.title}</span>
+                        <span className="text-[#A1A1AA]">{(k.content_excerpt ?? k.content ?? '').slice(0, 110)}{((k.content_excerpt ?? k.content ?? '').length > 110 ? '…' : '')}</span>
+                      </span>
+                    </label>
+                  );
+                }) : (
+                  <div className="px-3 py-2 text-[12px] text-[#71717A]">No knowledge items yet.</div>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-2 self-start sm:self-auto">
+            <Button onClick={handleVariants} disabled={isGenerating || isVariants} variant="outline"
+              className="h-10 rounded-[12px] border-white/[0.06] bg-[#111111] text-[#FAFAFA] hover:bg-white/[0.05] text-[13px]">
+              {isVariants ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Layers className="h-4 w-4 mr-2" />}
+              <span className="hidden sm:inline">All Platforms</span>
+              <span className="inline sm:hidden">All</span>
+            </Button>
+            <Button onClick={handleGenerate} disabled={isGenerating}
+              className="h-10 rounded-[12px] px-4 sm:px-5 bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] text-[13px]">
+              {isGenerating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 sm:mr-2" />}
+              <span className="hidden sm:inline">Generate</span>
+            </Button>
+          </div>
         </div>
       </div>
 

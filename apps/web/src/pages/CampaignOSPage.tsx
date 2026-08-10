@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCampaigns, Campaign, CampaignStatus } from "@/hooks/useCampaigns";
+import { useWorkspacePrompts, useWorkspaceKnowledge } from "@/hooks/useWorkflowResources";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BrandedDateField } from "@/components/BrandedDateControls";
@@ -16,6 +17,7 @@ import {
   Rocket,
   Target,
   X,
+  ChevronDown,
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<
@@ -521,9 +523,14 @@ function CampaignCard({
 // ---- Main Page ----------------------------------------------
 export default function CampaignOSPage() {
   const { data: campaigns, isLoading } = useCampaigns();
+  const { data: prompts } = useWorkspacePrompts();
+  const { data: knowledge } = useWorkspaceKnowledge();
   const [showCreate, setShowCreate] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<CampaignStatus | "all">("all");
+  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
+  const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>([]);
+  const [knowledgeOpen, setKnowledgeOpen] = useState(false);
 
   const visible =
     filter === "all"
@@ -548,6 +555,60 @@ export default function CampaignOSPage() {
           <Plus className="h-4 w-4 mr-1.5" />
           New Campaign
         </Button>
+      </div>
+
+      <div className="mb-5 flex flex-col gap-3 rounded-[18px] border border-white/[0.06] bg-[#111111] p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-[#71717A]">Workflow context</p>
+            <p className="mt-1 text-[13px] text-[#A1A1AA]">Saved prompt + knowledge feed this campaign plan.</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-[#0D0D0D] px-2.5 py-1.5">
+            <label className="text-[11px] uppercase tracking-[0.18em] text-[#71717A]">Prompt</label>
+            <select
+              value={selectedPromptId ?? ''}
+              onChange={(e) => setSelectedPromptId(e.target.value || null)}
+              className="h-8 rounded-full border border-white/[0.05] bg-[#111111] text-[#FAFAFA] px-3 text-[12px] outline-none focus:border-primary/50"
+            >
+              <option value="">No prompt</option>
+              {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setKnowledgeOpen((open) => !open)}
+              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.06] bg-[#0D0D0D] px-3 text-[12px] text-[#FAFAFA]"
+            >
+              <span>{selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
+            </button>
+            {knowledgeOpen && (
+              <div className="absolute left-0 z-20 mt-2 w-72 max-h-64 overflow-auto rounded-[14px] border border-white/[0.08] bg-[#111111] p-2 shadow-2xl ring-1 ring-primary/10">
+                {knowledge && knowledge.length > 0 ? knowledge.map((k: any) => {
+                  const value = k.content_excerpt ?? k.content ?? '';
+                  const checked = selectedKnowledgeSnippets.includes(value);
+                  return (
+                    <label key={k.id} className="flex cursor-pointer items-start gap-2 rounded-[10px] px-2 py-2 hover:bg-white/[0.03]">
+                      <input type="checkbox" checked={checked} onChange={(e) => {
+                        const val = value;
+                        setSelectedKnowledgeSnippets((prev) => e.target.checked ? [...prev, val] : prev.filter((x) => x !== val));
+                      }} className="mt-0.5 accent-primary" />
+                      <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
+                        <span className="mb-0.5 block font-medium text-[#FAFAFA]">{k.title}</span>
+                        <span className="text-[#A1A1AA]">{(k.content_excerpt ?? k.content ?? '').slice(0, 110)}{((k.content_excerpt ?? k.content ?? '').length > 110 ? '…' : '')}</span>
+                      </span>
+                    </label>
+                  );
+                }) : (
+                  <div className="px-3 py-2 text-[12px] text-[#71717A]">No knowledge items yet.</div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Status filter pills */}
