@@ -30,7 +30,18 @@ serve(async (request) => {
     if (!whopUserResponse.ok) throw new Error('Whop user verification failed.');
     const whopUser = await whopUserResponse.json();
     const whopUserId = whopUser.sub as string | undefined;
+    const whopEmail = String(whopUser.email ?? '').trim().toLowerCase();
     if (!whopUserId) throw new Error('Whop did not return a user identity.');
+
+    const { data: allUsers, error: userListError } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    if (userListError) throw new Error('Could not verify the Whop account link.');
+
+    const sameEmailUser = whopEmail
+      ? allUsers.users.find((user) => String(user.email ?? '').trim().toLowerCase() === whopEmail)
+      : undefined;
+    if (sameEmailUser && sameEmailUser.id !== authData.user.id) {
+      throw new Error('This Whop email is already linked to a different CreatorOS account. Sign in with that account instead.');
+    }
 
     const { data: alreadyLinked, error: linkLookupError } = await admin.from('users').select('id').eq('whop_id', whopUserId).maybeSingle();
     if (linkLookupError) throw new Error('Could not verify the Whop account link.');
