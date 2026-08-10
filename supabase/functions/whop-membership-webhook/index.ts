@@ -56,7 +56,7 @@ async function getMembership(whopApiKey: string, membershipId: string) {
   return await response.json() as Membership;
 }
 
-async function syncMembership(admin: ReturnType<typeof createClient>, membership: Membership) {
+async function syncMembership(admin: ReturnType<typeof createClient>, membership: Membership, whopApiKey?: string) {
   if (!membership.user_id) return;
   const { data: mapping, error: mappingError } = await admin
     .from('whop_plan_mappings').select('tier').eq('whop_plan_id', membership.plan_id).maybeSingle();
@@ -66,10 +66,42 @@ async function syncMembership(admin: ReturnType<typeof createClient>, membership
   if (!mapping?.tier) return;
 
   const active = ACCESS_GRANTING_STATUSES.has(membership.status);
-  const { data: profile, error: profileError } = await admin
-    .from('users').select('id').eq('whop_id', membership.user_id).maybeSingle();
-  if (profileError) throw new Error('Profile lookup failed');
-  if (!profile) throw new Error('CreatorOS profile is not available yet');
+  const { data: whopProfile, error: whopProfileError } = await admin.from('users').select('id').eq('whop_id', membership.user_id).maybeSingle();
+  if (whopProfileError) throw new Error('Profile lookup failed');
+
+  let profileId = whopProfile?.id ?? null;
+
+  if (!profileId && whopApiKey) {
+    try {
+      const profileResponse = await fetch(`https://api.whop.com/api/v2/users/${encodeURIComponent(membership.user_id)}`, {
+        headers: { Authorization: `Bearer ${whopApiKey}` },
+      });
+      if (profileResponse.ok) {
+        const remoteProfile = await profileResponse.json();
+        const remoteEmail = String(remoteProfile?.email ?? '').trim().toLowerCase();
+        if (remoteEmail) {
+          const { data: userList, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
+          if (listError) throw new Error('User directory lookup failed');
+          const matchingAuth = userList.users.find((user) => String(user.email ?? '').trim().toLowerCase() === remoteEmail);
+          if (matchingAuth) {
+            profileId = matchingAuth.id;
+            const { error: profileUpsertError } = await admin.from('users').upsert({
+              id: matchingAuth.id,
+              whop_id: membership.user_id,
+              full_name: remoteProfile?.username ?? remoteProfile?.name ?? matchingAuth.email?.split('@')[0] ?? 'Whop User',
+              updated_at: new Date().toISOString(),
+            }, { onConflict: 'id' });
+            if (profileUpsertError) throw new Error('Profile upsert failed');
+          }
+        }
+      }
+    } catch {
+      // Leave the resolution to the whop_id-only case; we do not want one
+      // lookup failure to poison the whole webhook replay.
+    }
+  }
+
+  if (!profileId) throw new Error('CreatorOS profile is not available yet');
 
   const { error: updateError } = await admin.from('users').update({
     membership_status: active ? membership.status : 'inactive',
@@ -79,12 +111,12 @@ async function syncMembership(admin: ReturnType<typeof createClient>, membership
     membership_expires_at: membership.current_period_end ?? null,
     entitlement_updated_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }).eq('id', profile.id);
+  }).eq('id', profileId);
   if (updateError) throw new Error('Profile synchronization failed');
 
   if (active) {
     const { error: grantError } = await admin.rpc('grant_creator_os_subscription_credits', {
-      p_user_id: profile.id,
+      p_user_id: profileId,
       p_tier: mapping.tier,
       p_membership_id: membership.id,
       p_period_end: membership.current_period_end ?? null,
@@ -114,7 +146,7 @@ serve(async (request) => {
 
   try {
     if (event.type.startsWith('membership.')) {
-      await syncMembership(admin, await getMembership(whopApiKey, event.data.id));
+      await syncMembership(admin, await getMembership(whopApiKey, event.data.id), whopApiKey);
     } else if (event.type === 'payment.succeeded') {
       const planId = event.data.plan?.id ?? '';
       const whopUserId = event.data.user?.id ?? '';
@@ -141,7 +173,7 @@ serve(async (request) => {
       } else if (event.data.membership?.id) {
         // Subscription renewal payments are also a reliable opportunity to grant
         // the next allocation. The grant reference makes replays harmless.
-        await syncMembership(admin, await getMembership(whopApiKey, event.data.membership.id));
+        await syncMembership(admin, await getMembership(whopApiKey, event.data.membership.id), whopApiKey);
       }
     }
   } catch (error) {
