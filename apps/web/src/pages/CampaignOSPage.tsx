@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCampaigns, Campaign, CampaignStatus } from "@/hooks/useCampaigns";
 import { useWorkspacePrompts, useWorkspaceKnowledge } from "@/hooks/useWorkflowResources";
