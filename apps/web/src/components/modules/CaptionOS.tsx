@@ -123,25 +123,53 @@ export function CaptionOS() {
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1 truncate">Context: <span className="text-[#A1A1AA]">{latestIdea.title}</span></p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex items-center gap-2 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-2.5 py-1.5 shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.22)]">
-            <label className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</label>
-            <div className="relative">
-              <select
-                value={selectedPromptId ?? ''}
-                onChange={(e) => {
-                  const id = e.target.value || null;
-                  setSelectedPromptId(id);
-                  const p = prompts?.find((x: any) => x.id === id);
-                  setSelectedPromptTitle(p?.title);
-                  setSelectedPrompt(p?.content);
-                }}
-                className="h-8 min-w-[170px] appearance-none rounded-full border border-white/[0.08] bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.08),rgba(13,13,13,0.96)_55%)] px-3 pr-8 text-[12px] font-medium text-[#FAFAFA] outline-none transition-all hover:border-primary/35 hover:shadow-[0_0_0_1px_rgba(124,58,237,0.15)] focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="">No prompt</option>
-                {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#A1A1AA]" />
-            </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsPromptOpen((open) => !open)}
+              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
+            >
+              <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</span>
+              <span className="max-w-[160px] truncate text-[#FAFAFA]">{selectedPromptTitle ?? 'No prompt'}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
+            </button>
+            {isPromptOpen && (
+              <div className="absolute left-0 z-20 mt-2 w-80 max-h-72 overflow-auto rounded-[16px] border border-white/[0.08] bg-[#111111]/95 p-1.5 shadow-[0_18px_44px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,58,237,0.12)] backdrop-blur-md">
+                <div className="mb-1 px-2 pt-1 pb-1.5">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompts</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedPromptId(null);
+                    setSelectedPromptTitle(undefined);
+                    setSelectedPrompt(undefined);
+                    setIsPromptOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${!selectedPromptId ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
+                >
+                  <span className="text-[12px] font-medium text-[#FAFAFA]">No prompt</span>
+                </button>
+                {prompts?.map((p: any) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPromptId(p.id);
+                      setSelectedPromptTitle(p.title);
+                      setSelectedPrompt(p.content);
+                      setIsPromptOpen(false);
+                    }}
+                    className={`mt-1 flex w-full items-start justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${selectedPromptId === p.id ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
+                  >
+                    <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
+                      <span className="mb-0.5 block font-medium text-[#FAFAFA]">{p.title}</span>
+                      <span className="text-[#A1A1AA]">{(p.content ?? '').slice(0, 110)}{((p.content ?? '').length > 110 ? '…' : '')}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="relative">
             <button
