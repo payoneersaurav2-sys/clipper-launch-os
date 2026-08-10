@@ -107,12 +107,8 @@ serve(async (req) => {
     // Whop access verifies the Experience; membership resolution verifies the
     // paid Creator OS tier. Checkout URLs are never used as an entitlement.
     const resolvedPlan = await resolveWhopPlan(supabaseAdmin, whopApiKey, userId);
-    if (!resolvedPlan) {
-      return new Response(JSON.stringify({ error: 'Your Whop access is valid, but no active Creator OS plan could be resolved.' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      });
-    }
+    const effectiveTier = resolvedPlan?.tier ?? 'free';
+    const effectiveMembershipStatus = resolvedPlan?.membership.status ?? 'inactive';
 
     const [profileRes, listData] = await Promise.all([
       fetch(`https://api.whop.com/api/v2/users/${userId}`, {
@@ -167,11 +163,11 @@ serve(async (req) => {
       id: targetUid,
       whop_id: userId,
       full_name: fullName,
-      membership_status: resolvedPlan.membership.status,
-      subscription_tier: resolvedPlan.tier,
-      whop_membership_id: resolvedPlan.membership.id,
-      whop_plan_id: resolvedPlan.membership.plan_id,
-      membership_expires_at: resolvedPlan.membership.current_period_end ?? null,
+      membership_status: effectiveMembershipStatus,
+      subscription_tier: effectiveTier,
+      whop_membership_id: resolvedPlan?.membership.id ?? null,
+      whop_plan_id: resolvedPlan?.membership.plan_id ?? null,
+      membership_expires_at: resolvedPlan?.membership.current_period_end ?? null,
       entitlement_updated_at: new Date().toISOString(),
       onboarding_complete: true,
       updated_at: new Date().toISOString()

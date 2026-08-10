@@ -44,8 +44,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .single();
       if (data) {
         const expired = Boolean(data.membership_expires_at && new Date(data.membership_expires_at).getTime() <= Date.now());
-        status = expired ? 'inactive' : data.membership_status;
-        tier = expired ? 'free' : data.subscription_tier;
+        const storedTier = data.subscription_tier ?? 'free';
+        status = expired ? 'inactive' : (data.membership_status ?? 'inactive');
+        tier = expired ? 'free' : storedTier;
         whopId = data.whop_id;
         avatarUrl = data.avatar_url;
         onboarded = data.onboarding_complete;

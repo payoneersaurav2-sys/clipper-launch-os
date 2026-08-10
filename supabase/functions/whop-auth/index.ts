@@ -140,12 +140,8 @@ serve(async (req) => {
     const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
     if (!whopApiKey) throw new Error('Whop membership verification is not configured');
     const resolvedPlan = await resolveWhopPlan(supabaseAdmin, whopApiKey, whopUserId);
-    if (!resolvedPlan) {
-      return new Response(
-        JSON.stringify({ error: 'No active Creator OS Whop plan could be resolved for this account.' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
-    }
+    const effectiveTier = resolvedPlan?.tier ?? 'free';
+    const effectiveMembershipStatus = resolvedPlan?.membership.status ?? 'inactive';
 
     const { data: existingUsers, error: existingUsersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
     if (existingUsersError) throw new Error(`Could not look up Supabase user: ${existingUsersError.message}`);
@@ -182,11 +178,11 @@ serve(async (req) => {
       whop_id: whopUserId,
       full_name: fullName,
       avatar_url: whopUser.picture ?? null,
-      membership_status: resolvedPlan.membership.status,
-      subscription_tier: resolvedPlan.tier,
-      whop_membership_id: resolvedPlan.membership.id,
-      whop_plan_id: resolvedPlan.membership.plan_id,
-      membership_expires_at: resolvedPlan.membership.current_period_end ?? null,
+      membership_status: effectiveMembershipStatus,
+      subscription_tier: effectiveTier,
+      whop_membership_id: resolvedPlan?.membership.id ?? null,
+      whop_plan_id: resolvedPlan?.membership.plan_id ?? null,
+      membership_expires_at: resolvedPlan?.membership.current_period_end ?? null,
       entitlement_updated_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
