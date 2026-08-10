@@ -124,7 +124,7 @@ export function CaptionOS() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative flex items-center gap-2 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-2.5 py-1.5 shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.22)]">
-            <label className="text-[11px] uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</label>
+            <label className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</label>
             <div className="relative">
               <select
                 value={selectedPromptId ?? ''}
@@ -135,7 +135,7 @@ export function CaptionOS() {
                   setSelectedPromptTitle(p?.title);
                   setSelectedPrompt(p?.content);
                 }}
-                className="h-8 appearance-none rounded-full border border-white/[0.08] bg-[#0D0D0D] px-3 pr-7 text-[12px] font-medium text-[#FAFAFA] outline-none transition-all hover:border-primary/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+                className="h-8 min-w-[170px] appearance-none rounded-full border border-white/[0.08] bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.08),rgba(13,13,13,0.96)_55%)] px-3 pr-8 text-[12px] font-medium text-[#FAFAFA] outline-none transition-all hover:border-primary/35 hover:shadow-[0_0_0_1px_rgba(124,58,237,0.15)] focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
               >
                 <option value="">No prompt</option>
                 {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
