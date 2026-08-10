@@ -533,7 +533,6 @@ export default function CampaignOSPage() {
   const [filter, setFilter] = useState<CampaignStatus | "all">("all");
   const [selectedPromptIds, setSelectedPromptIds] = useState<string[]>([]);
   const [selectedPromptTitles, setSelectedPromptTitles] = useState<string[]>([]);
-  const [selectedPromptContents, setSelectedPromptContents] = useState<string[]>([]);
   const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>([]);
   const [allPromptsSelected, setAllPromptsSelected] = useState(false);
   const [allKnowledgeSelected, setAllKnowledgeSelected] = useState(false);
@@ -622,7 +621,6 @@ export default function CampaignOSPage() {
                   onClick={() => {
                     setSelectedPromptIds([]);
                     setSelectedPromptTitles([]);
-                    setSelectedPromptContents([]);
                     setAllPromptsSelected(false);
                     setPromptOpen(false);
                   }}
@@ -638,11 +636,9 @@ export default function CampaignOSPage() {
                     if (nextAll) {
                       setSelectedPromptIds(promptList.map((p: any) => p.id));
                       setSelectedPromptTitles(promptList.map((p: any) => p.title));
-                      setSelectedPromptContents(promptList.map((p: any) => p.content));
                     } else {
                       setSelectedPromptIds([]);
                       setSelectedPromptTitles([]);
-                      setSelectedPromptContents([]);
                     }
                     setPromptOpen(false);
                   }}
@@ -664,7 +660,6 @@ export default function CampaignOSPage() {
                           setSelectedPromptIds((prev) => {
                             const next = isChecked ? [...new Set([...prev, p.id])] : prev.filter((id) => id !== p.id);
                             setSelectedPromptTitles(promptList.filter((item: any) => next.includes(item.id)).map((item: any) => item.title));
-                            setSelectedPromptContents(promptList.filter((item: any) => next.includes(item.id)).map((item: any) => item.content));
                             return next;
                           });
                           setPromptOpen(false);
