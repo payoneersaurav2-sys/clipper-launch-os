@@ -1,10 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useAI } from '@/hooks/useAI';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { buildGenerateIdeasPrompt, buildExpandIdeaPrompt } from '@/lib/ai-services';
-import { useWorkspaceKnowledge, useWorkspacePrompts } from '@/hooks/useWorkflowResources';
 import EmptyState from '@/components/EmptyState';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,34 +24,9 @@ export function IdeaStudio() {
   const ws = activeWorkspace
     ? { id: activeWorkspace.id, name: activeWorkspace.name, niche: activeWorkspace.niche, platform: activeWorkspace.platform }
     : null;
-  const { data: prompts } = useWorkspacePrompts();
-  const { data: knowledge } = useWorkspaceKnowledge();
-  const [selectedPromptId, setSelectedPromptId] = useState<string>('');
-  const [selectedKnowledgeIds, setSelectedKnowledgeIds] = useState<string[]>([]);
-
-  const selectedPrompt = useMemo(
-    () => prompts?.find((prompt) => prompt.id === selectedPromptId),
-    [prompts, selectedPromptId],
-  );
-  const selectedKnowledgeSnippets = useMemo(
-    () => knowledge
-      ?.filter((item) => selectedKnowledgeIds.includes(item.id))
-      .map((item) => `${item.title}: ${item.content_excerpt ?? item.content.slice(0, 240)}`) ?? [],
-    [knowledge, selectedKnowledgeIds],
-  );
 
   const sendTo = (path: string, idea: any) => {
-    navigate(`/dashboard/${path}`, {
-      state: {
-        ideaId: idea.id,
-        ideaTitle: idea.title,
-        selectedPromptId,
-        selectedPromptTitle: selectedPrompt?.title,
-        selectedPrompt: selectedPrompt?.content,
-        selectedKnowledgeIds,
-        selectedKnowledgeSnippets,
-      },
-    });
+    navigate(`/dashboard/${path}`, { state: { ideaId: idea.id, ideaTitle: idea.title } });
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -78,9 +52,6 @@ export function IdeaStudio() {
           workspaceName: ws.name,
           niche: ws.niche ?? undefined,
           platform: ws.platform ?? undefined,
-          selectedPromptTitle: selectedPrompt?.title,
-          selectedPrompt: selectedPrompt?.content,
-          knowledgeSnippets: selectedKnowledgeSnippets,
         }),
         { category: 'idea', promptSummary: 'Generate viral ideas' }
       );
@@ -138,40 +109,6 @@ export function IdeaStudio() {
         </div>
       )}
 
-      <div className="grid gap-3 md:grid-cols-[1fr_260px] mb-4">
-        <div className="flex flex-col gap-3">
-          <label className="text-[12px] font-medium uppercase tracking-[0.2em] text-[#71717A]">Saved prompt</label>
-          <select
-            value={selectedPromptId}
-            onChange={(event) => setSelectedPromptId(event.target.value)}
-            className="h-11 rounded-[12px] border border-white/[0.08] bg-[#111111] px-3 text-sm text-[#FAFAFA] outline-none"
-          >
-            <option value="">Use default prompt</option>
-            {prompts?.map((prompt) => (
-              <option key={prompt.id} value={prompt.id}>
-                {prompt.title}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-3">
-          <label className="text-[12px] font-medium uppercase tracking-[0.2em] text-[#71717A]">Knowledge</label>
-          <select
-            multiple
-            value={selectedKnowledgeIds}
-            onChange={(event) => setSelectedKnowledgeIds(Array.from(event.target.selectedOptions, (option) => option.value))}
-            className="h-44 rounded-[12px] border border-white/[0.08] bg-[#111111] px-3 py-2 text-sm text-[#FAFAFA] outline-none"
-          >
-            {knowledge?.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.title}
-              </option>
-            ))}
-          </select>
-          <p className="text-[11px] text-[#71717A]">Hold Control / Command to select multiple items.</p>
-        </div>
-      </div>
-
       <form onSubmit={handleCreate} className="flex gap-3">
         <Input
           placeholder="Capture an idea (e.g. 'Why most creators quit before $10k/mo')"
@@ -201,78 +138,6 @@ export function IdeaStudio() {
           description="Capture your first idea or let the AI generate viral concepts for your niche."
           actionLabel="Generate Ideas"
         />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {ideas?.map(idea => (
-            <Card key={idea.id} className="bg-[#111111] border border-white/[0.06] rounded-[16px] hover:border-primary/30 transition-colors group">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 rounded-[10px] bg-primary/10">
-                    <Lightbulb className="h-4 w-4 text-primary" />
-                  </div>
-                  <span className="text-[11px] font-medium px-2 py-0.5 bg-white/[0.06] rounded-full text-[#71717A] uppercase tracking-wide">
-                    {idea.status}
-                  </span>
-                </div>
-                <h3 className="text-[14px] font-medium text-[#FAFAFA] line-clamp-2 mb-3 group-hover:text-primary transition-colors">
-                  {idea.title}
-                </h3>
-                <div className="flex items-center justify-between">
-                  <p className="text-[12px] text-[#71717A]">
-                    {new Date(idea.created_at).toLocaleDateString()}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleExpand(idea)}
-                    disabled={expandingId === idea.id}
-                    className="h-7 px-2.5 text-[12px] text-[#71717A] hover:text-primary hover:bg-primary/10 rounded-[8px]"
-                  >
-                    {expandingId === idea.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-                    Expand
-                  </Button>
-                </div>
-
-                {/* Send To actions */}
-                <div className="flex gap-1.5 mt-3 pt-3 border-t border-white/[0.05]">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => sendTo('hook-engine', idea)}
-                    className="flex-1 h-7 text-[11px] text-[#71717A] hover:text-primary hover:bg-primary/10 rounded-[8px] gap-1"
-                  >
-                    <Zap className="h-3 w-3" /> Hook Engine
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => sendTo('caption-os', idea)}
-                    className="flex-1 h-7 text-[11px] text-[#71717A] hover:text-[#FAFAFA] hover:bg-white/[0.06] rounded-[8px] gap-1"
-                  >
-                    <Type className="h-3 w-3" /> Caption OS
-                  </Button>
-                </div>
-                {expanded[idea.id] && (
-                  <div className="mt-4 pt-4 border-t border-white/[0.06] text-[13px] text-[#A1A1AA] leading-relaxed">
-                    <p className="mb-2">{expanded[idea.id].expanded}</p>
-                    {expanded[idea.id].angles?.length > 0 && (
-                      <div className="space-y-1 mt-3">
-                        <p className="text-[11px] text-[#71717A] uppercase tracking-widest mb-1">Angles</p>
-                        {expanded[idea.id].angles.slice(0, 3).map((a: string, i: number) => (
-                          <p key={i} className="text-[12px]">• {a}</p>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {ideas?.map(idea => (

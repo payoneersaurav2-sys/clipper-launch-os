@@ -1,8 +1,8 @@
 // This runs in Deno (Supabase Edge Functions)
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { OpenRouterProvider } from '../../../packages/core/src/ai/provider.ts';
-import { AIPromptContext } from '../../../packages/core/src/ai/types.ts';
+import { OpenRouterProvider } from './provider.ts';
+import { AIPromptContext } from './types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
