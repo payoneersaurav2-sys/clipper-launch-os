@@ -539,6 +539,35 @@ export default function CampaignOSPage() {
   const [allKnowledgeSelected, setAllKnowledgeSelected] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
+  const promptMenuRef = useRef<HTMLDivElement | null>(null);
+  const knowledgeMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (promptOpen && promptMenuRef.current && !promptMenuRef.current.contains(target)) {
+        setPromptOpen(false);
+      }
+      if (knowledgeOpen && knowledgeMenuRef.current && !knowledgeMenuRef.current.contains(target)) {
+        setKnowledgeOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setPromptOpen(false);
+        setKnowledgeOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [promptOpen, knowledgeOpen]);
 
   const visible =
     filter === "all"
@@ -573,7 +602,7 @@ export default function CampaignOSPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
+          <div className="relative" ref={promptMenuRef}>
             <button
               type="button"
               onClick={() => setPromptOpen((open) => !open)}
@@ -652,7 +681,7 @@ export default function CampaignOSPage() {
               </div>
             )}
           </div>
-          <div className="relative">
+          <div className="relative" ref={knowledgeMenuRef}>
             <button
               type="button"
               onClick={() => setKnowledgeOpen((open) => !open)}

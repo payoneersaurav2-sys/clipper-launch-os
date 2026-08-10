@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useHooks } from '@/hooks/useHooks';
@@ -43,6 +43,35 @@ export function HookEngine() {
   const [allKnowledgeSelected, setAllKnowledgeSelected] = useState<boolean>(allKnowledgeSelectedFromState ?? false);
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
+  const promptMenuRef = useRef<HTMLDivElement | null>(null);
+  const knowledgeMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (isPromptOpen && promptMenuRef.current && !promptMenuRef.current.contains(target)) {
+        setIsPromptOpen(false);
+      }
+      if (isKnowledgeOpen && knowledgeMenuRef.current && !knowledgeMenuRef.current.contains(target)) {
+        setIsKnowledgeOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsPromptOpen(false);
+        setIsKnowledgeOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPromptOpen, isKnowledgeOpen]);
 
   // Prefer idea passed from Idea Studio, fall back to latest
   const passedIdea = passedId ? ideas?.find(i => i.id === passedId) : undefined;
@@ -128,7 +157,7 @@ export function HookEngine() {
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1 truncate">Context: <span className="text-[#A1A1AA]">{latestIdea.title}</span></p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
+          <div className="relative" ref={promptMenuRef}>
             <button
               type="button"
               onClick={() => setIsPromptOpen((open) => !open)}
@@ -207,7 +236,7 @@ export function HookEngine() {
               </div>
             )}
           </div>
-          <div className="relative">
+          <div className="relative" ref={knowledgeMenuRef}>
             <button
               type="button"
               onClick={() => setIsKnowledgeOpen((open) => !open)}
