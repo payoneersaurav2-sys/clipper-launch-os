@@ -525,12 +525,18 @@ export default function CampaignOSPage() {
   const { data: campaigns, isLoading } = useCampaigns();
   const { data: prompts } = useWorkspacePrompts();
   const { data: knowledge } = useWorkspaceKnowledge();
+  const promptList = prompts ?? [];
+  const knowledgeList = knowledge ?? [];
+  const knowledgeValues = knowledgeList.map((k: any) => k.content_excerpt ?? k.content ?? '');
   const [showCreate, setShowCreate] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [filter, setFilter] = useState<CampaignStatus | "all">("all");
-  const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
-  const [selectedPromptTitle, setSelectedPromptTitle] = useState<string | null>(null);
+  const [selectedPromptIds, setSelectedPromptIds] = useState<string[]>([]);
+  const [selectedPromptTitles, setSelectedPromptTitles] = useState<string[]>([]);
+  const [selectedPromptContents, setSelectedPromptContents] = useState<string[]>([]);
   const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>([]);
+  const [allPromptsSelected, setAllPromptsSelected] = useState(false);
+  const [allKnowledgeSelected, setAllKnowledgeSelected] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [knowledgeOpen, setKnowledgeOpen] = useState(false);
 
@@ -574,7 +580,7 @@ export default function CampaignOSPage() {
               className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
             >
               <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Prompt</span>
-              <span className="max-w-[160px] truncate text-[#FAFAFA]">{selectedPromptTitle ?? 'No prompt'}</span>
+              <span className="max-w-[160px] truncate text-[#FAFAFA]">{allPromptsSelected ? 'All prompts' : selectedPromptTitles.length ? `${selectedPromptTitles.length} prompt${selectedPromptTitles.length > 1 ? 's' : ''}` : 'No prompt'}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
             </button>
             {promptOpen && (
@@ -585,31 +591,64 @@ export default function CampaignOSPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setSelectedPromptId(null);
-                    setSelectedPromptTitle(null);
+                    setSelectedPromptIds([]);
+                    setSelectedPromptTitles([]);
+                    setSelectedPromptContents([]);
+                    setAllPromptsSelected(false);
                     setPromptOpen(false);
                   }}
-                  className={`flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${!selectedPromptId ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
+                  className={`flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${!allPromptsSelected && selectedPromptIds.length === 0 ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
                 >
                   <span className="text-[12px] font-medium text-[#FAFAFA]">No prompt</span>
                 </button>
-                {prompts?.map((p: any) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedPromptId(p.id);
-                      setSelectedPromptTitle(p.title);
-                      setPromptOpen(false);
-                    }}
-                    className={`mt-1 flex w-full items-start justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${selectedPromptId === p.id ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
-                  >
-                    <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
-                      <span className="mb-0.5 block font-medium text-[#FAFAFA]">{p.title}</span>
-                      <span className="text-[#A1A1AA]">{(p.content ?? '').slice(0, 110)}{((p.content ?? '').length > 110 ? '…' : '')}</span>
-                    </span>
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextAll = !allPromptsSelected;
+                    setAllPromptsSelected(nextAll);
+                    if (nextAll) {
+                      setSelectedPromptIds(promptList.map((p: any) => p.id));
+                      setSelectedPromptTitles(promptList.map((p: any) => p.title));
+                      setSelectedPromptContents(promptList.map((p: any) => p.content));
+                    } else {
+                      setSelectedPromptIds([]);
+                      setSelectedPromptTitles([]);
+                      setSelectedPromptContents([]);
+                    }
+                    setPromptOpen(false);
+                  }}
+                  className={`mt-1 flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${allPromptsSelected ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
+                >
+                  <span className="text-[12px] font-medium text-[#FAFAFA]">All prompts</span>
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-[#71717A]">{promptList.length}</span>
+                </button>
+                {promptList.map((p: any) => {
+                  const checked = allPromptsSelected || selectedPromptIds.includes(p.id);
+                  return (
+                    <label key={p.id} className={`mt-1 flex cursor-pointer items-start gap-2 rounded-[10px] border px-2.5 py-2.5 transition-colors ${checked ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          setAllPromptsSelected(false);
+                          setSelectedPromptIds((prev) => {
+                            const next = isChecked ? [...new Set([...prev, p.id])] : prev.filter((id) => id !== p.id);
+                            setSelectedPromptTitles(promptList.filter((item: any) => next.includes(item.id)).map((item: any) => item.title));
+                            setSelectedPromptContents(promptList.filter((item: any) => next.includes(item.id)).map((item: any) => item.content));
+                            return next;
+                          });
+                          setPromptOpen(false);
+                        }}
+                        className="mt-0.5 h-3.5 w-3.5 rounded-sm border border-white/[0.1] bg-[#0D0D0D] accent-[#7C3AED]"
+                      />
+                      <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
+                        <span className="mb-0.5 block font-medium text-[#FAFAFA]">{p.title}</span>
+                        <span className="text-[#A1A1AA]">{(p.content ?? '').slice(0, 110)}{((p.content ?? '').length > 110 ? '…' : '')}</span>
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -619,7 +658,7 @@ export default function CampaignOSPage() {
               onClick={() => setKnowledgeOpen((open) => !open)}
               className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
             >
-              <span>{selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
+              <span>{allKnowledgeSelected ? 'All knowledge' : selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
             </button>
             {knowledgeOpen && (
@@ -627,14 +666,39 @@ export default function CampaignOSPage() {
                 <div className="mb-1 px-2 pt-1 pb-1.5">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Knowledge sources</p>
                 </div>
-                {knowledge && knowledge.length > 0 ? knowledge.map((k: any) => {
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAllKnowledgeSelected(false);
+                    setSelectedKnowledgeSnippets([]);
+                    setKnowledgeOpen(false);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${!allKnowledgeSelected && selectedKnowledgeSnippets.length === 0 ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
+                >
+                  <span className="text-[12px] font-medium text-[#FAFAFA]">No knowledge</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextAll = !allKnowledgeSelected;
+                    setAllKnowledgeSelected(nextAll);
+                    setSelectedKnowledgeSnippets(nextAll ? knowledgeValues : []);
+                    setKnowledgeOpen(false);
+                  }}
+                  className={`mt-1 flex w-full items-center justify-between rounded-[10px] border px-2.5 py-2.5 text-left transition-colors ${allKnowledgeSelected ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}
+                >
+                  <span className="text-[12px] font-medium text-[#FAFAFA]">All knowledge</span>
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-[#71717A]">{knowledgeValues.length}</span>
+                </button>
+                {knowledgeList.length > 0 ? knowledgeList.map((k: any) => {
                   const value = k.content_excerpt ?? k.content ?? '';
-                  const checked = selectedKnowledgeSnippets.includes(value);
+                  const checked = allKnowledgeSelected || selectedKnowledgeSnippets.includes(value);
                   return (
-                    <label key={k.id} className={`flex cursor-pointer items-start gap-2 rounded-[10px] border px-2.5 py-2.5 transition-colors ${checked ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}>
+                    <label key={k.id} className={`mt-1 flex cursor-pointer items-start gap-2 rounded-[10px] border px-2.5 py-2.5 transition-colors ${checked ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}>
                       <input type="checkbox" checked={checked} onChange={(e) => {
                         const val = value;
-                        setSelectedKnowledgeSnippets((prev) => e.target.checked ? [...prev, val] : prev.filter((x) => x !== val));
+                        setAllKnowledgeSelected(false);
+                        setSelectedKnowledgeSnippets((prev) => e.target.checked ? [...new Set([...prev, val])] : prev.filter((x) => x !== val));
                       }} className="mt-0.5 h-3.5 w-3.5 rounded-sm border border-white/[0.1] bg-[#0D0D0D] accent-[#7C3AED]" />
                       <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
                         <span className="mb-0.5 block font-medium text-[#FAFAFA]">{k.title}</span>

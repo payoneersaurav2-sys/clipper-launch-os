@@ -66,9 +66,13 @@ export default function CampaignDetailPage() {
   const maxContentBatch = entitlements?.limits?.content_batch_size ?? 10;
 
   const location = useLocation();
+  const selectedPromptTitles = (location.state as any)?.selectedPromptTitles as string[] | undefined;
+  const selectedPromptContents = (location.state as any)?.selectedPromptContents as string[] | undefined;
   const selectedPromptTitle = (location.state as any)?.selectedPromptTitle as string | undefined;
   const selectedPrompt = (location.state as any)?.selectedPrompt as string | undefined;
   const selectedKnowledgeSnippets = (location.state as any)?.selectedKnowledgeSnippets as string[] | undefined;
+  const allPromptsSelected = (location.state as any)?.allPromptsSelected as boolean | undefined;
+  const allKnowledgeSelected = (location.state as any)?.allKnowledgeSelected as boolean | undefined;
 
   if (isLoading)
     return (
@@ -143,9 +147,11 @@ export default function CampaignDetailPage() {
             niche: campaign.niche,
             durationDays: quantity,
             billingOperation: 'campaign_content_plan',
-            selectedPromptTitle,
-            selectedPrompt,
-            knowledgeSnippets: selectedKnowledgeSnippets,
+            selectedPromptTitle: allPromptsSelected ? undefined : selectedPromptTitle,
+            selectedPrompt: allPromptsSelected ? undefined : selectedPrompt,
+            selectedPromptTitles: allPromptsSelected ? selectedPromptTitles ?? [] : selectedPromptTitles,
+            selectedPromptContents: allPromptsSelected ? selectedPromptContents ?? [] : selectedPromptContents,
+            knowledgeSnippets: allKnowledgeSelected ? selectedKnowledgeSnippets ?? [] : selectedKnowledgeSnippets,
           }),
         {
           category: "campaign",

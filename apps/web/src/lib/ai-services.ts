@@ -14,15 +14,19 @@ function baseContext(id: string, name: string): AIContext {
 function buildWorkflowResourceInstructions(input: {
   selectedPromptTitle?: string;
   selectedPrompt?: string;
+  selectedPromptTitles?: string[];
+  selectedPromptContents?: string[];
   knowledgeSnippets?: string[];
 }) {
   const instructions: string[] = [];
-  if (input.selectedPromptTitle) {
-    instructions.push(`Follow the saved prompt: "${input.selectedPromptTitle}".`);
+  const promptTitles = [...new Set([...(input.selectedPromptTitles ?? []), ...(input.selectedPromptTitle ? [input.selectedPromptTitle] : [])].filter(Boolean))];
+  const promptContents = [...new Set([...(input.selectedPromptContents ?? []), ...(input.selectedPrompt ? [input.selectedPrompt] : [])].filter(Boolean))];
+
+  if (promptTitles.length || promptContents.length) {
+    const promptList = promptContents.length ? promptContents : promptTitles;
+    instructions.push(`Follow the selected saved prompt(s):\n${promptList.map((prompt, index) => `Prompt ${index + 1}: ${prompt}`).join('\n\n')}`);
   }
-  if (input.selectedPrompt) {
-    instructions.push(`Saved prompt instructions:\n${input.selectedPrompt}`);
-  }
+
   if (input.knowledgeSnippets?.length) {
     instructions.push(`Reference these knowledge resources:\n${input.knowledgeSnippets.map((snippet, index) => `Knowledge ${index + 1}: ${snippet}`).join('\n\n')}`);
   }
@@ -36,11 +40,14 @@ export function buildGenerateIdeasPrompt(input: {
   niche?: string; platform?: string; tone?: string;
   count?: number; previousIdeas?: string[];
   selectedPromptTitle?: string; selectedPrompt?: string;
+  selectedPromptTitles?: string[]; selectedPromptContents?: string[];
   knowledgeSnippets?: string[];
 }): AIPromptContext {
   const resourceInstructions = buildWorkflowResourceInstructions({
     selectedPromptTitle: input.selectedPromptTitle,
     selectedPrompt: input.selectedPrompt,
+    selectedPromptTitles: input.selectedPromptTitles,
+    selectedPromptContents: input.selectedPromptContents,
     knowledgeSnippets: input.knowledgeSnippets,
   });
 
@@ -80,11 +87,14 @@ export function buildGenerateHooksPrompt(input: {
   ideaTitle: string; ideaContext?: string;
   platform?: string; count?: number; previousHooks?: string[];
   selectedPromptTitle?: string; selectedPrompt?: string;
+  selectedPromptTitles?: string[]; selectedPromptContents?: string[];
   knowledgeSnippets?: string[];
 }): AIPromptContext {
   const resourceInstructions = buildWorkflowResourceInstructions({
     selectedPromptTitle: input.selectedPromptTitle,
     selectedPrompt: input.selectedPrompt,
+    selectedPromptTitles: input.selectedPromptTitles,
+    selectedPromptContents: input.selectedPromptContents,
     knowledgeSnippets: input.knowledgeSnippets,
   });
 
@@ -124,11 +134,14 @@ export function buildGenerateCaptionPrompt(input: {
   ideaTitle: string; selectedHook?: string;
   platform?: string; tone?: string;
   selectedPromptTitle?: string; selectedPrompt?: string;
+  selectedPromptTitles?: string[]; selectedPromptContents?: string[];
   knowledgeSnippets?: string[];
 }): AIPromptContext {
   const resourceInstructions = buildWorkflowResourceInstructions({
     selectedPromptTitle: input.selectedPromptTitle,
     selectedPrompt: input.selectedPrompt,
+    selectedPromptTitles: input.selectedPromptTitles,
+    selectedPromptContents: input.selectedPromptContents,
     knowledgeSnippets: input.knowledgeSnippets,
   });
 
@@ -166,11 +179,15 @@ export function buildCampaignPlanPrompt(input: {
   workspaceId: string; workspaceName: string;
   topic: string; platform?: string;
   durationDays?: number; goal?: string; niche?: string; billingOperation?: 'campaign_strategy' | 'campaign_content_plan';
-  selectedPromptTitle?: string; selectedPrompt?: string; knowledgeSnippets?: string[];
+  selectedPromptTitle?: string; selectedPrompt?: string;
+  selectedPromptTitles?: string[]; selectedPromptContents?: string[];
+  knowledgeSnippets?: string[];
 }): AIPromptContext {
   const resourceInstructions = buildWorkflowResourceInstructions({
     selectedPromptTitle: input.selectedPromptTitle,
     selectedPrompt: input.selectedPrompt,
+    selectedPromptTitles: input.selectedPromptTitles,
+    selectedPromptContents: input.selectedPromptContents,
     knowledgeSnippets: input.knowledgeSnippets,
   });
 
