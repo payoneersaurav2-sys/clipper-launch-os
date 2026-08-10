@@ -2,15 +2,20 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
 
-type GoogleSignInButtonProps = { onError: (message: string) => void };
+type GoogleSignInButtonProps = { onError: (message: string) => void; rememberMe?: boolean };
 
 /** Custom-branded Google sign-in button using Supabase OAuth redirect. */
-export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
+export function GoogleSignInButton({ onError, rememberMe = false }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
+      if (rememberMe) {
+        localStorage.setItem('creator_os_remember_me', 'true');
+      } else {
+        localStorage.removeItem('creator_os_remember_me');
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

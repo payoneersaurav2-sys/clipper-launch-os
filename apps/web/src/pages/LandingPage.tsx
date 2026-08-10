@@ -1,10 +1,23 @@
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3, PlayCircle } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const remembered = localStorage.getItem('creator_os_remember_me') === 'true';
+    if (!remembered) return;
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) navigate('/dashboard');
+    })();
+  }, [navigate]);
 
   return (
     <div className="flex flex-col min-h-screen relative overflow-hidden bg-[#080808] font-sans text-[#FAFAFA]">

@@ -132,21 +132,28 @@ serve(async (req) => {
     let targetUid: string;
     let signInEmail: string = email; // track the correct email to sign in with
 
-    // Search for existing user by email or whop_id metadata (listData already fetched above)
-    const byEmail = listData?.users?.find(u => u.email === email);
+    // Resolve the canonical Supabase identity first by exact same-email match,
+    // then by Whop ID metadata. This prevents a Google/email account from
+    // being split into a separate auth row when the same mailbox already exists.
+    const normalizedWhopEmail = String(email ?? '').trim().toLowerCase();
+    const byEmail = listData?.users?.find(u => String(u.email ?? '').trim().toLowerCase() === normalizedWhopEmail);
     const byWhopId = listData?.users?.find(u => u.user_metadata?.whop_id === userId);
-    const found = byEmail || byWhopId;
+    const found = byEmail ?? byWhopId;
 
     if (found) {
       targetUid = found.id;
       signInEmail = found.email!; // CRITICAL: use their actual Supabase email
+      const nextMetadata = {
+        ...(found.user_metadata ?? {}),
+        whop_id: userId,
+      };
       const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(targetUid, {
         password: deterministicPassword,
-        user_metadata: { whop_id: userId },
+        user_metadata: nextMetadata,
       });
       if (updateErr) throw new Error(`Failed to update user password: ${updateErr.message}`);
     } else {
-      // Create new user
+      // Create new user only when neither the same email nor the same Whop ID already exists.
       const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
         email,
         password: deterministicPassword,

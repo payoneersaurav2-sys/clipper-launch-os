@@ -34,7 +34,7 @@ export default function CreditStorePage() {
       </header>
       {balance?.tier === 'free' ? (
         <section className="relative overflow-hidden rounded-[20px] border border-primary/25 bg-[radial-gradient(circle_at_top_right,rgba(124,58,237,.18),transparent_45%),#111111] p-6 sm:p-8">
-          <div className="max-w-xl"><p className="text-[11px] font-semibold uppercase tracking-[.16em] text-primary">Your next step</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Unlock your full creator workflow.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Your free credits are designed to help you experience CreatorOS. Upgrade to Creator for a recurring monthly allowance and more room to build.</p><Link to="/pricing" className="mt-5 inline-flex h-11 items-center justify-center rounded-[11px] bg-primary px-5 text-sm font-semibold text-white shadow-[0_0_22px_rgba(124,58,237,.25)] transition hover:bg-primary/90">View Creator plans</Link></div>
+          <div className="max-w-xl"><p className="text-[11px] font-semibold uppercase tracking-[.16em] text-primary">Your next step</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Unlock your full creator workflow.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Your free credits are designed to help you experience CreatorOS. Upgrade to Creator for a recurring monthly allowance and more room to build.</p><Link to="/dashboard/pricing" className="mt-5 inline-flex h-11 items-center justify-center rounded-[11px] bg-primary px-5 text-sm font-semibold text-white shadow-[0_0_22px_rgba(124,58,237,.25)] transition hover:bg-primary/90">View Creator plans</Link></div>
         </section>
       ) : <>
       {!whopId && (

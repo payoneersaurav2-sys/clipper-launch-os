@@ -25,7 +25,19 @@ export default function LoginPage() {
   const [err, setErr] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [success, setSuccess] = useState('');
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('creator_os_remember_me') === 'true';
+  });
   const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+  const persistRememberPreference = (next: boolean) => {
+    if (next) {
+      localStorage.setItem('creator_os_remember_me', 'true');
+    } else {
+      localStorage.removeItem('creator_os_remember_me');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +68,7 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
+      persistRememberPreference(rememberMe);
       setLoading(false);
       navigate('/dashboard');
       return;
@@ -68,6 +81,7 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
+    persistRememberPreference(rememberMe);
     setLoading(false);
     navigate('/dashboard');
   };
@@ -119,6 +133,19 @@ export default function LoginPage() {
             {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
+        <label className="flex items-center gap-2 text-[12px] text-[#A1A1AA]">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(event) => {
+              const checked = event.target.checked;
+              setRememberMe(checked);
+              persistRememberPreference(checked);
+            }}
+            className="h-4 w-4 rounded border-white/10 bg-[#0D0D0D] text-primary focus:ring-primary"
+          />
+          Remember me
+        </label>
         <Button type="submit" disabled={loading || !email || !password}
           className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
           {loading
@@ -140,6 +167,7 @@ export default function LoginPage() {
         <WhopOAuthButton
           onClick={async () => {
             try {
+              persistRememberPreference(rememberMe);
               const { buildWhopOAuthUrl } = await import('@/lib/whopPkce');
               const url = await buildWhopOAuthUrl();
               window.location.assign(url);
@@ -151,7 +179,7 @@ export default function LoginPage() {
         />
       )}
 
-      {googleConfigured ? <GoogleSignInButton onError={setErr} /> : (
+      {googleConfigured ? <GoogleSignInButton rememberMe={rememberMe} onError={setErr} /> : (
         <p className="text-center text-xs text-[#71717A]">Google sign-in is being configured.</p>
       )}
 

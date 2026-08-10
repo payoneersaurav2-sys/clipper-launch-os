@@ -146,9 +146,11 @@ serve(async (req) => {
     const { data: existingUsers, error: existingUsersError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
     if (existingUsersError) throw new Error(`Could not look up Supabase user: ${existingUsersError.message}`);
 
-    const existingUser = existingUsers.users.find(
-      (user) => user.email === email || user.user_metadata?.whop_id === whopUserId,
-    );
+    const normalizedWhopEmail = String(email ?? '').trim().toLowerCase();
+    const emailCandidate = existingUsers.users.find((user) => user.email && String(user.email).trim().toLowerCase() === normalizedWhopEmail);
+    const whopCandidate = existingUsers.users.find((user) => user.user_metadata?.whop_id === whopUserId);
+    const existingUser = emailCandidate ?? whopCandidate ?? null;
+
     const deterministicPassword = await derivePassword(whopUserId, serviceRoleKey);
     let supabaseUserId: string;
     let signInEmail: string;
@@ -156,9 +158,13 @@ serve(async (req) => {
     if (existingUser) {
       supabaseUserId = existingUser.id;
       signInEmail = existingUser.email!;
+      const nextMetadata = {
+        ...(existingUser.user_metadata ?? {}),
+        whop_id: whopUserId,
+      };
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
         password: deterministicPassword,
-        user_metadata: { ...existingUser.user_metadata, whop_id: whopUserId },
+        user_metadata: nextMetadata,
       });
       if (updateError) throw new Error(`Could not update Supabase user: ${updateError.message}`);
     } else {

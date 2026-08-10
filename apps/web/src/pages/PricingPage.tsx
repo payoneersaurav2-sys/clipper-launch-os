@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { BillingInterval, annualSavings, pricingPlans, unresolvedCheckoutMapping, validatePricingConfiguration } from '@/lib/pricing';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
@@ -13,9 +14,17 @@ export default function PricingPage() {
   const navigate = useNavigate();
   const { user, whopId } = useAuthStore();
 
-  const beginCheckout = (checkoutUrl: string) => {
+  const beginCheckout = async (checkoutUrl: string) => {
     if (!user) { navigate('/login'); return; }
-    if (!whopId) { navigate('/dashboard/credits'); return; }
+    if (!whopId) {
+      try {
+        const whopUrl = await buildWhopOAuthUrl('link_account');
+        window.location.assign(whopUrl);
+      } catch {
+        navigate('/dashboard/credits');
+      }
+      return;
+    }
     window.location.assign(checkoutUrl);
   };
 
