@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
 import { useHooks } from '@/hooks/useHooks';
@@ -17,11 +17,14 @@ export function HookEngine() {
   const { data: ideas } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
 
-  // Prefer idea passed from Idea Studio, fall back to latest
   const passedId = (location.state as any)?.ideaId;
-  const selectedIdea = passedId
-    ? ideas?.find(i => i.id === passedId) ?? ideas?.[0]
-    : ideas?.[0];
+  const selectedPromptTitle = (location.state as any)?.selectedPromptTitle as string | undefined;
+  const selectedPrompt = (location.state as any)?.selectedPrompt as string | undefined;
+  const selectedKnowledgeSnippets = (location.state as any)?.selectedKnowledgeSnippets as string[] | undefined;
+
+  // Prefer idea passed from Idea Studio, fall back to latest
+  const passedIdea = passedId ? ideas?.find(i => i.id === passedId) : undefined;
+  const selectedIdea = passedIdea ?? ideas?.[0];
   const latestIdea = selectedIdea;
 
   const { data: hooks, isLoading, createHook, updateHookStatus } = useHooks(latestIdea?.id);
@@ -66,6 +69,9 @@ export function HookEngine() {
         workspaceId: ws.id, workspaceName: ws.name,
         ideaTitle: latestIdea.title,
         previousHooks: hooks?.map(h => h.content),
+        selectedPromptTitle,
+        selectedPrompt,
+        knowledgeSnippets: selectedKnowledgeSnippets,
       }),
       { category: 'hook', promptSummary: `Hooks for: ${latestIdea.title}` }
     );

@@ -19,8 +19,11 @@ export function CaptionOS() {
   const { data: ideas } = useClipIdeas();
   const { activeWorkspace } = useWorkspaceStore();
 
-  // Prefer idea passed from Idea Studio, fall back to latest
   const passedId = (location.state as any)?.ideaId;
+  const selectedPromptTitle = (location.state as any)?.selectedPromptTitle as string | undefined;
+  const selectedPrompt = (location.state as any)?.selectedPrompt as string | undefined;
+  const selectedKnowledgeSnippets = (location.state as any)?.selectedKnowledgeSnippets as string[] | undefined;
+
   const latestIdea = passedId
     ? ideas?.find(i => i.id === passedId) ?? ideas?.[0]
     : ideas?.[0];
@@ -62,7 +65,15 @@ export function CaptionOS() {
       return;
     }
     const data = await generateJSON<any>(
-      buildGenerateCaptionPrompt({ workspaceId: ws.id, workspaceName: ws.name, ideaTitle: latestIdea.title, platform }),
+      buildGenerateCaptionPrompt({
+        workspaceId: ws.id,
+        workspaceName: ws.name,
+        ideaTitle: latestIdea.title,
+        platform,
+        selectedPromptTitle,
+        selectedPrompt,
+        knowledgeSnippets: selectedKnowledgeSnippets,
+      }),
       { category: 'caption', promptSummary: `Caption: ${latestIdea.title}` }
     );
     const full = [data.hook, data.body ?? data.caption, data.cta, (data.hashtags ?? []).join(' ')].filter(Boolean).join('\n\n');

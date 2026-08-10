@@ -11,16 +11,42 @@ function baseContext(id: string, name: string): AIContext {
   };
 }
 
+function buildWorkflowResourceInstructions(input: {
+  selectedPromptTitle?: string;
+  selectedPrompt?: string;
+  knowledgeSnippets?: string[];
+}) {
+  const instructions: string[] = [];
+  if (input.selectedPromptTitle) {
+    instructions.push(`Follow the saved prompt: "${input.selectedPromptTitle}".`);
+  }
+  if (input.selectedPrompt) {
+    instructions.push(`Saved prompt instructions:\n${input.selectedPrompt}`);
+  }
+  if (input.knowledgeSnippets?.length) {
+    instructions.push(`Reference these knowledge resources:\n${input.knowledgeSnippets.map((snippet, index) => `Knowledge ${index + 1}: ${snippet}`).join('\n\n')}`);
+  }
+  return instructions.length ? `${instructions.join('\n\n')}\n\n` : '';
+}
+
 // ---- Idea Studio --------------------------------------------
 
 export function buildGenerateIdeasPrompt(input: {
   workspaceId: string; workspaceName: string;
   niche?: string; platform?: string; tone?: string;
   count?: number; previousIdeas?: string[];
+  selectedPromptTitle?: string; selectedPrompt?: string;
+  knowledgeSnippets?: string[];
 }): AIPromptContext {
+  const resourceInstructions = buildWorkflowResourceInstructions({
+    selectedPromptTitle: input.selectedPromptTitle,
+    selectedPrompt: input.selectedPrompt,
+    knowledgeSnippets: input.knowledgeSnippets,
+  });
+
   return {
     systemPrompt: `Generate ${input.count ?? 5} viral content ideas for a ${input.niche ?? 'general'} creator on ${input.platform ?? 'TikTok'}.`,
-    developerPrompt: `Create unique, specific, immediately actionable ideas. Score viral potential 1-10. Platform: ${input.platform ?? 'TikTok'}. Niche: ${input.niche ?? 'general'}. Return ONLY JSON.`,
+    developerPrompt: `${resourceInstructions}Create unique, specific, immediately actionable ideas. Score viral potential 1-10. Platform: ${input.platform ?? 'TikTok'}. Niche: ${input.niche ?? 'general'}. Return ONLY JSON.`,
     taskContext: {
       ...baseContext(input.workspaceId, input.workspaceName),
       workflowStage: 'idea',
@@ -53,10 +79,18 @@ export function buildGenerateHooksPrompt(input: {
   workspaceId: string; workspaceName: string;
   ideaTitle: string; ideaContext?: string;
   platform?: string; count?: number; previousHooks?: string[];
+  selectedPromptTitle?: string; selectedPrompt?: string;
+  knowledgeSnippets?: string[];
 }): AIPromptContext {
+  const resourceInstructions = buildWorkflowResourceInstructions({
+    selectedPromptTitle: input.selectedPromptTitle,
+    selectedPrompt: input.selectedPrompt,
+    knowledgeSnippets: input.knowledgeSnippets,
+  });
+
   return {
     systemPrompt: `Generate ${input.count ?? 5} high-performing hooks for: "${input.ideaTitle}"`,
-    developerPrompt: `Generate diverse hooks (question, statement, controversy, curiosity, number, story). Score each 1-10. Platform: ${input.platform ?? 'TikTok'}. Avoid: ${input.previousHooks?.join(', ') ?? 'none'}. Return ONLY JSON.`,
+    developerPrompt: `${resourceInstructions}Generate diverse hooks (question, statement, controversy, curiosity, number, story). Score each 1-10. Platform: ${input.platform ?? 'TikTok'}. Avoid: ${input.previousHooks?.join(', ') ?? 'none'}. Return ONLY JSON.`,
     taskContext: {
       ...baseContext(input.workspaceId, input.workspaceName),
       workflowStage: 'hook',
@@ -89,10 +123,18 @@ export function buildGenerateCaptionPrompt(input: {
   workspaceId: string; workspaceName: string;
   ideaTitle: string; selectedHook?: string;
   platform?: string; tone?: string;
+  selectedPromptTitle?: string; selectedPrompt?: string;
+  knowledgeSnippets?: string[];
 }): AIPromptContext {
+  const resourceInstructions = buildWorkflowResourceInstructions({
+    selectedPromptTitle: input.selectedPromptTitle,
+    selectedPrompt: input.selectedPrompt,
+    knowledgeSnippets: input.knowledgeSnippets,
+  });
+
   return {
     systemPrompt: `Write a viral ${input.platform ?? 'TikTok'} caption for: "${input.ideaTitle}"`,
-    developerPrompt: `Hook line, value body, clear CTA, 5-8 hashtags, embed SEO keywords naturally. Hook to use: "${input.selectedHook ?? 'create new'}". Tone: ${input.tone ?? 'viral'}. Return ONLY JSON.`,
+    developerPrompt: `${resourceInstructions}Hook line, value body, clear CTA, 5-8 hashtags, embed SEO keywords naturally. Hook to use: "${input.selectedHook ?? 'create new'}". Tone: ${input.tone ?? 'viral'}. Return ONLY JSON.`,
     taskContext: {
       ...baseContext(input.workspaceId, input.workspaceName),
       workflowStage: 'caption',

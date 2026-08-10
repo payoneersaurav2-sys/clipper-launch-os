@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -65,6 +65,11 @@ export default function CampaignDetailPage() {
   const [generationNotice, setGenerationNotice] = useState("");
   const maxContentBatch = entitlements?.limits?.content_batch_size ?? 10;
 
+  const location = useLocation();
+  const selectedPromptTitle = (location.state as any)?.selectedPromptTitle as string | undefined;
+  const selectedPrompt = (location.state as any)?.selectedPrompt as string | undefined;
+  const selectedKnowledgeSnippets = (location.state as any)?.selectedKnowledgeSnippets as string[] | undefined;
+
   if (isLoading)
     return (
       <div className="flex h-48 items-center justify-center">
@@ -129,16 +134,19 @@ export default function CampaignDetailPage() {
     setContentError("");
     try {
       const plan = await generateJSON<CampaignPlan>(
-        buildCampaignPlanPrompt({
-          workspaceId: activeWorkspace.id,
-          workspaceName: activeWorkspace.name,
-          topic: campaign.title,
-          platform: campaign.platform,
-          goal: campaign.goal || campaign.objective,
-          niche: campaign.niche,
-          durationDays: quantity,
-          billingOperation: 'campaign_content_plan',
-        }),
+          buildCampaignPlanPrompt({
+            workspaceId: activeWorkspace.id,
+            workspaceName: activeWorkspace.name,
+            topic: campaign.title,
+            platform: campaign.platform,
+            goal: campaign.goal || campaign.objective,
+            niche: campaign.niche,
+            durationDays: quantity,
+            billingOperation: 'campaign_content_plan',
+            selectedPromptTitle,
+            selectedPrompt,
+            knowledgeSnippets: selectedKnowledgeSnippets,
+          }),
         {
           category: "campaign",
           promptSummary: `Campaign content plan: ${campaign.title}`,
