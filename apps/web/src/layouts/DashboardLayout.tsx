@@ -50,6 +50,7 @@ const navGroups = [
     items: [
       { name: 'AI Settings', href: '/dashboard/ai-settings', icon: Settings },
       { name: 'Credits',     href: '/dashboard/credits',     icon: Coins },
+      { name: 'Upgrade Plans', href: '/dashboard/pricing', icon: ArrowUpRight },
       { name: 'Settings',    href: '/dashboard/settings',    icon: UserCircle },
       { name: 'Help',        href: '/dashboard/help',        icon: HelpCircle },
       { name: 'Changelog',   href: '/dashboard/changelog',   icon: Tag },

@@ -90,6 +90,7 @@ function CreatorOSRoutes() {
                 <Route path="ai-settings"     element={<AISettingsPage />} />
                 <Route path="settings"        element={<SettingsPage />} />
                 <Route path="credits"         element={<CreditStorePage />} />
+                <Route path="pricing"         element={<PricingPage />} />
                 <Route path="help"            element={<HelpCenterPage />} />
                 <Route path="changelog"       element={<ChangelogPage />} />
                 <Route path="*"               element={<NotFoundPage />} />
