@@ -114,43 +114,49 @@ export function HookEngine() {
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1 truncate">Context: <span className="text-[#A1A1AA]">{latestIdea.title}</span></p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2 rounded-full border border-white/[0.06] bg-[#111111] px-2.5 py-1.5">
+          <div className="relative flex items-center gap-2 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-2.5 py-1.5 shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.22)]">
             <label className="text-[11px] uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</label>
-            <select
-              value={selectedPromptId ?? ''}
-              onChange={(e) => {
-                const id = e.target.value || null;
-                setSelectedPromptId(id);
-                const p = prompts?.find((x: any) => x.id === id);
-                setSelectedPromptTitle(p?.title);
-                setSelectedPrompt(p?.content);
-              }}
-              className="h-8 rounded-full border border-white/[0.05] bg-[#0D0D0D] text-[#FAFAFA] px-3 text-[12px] outline-none focus:border-primary/50"
-            >
-              <option value="">No prompt</option>
-              {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
-            </select>
+            <div className="relative">
+              <select
+                value={selectedPromptId ?? ''}
+                onChange={(e) => {
+                  const id = e.target.value || null;
+                  setSelectedPromptId(id);
+                  const p = prompts?.find((x: any) => x.id === id);
+                  setSelectedPromptTitle(p?.title);
+                  setSelectedPrompt(p?.content);
+                }}
+                className="h-8 appearance-none rounded-full border border-white/[0.08] bg-[#0D0D0D] px-3 pr-7 text-[12px] font-medium text-[#FAFAFA] outline-none transition-all hover:border-primary/30 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">No prompt</option>
+                {prompts?.map((p: any) => <option key={p.id} value={p.id}>{p.title}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#A1A1AA]" />
+            </div>
           </div>
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsKnowledgeOpen((open) => !open)}
-              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.06] bg-[#111111] px-3 text-[12px] text-[#FAFAFA]"
+              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
             >
               <span>{selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
             </button>
             {isKnowledgeOpen && (
-              <div className="absolute right-0 z-20 mt-2 w-72 max-h-64 overflow-auto rounded-[14px] border border-white/[0.08] bg-[#111111] p-2 shadow-2xl ring-1 ring-primary/10">
+              <div className="absolute right-0 z-20 mt-2 w-80 max-h-72 overflow-auto rounded-[16px] border border-white/[0.08] bg-[#111111]/95 p-1.5 shadow-[0_18px_44px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,58,237,0.12)] backdrop-blur-md">
+                <div className="mb-1 px-2 pt-1 pb-1.5">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Knowledge sources</p>
+                </div>
                 {knowledge && knowledge.length > 0 ? knowledge.map((k: any) => {
                   const value = k.content_excerpt ?? k.content ?? '';
                   const checked = selectedKnowledgeSnippets.includes(value);
                   return (
-                    <label key={k.id} className="flex cursor-pointer items-start gap-2 rounded-[10px] px-2 py-2 hover:bg-white/[0.03]">
+                    <label key={k.id} className={`flex cursor-pointer items-start gap-2 rounded-[10px] border px-2.5 py-2.5 transition-colors ${checked ? 'border-primary/30 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))]' : 'border-transparent bg-transparent hover:border-white/[0.06] hover:bg-white/[0.02]'}`}>
                       <input type="checkbox" checked={checked} onChange={(e) => {
                         const val = value;
                         setSelectedKnowledgeSnippets((prev) => e.target.checked ? [...prev, val] : prev.filter((x) => x !== val));
-                      }} className="mt-0.5 accent-primary" />
+                      }} className="mt-0.5 h-3.5 w-3.5 rounded-sm border border-white/[0.1] bg-[#0D0D0D] accent-[#7C3AED]" />
                       <span className="flex-1 text-left text-[12px] leading-5 text-[#E4E4E7]">
                         <span className="mb-0.5 block font-medium text-[#FAFAFA]">{k.title}</span>
                         <span className="text-[#A1A1AA]">{(k.content_excerpt ?? k.content ?? '').slice(0, 110)}{((k.content_excerpt ?? k.content ?? '').length > 110 ? '…' : '')}</span>
@@ -158,7 +164,7 @@ export function HookEngine() {
                     </label>
                   );
                 }) : (
-                  <div className="px-3 py-2 text-[12px] text-[#71717A]">No knowledge items yet.</div>
+                  <div className="px-3 py-3 text-[12px] text-[#71717A]">No knowledge items yet.</div>
                 )}
               </div>
             )}
