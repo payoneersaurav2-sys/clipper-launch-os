@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { Webhook } from 'npm:svix';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
@@ -26,59 +27,6 @@ type WhopEvent = {
   };
 };
 
-const toBase64 = (bytes: Uint8Array) => {
-  let value = '';
-  for (const byte of bytes) value += String.fromCharCode(byte);
-  return btoa(value);
-};
-
-function equalConstantTime(left: string, right: string) {
-  if (left.length !== right.length) return false;
-  let difference = 0;
-  for (let index = 0; index < left.length; index += 1) difference |= left.charCodeAt(index) ^ right.charCodeAt(index);
-  return difference === 0;
-}
-
-async function verifyWebhook(request: Request, rawBody: string, secret: string) {
-  const id = request.headers.get('webhook-id') ?? '';
-  const timestamp = request.headers.get('webhook-timestamp') ?? '';
-  const signature = request.headers.get('webhook-signature') ?? '';
-
-  if (!id || !timestamp || !signature) return false;
-
-  const timestampAsNumber = Number(timestamp);
-  const requestAge = Math.abs(Date.now() - timestampAsNumber * 1000);
-  if (!Number.isFinite(timestampAsNumber) || !Number.isFinite(requestAge) || requestAge > 5 * 60_000) return false;
-
-  const rawSecret = (secret ?? '').trim();
-  const prefix = rawSecret.startsWith('whsec_') ? 'whsec_' : rawSecret.startsWith('ws_') ? 'ws_' : '';
-  const secretPayload = prefix ? rawSecret.slice(prefix.length) : rawSecret;
-
-  let secretBytes: Uint8Array;
-  if (secretPayload.length > 0) {
-    try {
-      const decoded = atob(secretPayload);
-      secretBytes = Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-    } catch {
-      secretBytes = new TextEncoder().encode(secretPayload);
-    }
-  } else {
-    secretBytes = new TextEncoder().encode(rawSecret);
-  }
-
-  const key = await crypto.subtle.importKey('raw', secretBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const signingInput = `${id}.${timestamp}.${rawBody}`;
-  const calculated = toBase64(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signingInput))));
-
-  const candidates = signature
-    .split(/[\s,]+/) // accept a normal Svix header such as 'v1,<hash>' or 'v1,<hash>,v1,<hash>'
-    .map((candidate) => candidate.trim())
-    .filter(Boolean)
-    .map((candidate) => candidate.startsWith('v1') ? candidate.slice(2) : candidate)
-    .filter(Boolean);
-
-  return candidates.some((candidate) => equalConstantTime(candidate, calculated));
-}
 
 async function getMembership(whopApiKey: string, membershipId: string) {
   const response = await fetch(`https://api.whop.com/api/v1/memberships/${encodeURIComponent(membershipId)}`, {
@@ -175,17 +123,47 @@ async function syncMembership(admin: ReturnType<typeof createClient>, membership
 
 serve(async (request) => {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+
   const secret = Deno.env.get('WHOP_WEBHOOK_SECRET') ?? '';
   const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   if (!secret || !whopApiKey || !supabaseUrl || !serviceRoleKey) return new Response('Webhook is not configured', { status: 503 });
 
-  const rawBody = await request.text();
-  if (!(await verifyWebhook(request, rawBody, secret))) return new Response('Invalid webhook signature', { status: 401 });
-  let event: WhopEvent;
-  try { event = JSON.parse(rawBody); } catch { return new Response('Invalid JSON', { status: 400 }); }
-  if (!event.id || !event.type || !event.data?.id) return new Response('OK', { status: 200 });
+  const rawSecret = Deno.env.get('WHOP_WEBHOOK_SECRET');
+  if (!rawSecret) {
+    console.error('WHOP_WEBHOOK_SECRET is missing in environment.');
+    return new Response('Server Configuration Error', { status: 500 });
+  }
+
+  const svixFormattedSecret = btoa(rawSecret);
+  const payload = await request.text();
+
+  const headers = {
+    'webhook-id': request.headers.get('webhook-id') || '',
+    'webhook-timestamp': request.headers.get('webhook-timestamp') || '',
+    'webhook-signature': request.headers.get('webhook-signature') || '',
+  };
+
+  const wh = new Webhook(svixFormattedSecret);
+  let event;
+
+  try {
+    event = wh.verify(payload, headers);
+  } catch (err) {
+    console.error('Signature verification failed:', err instanceof Error ? err.message : err);
+    return new Response(
+      JSON.stringify({ body: 'Invalid webhook signature', status: 401, success: false }),
+      { status: 401, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const body = JSON.parse(payload);
+  let parsedEvent: WhopEvent;
+  try { parsedEvent = body; } catch { return new Response('Invalid JSON', { status: 400 }); }
+  if (!parsedEvent.id || !parsedEvent.type || !parsedEvent.data?.id) return new Response('OK', { status: 200 });
+
+  event = parsedEvent;
 
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: priorEvent, error: priorEventError } = await admin.from('whop_webhook_events').select('id').eq('id', event.id).maybeSingle();
