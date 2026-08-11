@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
+let profileSubscription: ReturnType<typeof supabase.channel> | null = null;
+
 interface AuthState {
   user: User | null;
   session: Session | null;
@@ -65,6 +67,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     });
   },
   signOut: async () => {
+    if (profileSubscription) {
+      await profileSubscription.unsubscribe();
+      profileSubscription = null;
+    }
     localStorage.removeItem('creator_os_remember_me');
     await supabase.auth.signOut();
     set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null });
@@ -73,8 +79,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { data: { session } } = await supabase.auth.getSession();
     await get().syncSession(session);
 
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      await get().syncSession(session);
+    const attachProfileSubscription = async (nextSession: Session | null) => {
+      if (profileSubscription) {
+        await profileSubscription.unsubscribe();
+        profileSubscription = null;
+      }
+
+      const userId = nextSession?.user?.id;
+      if (!userId) return;
+
+      profileSubscription = supabase.channel(`creator-os-profile-${userId}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${userId}`,
+        }, async () => {
+          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+          await get().syncSession(refreshedSession);
+        })
+        .subscribe();
+    };
+
+    await attachProfileSubscription(session);
+
+    supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      await get().syncSession(nextSession);
+      await attachProfileSubscription(nextSession);
     });
   },
 }));

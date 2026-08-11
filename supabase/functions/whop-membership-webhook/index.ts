@@ -2,133 +2,21 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { Webhook } from 'npm:svix';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
-
-type Membership = {
-  id: string;
-  user_id?: string | null;
-  plan_id: string;
-  status: string;
-  current_period_end?: string | null;
+const PLAN_MAP: Record<string, { tier: string; interval: string }> = {
+  'plan_x36ZUqtqy8DUf': { tier: 'creator', interval: 'monthly' },
+  // Add your other plan IDs here
 };
-
-type WhopEvent = {
-  id?: string;
-  type?: string;
-  data?: {
-    id?: string;
-    plan?: { id?: string | null } | null;
-    user?: { id?: string | null } | null;
-    membership?: { id?: string | null } | null;
-    passthrough?: string | null;
-    custom_fields?: { user_id?: string | null } | null;
-    metadata?: { user_id?: string | null } | null;
-    usd_total?: number | null;
-  };
-};
-
-
-async function getMembership(whopApiKey: string, membershipId: string) {
-  const response = await fetch(`https://api.whop.com/api/v1/memberships/${encodeURIComponent(membershipId)}`, {
-    headers: { Authorization: `Bearer ${whopApiKey}` },
-  });
-  if (!response.ok) throw new Error('Membership lookup failed');
-  return await response.json() as Membership;
-}
-
-async function syncMembership(admin: ReturnType<typeof createClient>, membership: Membership, whopApiKey?: string, explicitUserId?: string | null) {
-  if (!membership.user_id) return;
-  const { data: mapping, error: mappingError } = await admin
-    .from('whop_plan_mappings').select('tier').eq('whop_plan_id', membership.plan_id).maybeSingle();
-  if (mappingError) throw new Error('Plan mapping lookup failed');
-  // This webhook can receive events for other Whop products. Never revoke access
-  // or change a CreatorOS plan merely because an unrelated plan is unmapped.
-  if (!mapping?.tier) return;
-
-  const active = ACCESS_GRANTING_STATUSES.has(membership.status);
-
-  let profileId: string | null = null;
-
-  if (explicitUserId) {
-    const { data: directProfile, error: directProfileError } = await admin.from('users').select('id').eq('id', explicitUserId).maybeSingle();
-    if (directProfileError) throw new Error('Direct passthrough profile lookup failed');
-    if (directProfile?.id) {
-      profileId = directProfile.id;
-      const { error: whopUpdateError } = await admin.from('users').update({
-        whop_id: membership.user_id,
-        updated_at: new Date().toISOString(),
-      }).eq('id', profileId);
-      if (whopUpdateError) throw new Error('Passthrough profile update failed');
-    }
-  }
-
-  const { data: whopProfile, error: whopProfileError } = await admin.from('users').select('id').eq('whop_id', membership.user_id).maybeSingle();
-  if (whopProfileError) throw new Error('Profile lookup failed');
-
-  if (!profileId) profileId = whopProfile?.id ?? null;
-
-  if (!profileId && whopApiKey) {
-    try {
-      const profileResponse = await fetch(`https://api.whop.com/api/v2/users/${encodeURIComponent(membership.user_id)}`, {
-        headers: { Authorization: `Bearer ${whopApiKey}` },
-      });
-      if (profileResponse.ok) {
-        const remoteProfile = await profileResponse.json();
-        const remoteEmail = String(remoteProfile?.email ?? '').trim().toLowerCase();
-        if (remoteEmail) {
-          const { data: userList, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
-          if (listError) throw new Error('User directory lookup failed');
-          const matchingAuth = userList.users.find((user) => String(user.email ?? '').trim().toLowerCase() === remoteEmail);
-          if (matchingAuth) {
-            profileId = matchingAuth.id;
-            const { error: profileUpsertError } = await admin.from('users').upsert({
-              id: matchingAuth.id,
-              whop_id: membership.user_id,
-              full_name: remoteProfile?.username ?? remoteProfile?.name ?? matchingAuth.email?.split('@')[0] ?? 'Whop User',
-              updated_at: new Date().toISOString(),
-            }, { onConflict: 'id' });
-            if (profileUpsertError) throw new Error('Profile upsert failed');
-          }
-        }
-      }
-    } catch {
-      // Leave the resolution to the whop_id-only case; we do not want one
-      // lookup failure to poison the whole webhook replay.
-    }
-  }
-
-  if (!profileId) throw new Error('CreatorOS profile is not available yet');
-
-  const { error: updateError } = await admin.from('users').update({
-    membership_status: active ? membership.status : 'inactive',
-    subscription_tier: active ? mapping.tier : 'free',
-    whop_membership_id: membership.id,
-    whop_plan_id: membership.plan_id,
-    membership_expires_at: membership.current_period_end ?? null,
-    entitlement_updated_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }).eq('id', profileId);
-  if (updateError) throw new Error('Profile synchronization failed');
-
-  if (active) {
-    const { error: grantError } = await admin.rpc('grant_creator_os_subscription_credits', {
-      p_user_id: profileId,
-      p_tier: mapping.tier,
-      p_membership_id: membership.id,
-      p_period_end: membership.current_period_end ?? null,
-    });
-    if (grantError) throw new Error('Subscription credit grant failed');
-  }
-}
 
 serve(async (request) => {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
   const secret = Deno.env.get('WHOP_WEBHOOK_SECRET') ?? '';
-  const whopApiKey = Deno.env.get('WHOP_API_KEY') ?? '';
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-  if (!secret || !whopApiKey || !supabaseUrl || !serviceRoleKey) return new Response('Webhook is not configured', { status: 503 });
+
+  if (!secret || !supabaseUrl || !serviceRoleKey) {
+    return new Response('Webhook is not configured', { status: 503 });
+  }
 
   const rawSecret = Deno.env.get('WHOP_WEBHOOK_SECRET');
   if (!rawSecret) {
@@ -146,10 +34,9 @@ serve(async (request) => {
   };
 
   const wh = new Webhook(svixFormattedSecret);
-  let event;
 
   try {
-    event = wh.verify(payload, headers);
+    wh.verify(payload, headers);
   } catch (err) {
     console.error('Signature verification failed:', err instanceof Error ? err.message : err);
     return new Response(
@@ -159,92 +46,95 @@ serve(async (request) => {
   }
 
   const body = JSON.parse(payload);
-  let parsedEvent: WhopEvent;
-  try { parsedEvent = body; } catch { return new Response('Invalid JSON', { status: 400 }); }
-  if (!parsedEvent.id || !parsedEvent.type || !parsedEvent.data?.id) return new Response('OK', { status: 200 });
+  const data = body.data || body;
 
-  console.log('Received webhook event', {
-    id: parsedEvent.id,
-    type: parsedEvent.type,
-    payloadId: parsedEvent.data?.id,
-    planId: parsedEvent.data?.plan?.id ?? null,
-    whopUserId: parsedEvent.data?.user?.id ?? null,
-    membershipId: parsedEvent.data?.membership?.id ?? null,
-    passthrough: parsedEvent.data?.passthrough ?? null,
-    customUserId: parsedEvent.data?.custom_fields?.user_id ?? null,
-    metadataUserId: parsedEvent.data?.metadata?.user_id ?? null,
-  });
+  const userEmail = String(data.user?.email || data.email || '').trim().toLowerCase();
+  const whopUserId = String(data.user?.id || data.user_id || body.whopUserId || '').trim();
+  const planId = String(data.plan_id || body.planId || data.plan?.id || '').trim();
+  const passthroughId = String(data.passthrough || body.passthrough || '').trim();
 
-  event = parsedEvent;
+  const selectedPlan = PLAN_MAP[planId] || { tier: 'creator', interval: 'monthly' };
 
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data: priorEvent, error: priorEventError } = await admin.from('whop_webhook_events').select('id').eq('id', event.id).maybeSingle();
-  if (priorEventError) return new Response('Webhook persistence failed', { status: 500 });
-  if (priorEvent) return new Response('OK', { status: 200 });
 
-  const normalizedType = String(event.type ?? '').toLowerCase();
-  const isMembership = normalizedType.startsWith('membership.') || normalizedType.startsWith('membership_');
-  const isPaymentSucceeded = normalizedType === 'payment.succeeded' || normalizedType === 'payment_succeeded';
-
-  console.log('Normalized webhook routing decision', {
-    originalType: event.type,
-    normalizedType,
-    isMembership,
-    isPaymentSucceeded,
-  });
-
-  try {
-    const explicitUserId = typeof event.data?.passthrough === 'string' && event.data.passthrough.trim().length > 0
-      ? event.data.passthrough.trim()
-      : event.data?.custom_fields?.user_id ?? event.data?.metadata?.user_id ?? null;
-
-    console.log('Webhook identity resolution inputs', {
-      explicitUserId,
-      passthrough: event.data?.passthrough ?? null,
-      customFieldsUserId: event.data?.custom_fields?.user_id ?? null,
-      metadataUserId: event.data?.metadata?.user_id ?? null,
-    });
-
-    if (isMembership) {
-      console.log('Membership branch selected', { membershipId: event.data.id });
-      await syncMembership(admin, await getMembership(whopApiKey, event.data.id), whopApiKey, explicitUserId);
-    } else if (isPaymentSucceeded) {
-      const planId = event.data.plan?.id ?? '';
-      const whopUserId = event.data.user?.id ?? '';
-      if (!planId || !whopUserId) return new Response('Payment payload is incomplete', { status: 400 });
-
-      const { data: pack, error: packError } = await admin
-        .from('creator_os_credit_pack_mappings').select('credits, usd_price').eq('whop_plan_id', planId).eq('active', true).maybeSingle();
-      if (packError) throw new Error('Credit-pack mapping lookup failed');
-
-      if (pack) {
-        const { data: profile, error: profileError } = await admin.from('users').select('id').eq('whop_id', whopUserId).maybeSingle();
-        if (profileError) throw new Error('Profile lookup failed');
-        if (!profile) throw new Error('CreatorOS profile is not available yet');
-        const { error: grantError } = await admin.rpc('grant_creator_os_credits', {
-          p_user_id: profile.id,
-          p_amount: pack.credits,
-          p_transaction_type: 'credit_purchase',
-          p_source: 'purchased',
-          p_reference_id: event.data.id,
-          p_expires_at: null,
-          p_metadata: { whopPaymentId: event.data.id, whopPlanId: planId, usdTotal: event.data.usd_total ?? null },
-        });
-        if (grantError) throw new Error('Purchased-credit grant failed');
-      } else if (event.data.membership?.id) {
-        // Subscription renewal payments are also a reliable opportunity to grant
-        // the next allocation. The grant reference makes replays harmless.
-        await syncMembership(admin, await getMembership(whopApiKey, event.data.membership.id), whopApiKey, explicitUserId);
-      }
-    }
-  } catch (error) {
-    console.error('Whop synchronization failed', error);
-    return new Response('Webhook processing failed', { status: 500 });
+  if (!passthroughId && !userEmail) {
+    console.log('No user identity found in webhook payload. Skipping.');
+    return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
   }
 
-  // Persist the event only after all authoritative state changes succeed. Each
-  // underlying grant is idempotent as an additional replay safeguard.
-  const { error: insertError } = await admin.from('whop_webhook_events').insert({ id: event.id, event_type: event.type });
-  if (insertError && insertError.code !== '23505') return new Response('Webhook persistence failed', { status: 500 });
-  return new Response('OK', { status: 200 });
+  let profileId: string | null = null;
+
+  if (passthroughId) {
+    const { data: existing, error: lookupError } = await admin
+      .from('users')
+      .select('id')
+      .eq('id', passthroughId)
+      .maybeSingle();
+
+    if (lookupError) {
+      console.error('Supabase passthrough lookup error:', lookupError);
+      return new Response(JSON.stringify({ error: lookupError.message }), { status: 500 });
+    }
+
+    if (!existing?.id) {
+      console.log('Passthrough identity did not resolve to an existing Creator OS profile.');
+      return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
+    }
+
+    profileId = existing.id;
+  } else if (userEmail) {
+    const { data: authUsers, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    if (listError) {
+      console.error('User directory lookup error:', listError);
+      return new Response(JSON.stringify({ error: listError.message }), { status: 500 });
+    }
+
+    const matchingAuth = authUsers.users.find((entry) => String(entry.email ?? '').trim().toLowerCase() === userEmail);
+    if (!matchingAuth?.id) {
+      console.log('Email identity did not resolve to an auth.user row. Skipping.');
+      return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
+    }
+
+    const { data: profile, error: profileError } = await admin
+      .from('users')
+      .select('id')
+      .eq('id', matchingAuth.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Supabase profile lookup error:', profileError);
+      return new Response(JSON.stringify({ error: profileError.message }), { status: 500 });
+    }
+
+    if (!profile?.id) {
+      console.log('Email identity resolved to auth user but no Creator OS profile row exists.');
+      return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
+    }
+
+    profileId = profile.id;
+  }
+
+  if (!profileId) {
+    console.log('No Creator OS profile found for the webhook identity.');
+    return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
+  }
+
+  const { data: updated, error } = await admin
+    .from('users')
+    .update({
+      subscription_tier: selectedPlan.tier,
+      membership_status: 'active',
+      whop_id: whopUserId || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', profileId)
+    .select();
+
+  if (error) {
+    console.error('Supabase update error:', error);
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+
+  console.log('Profile successfully updated:', updated);
+  return new Response(JSON.stringify({ success: true }), { status: 200 });
 });
