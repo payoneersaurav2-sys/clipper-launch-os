@@ -49,13 +49,42 @@ export default function AuthCallback() {
             return;
           }
           
-          const { data: profile, error: profileError } = await supabase.from('users').upsert({
+          const profileData = {
             id: session.user.id,
             full_name: session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? session.user.email?.split('@')[0] ?? 'Creator',
             avatar_url: session.user.user_metadata?.avatar_url ?? null,
-          }, { onConflict: 'id' }).select('onboarding_complete').single();
-          if (profileError) throw profileError;
-          
+          };
+
+          const { data: existingProfile, error: lookupError } = await supabase
+            .from('users')
+            .select('onboarding_complete')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          if (lookupError) throw lookupError;
+
+          let profile;
+          if (!existingProfile) {
+            const { data: insertedProfile, error: insertError } = await supabase
+              .from('users')
+              .insert(profileData)
+              .select('onboarding_complete')
+              .single();
+            if (insertError) throw insertError;
+            profile = insertedProfile;
+          } else {
+            const { data: updatedProfile, error: updateError } = await supabase
+              .from('users')
+              .update({
+                full_name: profileData.full_name,
+                avatar_url: profileData.avatar_url,
+              })
+              .eq('id', session.user.id)
+              .select('onboarding_complete')
+              .single();
+            if (updateError) throw updateError;
+            profile = updatedProfile;
+          }
+
           await syncSession(session);
           navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
         } catch (err: unknown) {
@@ -77,12 +106,42 @@ export default function AuthCallback() {
           setStatus('Connecting your account...');
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error || !data.user || !data.session) throw error ?? new Error('No session was created.');
-          const { data: profile, error: profileError } = await supabase.from('users').upsert({
+          const profileData = {
             id: data.user.id,
             full_name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? data.user.email?.split('@')[0] ?? 'Creator',
             avatar_url: data.user.user_metadata?.avatar_url ?? null,
-          }, { onConflict: 'id' }).select('onboarding_complete').single();
-          if (profileError) throw profileError;
+          };
+
+          const { data: existingProfile, error: lookupError } = await supabase
+            .from('users')
+            .select('onboarding_complete')
+            .eq('id', data.user.id)
+            .maybeSingle();
+          if (lookupError) throw lookupError;
+
+          let profile;
+          if (!existingProfile) {
+            const { data: insertedProfile, error: insertError } = await supabase
+              .from('users')
+              .insert(profileData)
+              .select('onboarding_complete')
+              .single();
+            if (insertError) throw insertError;
+            profile = insertedProfile;
+          } else {
+            const { data: updatedProfile, error: updateError } = await supabase
+              .from('users')
+              .update({
+                full_name: profileData.full_name,
+                avatar_url: profileData.avatar_url,
+              })
+              .eq('id', data.user.id)
+              .select('onboarding_complete')
+              .single();
+            if (updateError) throw updateError;
+            profile = updatedProfile;
+          }
+
           await syncSession(data.session);
           navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
         } catch (err: unknown) {

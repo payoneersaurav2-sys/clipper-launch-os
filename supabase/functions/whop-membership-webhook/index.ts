@@ -2,12 +2,23 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { Webhook } from 'npm:svix';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const PLAN_MAP: Record<string, { tier: string; interval: string }> = {
-  'plan_x36ZUqtqy8DUf': { tier: 'creator', interval: 'monthly' },
-  // Add your other plan IDs here, including annual and pro/agency mappings.
-};
-
 const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
+
+async function resolveMappedTier(admin: ReturnType<typeof createClient>, planId: string) {
+  if (!planId) return undefined;
+  const { data, error } = await admin
+    .from('whop_plan_mappings')
+    .select('tier')
+    .eq('whop_plan_id', planId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Whop plan mapping lookup failed:', error);
+    throw error;
+  }
+
+  return data?.tier;
+}
 
 function normalize(value: unknown): string {
   return String(value ?? '').trim();
@@ -52,20 +63,19 @@ serve(async (request) => {
   const userEmail = normalize(data.user?.email || data.email || membership.user?.email);
   const whopUserId = normalize(membership.user?.id || data.user?.id || data.user_id || data.userId || '');
   const planId = normalize(membership.plan?.id || membership.plan_id || data.plan_id || data.plan?.id || '');
-  const whopMembershipId = normalize(membership.id || data.id || data.membership_id || data.membership?.id);
+  const whopMembershipId = normalize(membership.id || data.id || data.membership_id || membership.membership?.id);
   const status = normalize(membership.status || data.status || '');
   const expiresAt = normalize(membership.current_period_end || membership.current_period_end_at || membership.expires_at || membership.expiry || '');
   const passthroughId = normalize(data.passthrough || data.passthrough_id || body.passthrough || '');
 
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const isActive = ACCESS_GRANTING_STATUSES.has(status.toLowerCase());
-  const selectedPlan = planId ? PLAN_MAP[planId] : undefined;
+  const selectedTier = await resolveMappedTier(admin, planId);
 
   if (!passthroughId && !userEmail && !whopUserId) {
     console.log('No user identity found in webhook payload. Skipping.');
     return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
   }
-
-  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
   let profileId: string | null = null;
 
@@ -148,8 +158,8 @@ serve(async (request) => {
     updated_at: new Date().toISOString(),
   };
 
-  if (selectedPlan) {
-    updatePayload.subscription_tier = isActive ? selectedPlan.tier : 'free';
+  if (selectedTier) {
+    updatePayload.subscription_tier = isActive ? selectedTier : 'free';
   } else if (!isActive) {
     updatePayload.subscription_tier = 'free';
   }
