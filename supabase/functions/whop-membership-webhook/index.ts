@@ -163,6 +163,18 @@ serve(async (request) => {
   try { parsedEvent = body; } catch { return new Response('Invalid JSON', { status: 400 }); }
   if (!parsedEvent.id || !parsedEvent.type || !parsedEvent.data?.id) return new Response('OK', { status: 200 });
 
+  console.log('Received webhook event', {
+    id: parsedEvent.id,
+    type: parsedEvent.type,
+    payloadId: parsedEvent.data?.id,
+    planId: parsedEvent.data?.plan?.id ?? null,
+    whopUserId: parsedEvent.data?.user?.id ?? null,
+    membershipId: parsedEvent.data?.membership?.id ?? null,
+    passthrough: parsedEvent.data?.passthrough ?? null,
+    customUserId: parsedEvent.data?.custom_fields?.user_id ?? null,
+    metadataUserId: parsedEvent.data?.metadata?.user_id ?? null,
+  });
+
   event = parsedEvent;
 
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
@@ -174,12 +186,27 @@ serve(async (request) => {
   const isMembership = normalizedType.startsWith('membership.') || normalizedType.startsWith('membership_');
   const isPaymentSucceeded = normalizedType === 'payment.succeeded' || normalizedType === 'payment_succeeded';
 
+  console.log('Normalized webhook routing decision', {
+    originalType: event.type,
+    normalizedType,
+    isMembership,
+    isPaymentSucceeded,
+  });
+
   try {
     const explicitUserId = typeof event.data?.passthrough === 'string' && event.data.passthrough.trim().length > 0
       ? event.data.passthrough.trim()
       : event.data?.custom_fields?.user_id ?? event.data?.metadata?.user_id ?? null;
 
+    console.log('Webhook identity resolution inputs', {
+      explicitUserId,
+      passthrough: event.data?.passthrough ?? null,
+      customFieldsUserId: event.data?.custom_fields?.user_id ?? null,
+      metadataUserId: event.data?.metadata?.user_id ?? null,
+    });
+
     if (isMembership) {
+      console.log('Membership branch selected', { membershipId: event.data.id });
       await syncMembership(admin, await getMembership(whopApiKey, event.data.id), whopApiKey, explicitUserId);
     } else if (isPaymentSucceeded) {
       const planId = event.data.plan?.id ?? '';
