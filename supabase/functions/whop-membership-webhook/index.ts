@@ -4,24 +4,24 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const PLAN_MAP: Record<string, { tier: string; interval: string }> = {
   'plan_x36ZUqtqy8DUf': { tier: 'creator', interval: 'monthly' },
-  // Add your other plan IDs here
+  // Add your other plan IDs here, including annual and pro/agency mappings.
 };
+
+const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
+
+function normalize(value: unknown): string {
+  return String(value ?? '').trim();
+}
 
 serve(async (request) => {
   if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-  const secret = Deno.env.get('WHOP_WEBHOOK_SECRET') ?? '';
+  const rawSecret = Deno.env.get('WHOP_WEBHOOK_SECRET');
   const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-  if (!secret || !supabaseUrl || !serviceRoleKey) {
+  if (!rawSecret || !supabaseUrl || !serviceRoleKey) {
     return new Response('Webhook is not configured', { status: 503 });
-  }
-
-  const rawSecret = Deno.env.get('WHOP_WEBHOOK_SECRET');
-  if (!rawSecret) {
-    console.error('WHOP_WEBHOOK_SECRET is missing in environment.');
-    return new Response('Server Configuration Error', { status: 500 });
   }
 
   const svixFormattedSecret = btoa(rawSecret);
@@ -46,21 +46,26 @@ serve(async (request) => {
   }
 
   const body = JSON.parse(payload);
-  const data = body.data || body;
+  const data = body.data ?? body;
+  const membership = data.membership ?? data;
 
-  const userEmail = String(data.user?.email || data.email || '').trim().toLowerCase();
-  const whopUserId = String(data.user?.id || data.user_id || body.whopUserId || '').trim();
-  const planId = String(data.plan_id || body.planId || data.plan?.id || '').trim();
-  const passthroughId = String(data.passthrough || body.passthrough || '').trim();
+  const userEmail = normalize(data.user?.email || data.email || membership.user?.email);
+  const whopUserId = normalize(membership.user?.id || data.user?.id || data.user_id || data.userId || '');
+  const planId = normalize(membership.plan?.id || membership.plan_id || data.plan_id || data.plan?.id || '');
+  const whopMembershipId = normalize(membership.id || data.id || data.membership_id || data.membership?.id);
+  const status = normalize(membership.status || data.status || '');
+  const expiresAt = normalize(membership.current_period_end || membership.current_period_end_at || membership.expires_at || membership.expiry || '');
+  const passthroughId = normalize(data.passthrough || data.passthrough_id || body.passthrough || '');
 
-  const selectedPlan = PLAN_MAP[planId] || { tier: 'creator', interval: 'monthly' };
+  const isActive = ACCESS_GRANTING_STATUSES.has(status.toLowerCase());
+  const selectedPlan = planId ? PLAN_MAP[planId] : undefined;
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-
-  if (!passthroughId && !userEmail) {
+  if (!passthroughId && !userEmail && !whopUserId) {
     console.log('No user identity found in webhook payload. Skipping.');
     return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
   }
+
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
 
   let profileId: string | null = null;
 
@@ -82,7 +87,9 @@ serve(async (request) => {
     }
 
     profileId = existing.id;
-  } else if (userEmail) {
+  }
+
+  if (!profileId && userEmail) {
     const { data: authUsers, error: listError } = await admin.auth.admin.listUsers({ perPage: 1000 });
     if (listError) {
       console.error('User directory lookup error:', listError);
@@ -114,19 +121,47 @@ serve(async (request) => {
     profileId = profile.id;
   }
 
+  if (!profileId && whopUserId) {
+    const { data: profile, error: profileError } = await admin
+      .from('users')
+      .select('id')
+      .eq('whop_id', whopUserId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Supabase whop_id lookup error:', profileError);
+      return new Response(JSON.stringify({ error: profileError.message }), { status: 500 });
+    }
+
+    if (profile?.id) {
+      profileId = profile.id;
+    }
+  }
+
   if (!profileId) {
     console.log('No Creator OS profile found for the webhook identity.');
     return new Response(JSON.stringify({ message: 'No user target' }), { status: 200 });
   }
 
+  const updatePayload: Record<string, unknown> = {
+    membership_status: isActive ? 'active' : 'inactive',
+    updated_at: new Date().toISOString(),
+  };
+
+  if (selectedPlan) {
+    updatePayload.subscription_tier = isActive ? selectedPlan.tier : 'free';
+  } else if (!isActive) {
+    updatePayload.subscription_tier = 'free';
+  }
+
+  if (whopUserId) updatePayload.whop_id = whopUserId;
+  if (whopMembershipId) updatePayload.whop_membership_id = whopMembershipId;
+  if (planId) updatePayload.whop_plan_id = planId;
+  updatePayload.membership_expires_at = isActive ? (expiresAt || null) : null;
+
   const { data: updated, error } = await admin
     .from('users')
-    .update({
-      subscription_tier: selectedPlan.tier,
-      membership_status: 'active',
-      whop_id: whopUserId || null,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq('id', profileId)
     .select();
 
