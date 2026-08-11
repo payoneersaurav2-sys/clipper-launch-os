@@ -39,16 +39,45 @@ function equalConstantTime(left: string, right: string) {
   return difference === 0;
 }
 
-async function verifyWebhook(request: Request, body: string, secret: string) {
+async function verifyWebhook(request: Request, rawBody: string, secret: string) {
   const id = request.headers.get('webhook-id') ?? '';
   const timestamp = request.headers.get('webhook-timestamp') ?? '';
   const signature = request.headers.get('webhook-signature') ?? '';
-  const requestAge = Math.abs(Date.now() - Number(timestamp) * 1000);
-  if (!id || !timestamp || !signature || !Number.isFinite(requestAge) || requestAge > 5 * 60_000) return false;
 
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const calculated = toBase64(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${id}.${timestamp}.${body}`))));
-  return signature.split(' ').flatMap((entry) => entry.split(',')).some((entry) => entry.startsWith('v1,') && equalConstantTime(entry.slice(3), calculated));
+  if (!id || !timestamp || !signature) return false;
+
+  const timestampAsNumber = Number(timestamp);
+  const requestAge = Math.abs(Date.now() - timestampAsNumber * 1000);
+  if (!Number.isFinite(timestampAsNumber) || !Number.isFinite(requestAge) || requestAge > 5 * 60_000) return false;
+
+  const rawSecret = (secret ?? '').trim();
+  const prefix = rawSecret.startsWith('whsec_') ? 'whsec_' : rawSecret.startsWith('ws_') ? 'ws_' : '';
+  const secretPayload = prefix ? rawSecret.slice(prefix.length) : rawSecret;
+
+  let secretBytes: Uint8Array;
+  if (secretPayload.length > 0) {
+    try {
+      const decoded = atob(secretPayload);
+      secretBytes = Uint8Array.from(decoded, (character) => character.charCodeAt(0));
+    } catch {
+      secretBytes = new TextEncoder().encode(secretPayload);
+    }
+  } else {
+    secretBytes = new TextEncoder().encode(rawSecret);
+  }
+
+  const key = await crypto.subtle.importKey('raw', secretBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const signingInput = `${id}.${timestamp}.${rawBody}`;
+  const calculated = toBase64(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signingInput))));
+
+  const candidates = signature
+    .split(/[\s,]+/) // accept a normal Svix header such as 'v1,<hash>' or 'v1,<hash>,v1,<hash>'
+    .map((candidate) => candidate.trim())
+    .filter(Boolean)
+    .map((candidate) => candidate.startsWith('v1') ? candidate.slice(2) : candidate)
+    .filter(Boolean);
+
+  return candidates.some((candidate) => equalConstantTime(candidate, calculated));
 }
 
 async function getMembership(whopApiKey: string, membershipId: string) {
@@ -152,10 +181,10 @@ serve(async (request) => {
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
   if (!secret || !whopApiKey || !supabaseUrl || !serviceRoleKey) return new Response('Webhook is not configured', { status: 503 });
 
-  const body = await request.text();
-  if (!(await verifyWebhook(request, body, secret))) return new Response('Invalid webhook signature', { status: 401 });
+  const rawBody = await request.text();
+  if (!(await verifyWebhook(request, rawBody, secret))) return new Response('Invalid webhook signature', { status: 401 });
   let event: WhopEvent;
-  try { event = JSON.parse(body); } catch { return new Response('Invalid JSON', { status: 400 }); }
+  try { event = JSON.parse(rawBody); } catch { return new Response('Invalid JSON', { status: 400 }); }
   if (!event.id || !event.type || !event.data?.id) return new Response('OK', { status: 200 });
 
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
@@ -163,14 +192,18 @@ serve(async (request) => {
   if (priorEventError) return new Response('Webhook persistence failed', { status: 500 });
   if (priorEvent) return new Response('OK', { status: 200 });
 
+  const normalizedType = String(event.type ?? '').toLowerCase();
+  const isMembership = normalizedType.startsWith('membership.') || normalizedType.startsWith('membership_');
+  const isPaymentSucceeded = normalizedType === 'payment.succeeded' || normalizedType === 'payment_succeeded';
+
   try {
     const explicitUserId = typeof event.data?.passthrough === 'string' && event.data.passthrough.trim().length > 0
       ? event.data.passthrough.trim()
       : event.data?.custom_fields?.user_id ?? event.data?.metadata?.user_id ?? null;
 
-    if (event.type.startsWith('membership.')) {
+    if (isMembership) {
       await syncMembership(admin, await getMembership(whopApiKey, event.data.id), whopApiKey, explicitUserId);
-    } else if (event.type === 'payment.succeeded') {
+    } else if (isPaymentSucceeded) {
       const planId = event.data.plan?.id ?? '';
       const whopUserId = event.data.user?.id ?? '';
       if (!planId || !whopUserId) return new Response('Payment payload is incomplete', { status: 400 });
