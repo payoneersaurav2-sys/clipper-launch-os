@@ -4,6 +4,8 @@ import { PlanTier } from '@/lib/entitlements';
 import { Button } from '@/components/ui/button';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 
 type UpgradePromptProps = {
   feature: string;
@@ -22,13 +24,32 @@ export function UpgradePrompt({
   const checkoutUrl = plan?.checkout.monthly.url;
   const { data: entitlements } = useEntitlements();
   const { subscriptionTier } = useAuthStore();
+  const { user } = useAuthStore();
 
   // If the user already has the required plan or better, show next actions
   const tierOrder: Record<PlanTier, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
   const userTier = (entitlements?.tier ?? subscriptionTier ?? 'free') as PlanTier;
   const alreadyHas = tierOrder[userTier] >= tierOrder[requiredPlan];
 
-  if (alreadyHas) {
+  // If entitlements are not active but user has available credits, treat as having access
+  const { data: creditSum } = useQuery([
+    'available_credits', user?.id,
+  ], async () => {
+    if (!user?.id) return 0;
+    const { data } = await supabase
+      .from('credit_lots')
+      .select('remaining_credits', { count: 'exact' })
+      .eq('user_id', user.id)
+      .gt('remaining_credits', 0);
+    if (!data) return 0;
+    // sum remaining_credits
+    return data.reduce((acc: number, r: any) => acc + Number(r.remaining_credits ?? 0), 0);
+  }, { enabled: Boolean(user?.id), staleTime: 30_000 });
+
+  const hasCredits = Number(creditSum ?? 0) > 0;
+  const effectiveHas = alreadyHas || hasCredits;
+
+  if (effectiveHas) {
     return (
       <section className={compact
         ? 'flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/[0.03] px-3 py-2'
