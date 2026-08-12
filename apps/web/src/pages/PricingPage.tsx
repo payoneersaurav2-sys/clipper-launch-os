@@ -17,6 +17,13 @@ export default function PricingPage() {
   const { subscriptionTier } = useAuthStore();
   const { data: entitlements } = useEntitlements();
 
+  // Resolve user tier from entitlements (preferred) or stored subscriptionTier
+  const tierOrder: Record<string, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
+  const resolvedTier = (entitlements?.tier ?? subscriptionTier ?? (user ? 'free' : 'free')) as keyof typeof tierOrder;
+  const visiblePlans = pricingPlans.filter((plan) => tierOrder[plan.id] > (tierOrder[resolvedTier] ?? 0));
+  const showNoUpgrades = resolvedTier === 'agency';
+  const toRender = user ? visiblePlans : pricingPlans;
+
   const checkoutWithPassthrough = (checkoutUrl: string) => {
     if (!user?.id) return checkoutUrl;
     try {
