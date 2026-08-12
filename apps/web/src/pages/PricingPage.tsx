@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { BillingInterval, annualSavings, pricingPlans, unresolvedCheckoutMapping, validatePricingConfiguration } from '@/lib/pricing';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useEntitlements } from '@/hooks/useEntitlements';
 import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -14,6 +15,7 @@ export default function PricingPage() {
   const navigate = useNavigate();
   const { user, whopId } = useAuthStore();
   const { subscriptionTier } = useAuthStore();
+  const { data: entitlements } = useEntitlements();
 
   const checkoutWithPassthrough = (checkoutUrl: string) => {
     if (!user?.id) return checkoutUrl;
@@ -85,9 +87,9 @@ export default function PricingPage() {
           {(() => {
             // Determine which plans to show based on subscriptionTier stored in DB
             const tierOrder: Record<string, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
-            const userTier = (subscriptionTier ?? (user ? 'free' : 'free')) as keyof typeof tierOrder;
+            const resolvedTier = (entitlements?.tier ?? subscriptionTier ?? (user ? 'free' : 'free')) as keyof typeof tierOrder;
             const visiblePlans = pricingPlans.filter((plan) => tierOrder[plan.id] > (tierOrder[userTier] ?? 0));
-            if (userTier === 'agency') {
+            if (resolvedTier === 'agency') {
               return <div className="col-span-full rounded-lg border border-white/[0.06] bg-[#0b0b0b] p-6 text-center text-[#A1A1AA]">You are on the highest plan — no upgrades available.</div>;
             }
             const toRender = (user ? visiblePlans : pricingPlans);
