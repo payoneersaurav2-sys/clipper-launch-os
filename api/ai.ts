@@ -96,13 +96,32 @@ export default async function handler(request: Request) {
     }
     let reservation: CreditReservation;
     try {
-      reservation = await invokeEntitlementRpc(
-        supabaseUrl,
-        supabaseAnonKey,
-        authorization,
-        'reserve_creator_os_credits',
-        { p_operation: operation },
-      ) as CreditReservation;
+      // Determine quantity from the prompt (e.g. "Generate 5 ...") when present.
+      let quantity = 1;
+      try {
+        const match = String(context.systemPrompt ?? '').match(/Generate\s+(\d+)/i);
+        if (match && Number(match[1]) > 0) quantity = Number(match[1]);
+      } catch { /* ignore parsing errors */ }
+
+      // Prefer the quantity-aware RPC if available; fall back to the single-unit RPC.
+      try {
+        reservation = await invokeEntitlementRpc(
+          supabaseUrl,
+          supabaseAnonKey,
+          authorization,
+          'reserve_creator_os_credits_with_quantity',
+          { p_operation: operation, p_quantity: quantity },
+        ) as CreditReservation;
+      } catch (err) {
+        // Fallback for deployments without the new RPC
+        reservation = await invokeEntitlementRpc(
+          supabaseUrl,
+          supabaseAnonKey,
+          authorization,
+          'reserve_creator_os_credits',
+          { p_operation: operation },
+        ) as CreditReservation;
+      }
     } catch {
       return json({ error: 'Creator OS could not verify your plan. Please try again.', code: 'PLAN_NOT_RESOLVED' }, 503);
     }

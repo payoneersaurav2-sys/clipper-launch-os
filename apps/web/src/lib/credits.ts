@@ -13,7 +13,7 @@ export type CreditOperation =
   | 'prompt_library_execution';
 
 export const CREDIT_COSTS: Record<CreditOperation, { credits: number; measuredP95CostUsd: number }> = {
-  idea_generation: { credits: 21, measuredP95CostUsd: 0.0020922 },
+  idea_generation: { credits: 4, measuredP95CostUsd: 0.0020922 },
   idea_expansion: { credits: 4, measuredP95CostUsd: 0.000312 },
   hook_generation: { credits: 6, measuredP95CostUsd: 0.00050835 },
   hook_scoring: { credits: 2, measuredP95CostUsd: 0.0001962 },
@@ -23,8 +23,8 @@ export const CREDIT_COSTS: Record<CreditOperation, { credits: number; measuredP9
   campaign_content_plan: { credits: 18, measuredP95CostUsd: 0.00174495 },
   storyboard_script: { credits: 4, measuredP95CostUsd: 0.00036225 },
   analytics_analysis: { credits: 5, measuredP95CostUsd: 0.0004401 },
-  knowledge_answer: { credits: 3, measuredP95CostUsd: 0.00028065 },
-  prompt_library_execution: { credits: 4, measuredP95CostUsd: 0.0003402 },
+  knowledge_answer: { credits: 15, measuredP95CostUsd: 0.00028065 },
+  prompt_library_execution: { credits: 10, measuredP95CostUsd: 0.0003402 },
 };
 
 export type CreditPack = {

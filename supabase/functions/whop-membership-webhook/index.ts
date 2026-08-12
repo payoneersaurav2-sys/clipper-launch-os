@@ -180,6 +180,24 @@ serve(async (request) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 
+  // When the membership is active and we resolved a mapped tier, grant
+  // subscription credits according to the plan limits. This ensures paid
+  // users receive their monthly credit allotment on successful webhook.
+  try {
+    if (isActive && selectedTier) {
+      await admin.rpc('grant_creator_os_subscription_credits', {
+        p_user_id: profileId,
+        p_tier: selectedTier,
+        p_membership_id: whopMembershipId || null,
+        p_period_end: expiresAt || null,
+      });
+    }
+  } catch (rpcErr) {
+    console.error('Failed to grant subscription credits:', rpcErr instanceof Error ? rpcErr.message : rpcErr);
+    // Do not fail the webhook — credit grants are best-effort and can be
+    // retried from server-side maintenance if needed.
+  }
+
   console.log('Profile successfully updated:', updated);
   return new Response(JSON.stringify({ success: true }), { status: 200 });
 });
