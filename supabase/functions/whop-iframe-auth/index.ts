@@ -166,20 +166,33 @@ serve(async (req) => {
     }
 
     // 5. Upsert into public.users (schema: id UUID, whop_id TEXT, full_name TEXT, membership_status TEXT)
-    const { error: dbError } = await supabaseAdmin.from('users').upsert({
+    // Read existing profile first to avoid accidental downgrades when Whop
+    // membership resolution fails transiently.
+    const { data: existingProfile, error: existingProfileErr } = await supabaseAdmin
+      .from('users')
+      .select('subscription_tier, membership_status, whop_membership_id, whop_plan_id, membership_expires_at')
+      .eq('id', targetUid)
+      .maybeSingle();
+    if (existingProfileErr) throw new Error(`Could not read existing profile: ${existingProfileErr.message}`);
+
+    const upsertPayload: Record<string, unknown> = {
       id: targetUid,
       whop_id: userId,
       full_name: fullName,
-      membership_status: effectiveMembershipStatus,
-      subscription_tier: effectiveTier,
-      whop_membership_id: resolvedPlan?.membership.id ?? null,
-      whop_plan_id: resolvedPlan?.membership.plan_id ?? null,
-      membership_expires_at: resolvedPlan?.membership.current_period_end ?? null,
-      entitlement_updated_at: new Date().toISOString(),
       onboarding_complete: true,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
+      updated_at: new Date().toISOString(),
+    };
 
+    if (resolvedPlan) {
+      upsertPayload.membership_status = effectiveMembershipStatus;
+      upsertPayload.subscription_tier = effectiveTier;
+      upsertPayload.whop_membership_id = resolvedPlan?.membership.id ?? null;
+      upsertPayload.whop_plan_id = resolvedPlan?.membership.plan_id ?? null;
+      upsertPayload.membership_expires_at = resolvedPlan?.membership.current_period_end ?? null;
+      upsertPayload.entitlement_updated_at = new Date().toISOString();
+    }
+
+    const { error: dbError } = await supabaseAdmin.from('users').upsert(upsertPayload, { onConflict: 'id' });
     if (dbError) throw new Error(`Database error: ${dbError.message}`);
 
     // 6. Sign in via the REST token endpoint to get a real access + refresh token pair

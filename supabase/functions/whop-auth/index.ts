@@ -179,19 +179,34 @@ serve(async (req) => {
       signInEmail = email;
     }
 
-    const { error: profileError } = await supabaseAdmin.from('users').upsert({
+    // Read existing profile to avoid overwriting managed subscription fields
+    const { data: existingProfile, error: existingProfileErr } = await supabaseAdmin
+      .from('users')
+      .select('subscription_tier, membership_status, whop_membership_id, whop_plan_id, membership_expires_at')
+      .eq('id', supabaseUserId)
+      .maybeSingle();
+    if (existingProfileErr) throw new Error(`Could not read existing profile: ${existingProfileErr.message}`);
+
+    const upsertPayload: Record<string, unknown> = {
       id: supabaseUserId,
       whop_id: whopUserId,
       full_name: fullName,
       avatar_url: whopUser.picture ?? null,
-      membership_status: effectiveMembershipStatus,
-      subscription_tier: effectiveTier,
-      whop_membership_id: resolvedPlan?.membership.id ?? null,
-      whop_plan_id: resolvedPlan?.membership.plan_id ?? null,
-      membership_expires_at: resolvedPlan?.membership.current_period_end ?? null,
-      entitlement_updated_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
+    };
+
+    // Only update managed membership fields when we have a resolved plan from Whop.
+    // This prevents brief upstream failures from downgrading paid users to 'free'.
+    if (resolvedPlan) {
+      upsertPayload.membership_status = effectiveMembershipStatus;
+      upsertPayload.subscription_tier = effectiveTier;
+      upsertPayload.whop_membership_id = resolvedPlan?.membership.id ?? null;
+      upsertPayload.whop_plan_id = resolvedPlan?.membership.plan_id ?? null;
+      upsertPayload.membership_expires_at = resolvedPlan?.membership.current_period_end ?? null;
+      upsertPayload.entitlement_updated_at = new Date().toISOString();
+    }
+
+    const { error: profileError } = await supabaseAdmin.from('users').upsert(upsertPayload, { onConflict: 'id' });
     if (profileError) throw new Error(`Could not synchronize Creator OS profile: ${profileError.message}`);
 
     const sessionResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
