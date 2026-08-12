@@ -104,3 +104,20 @@ $$;
 
 REVOKE ALL ON FUNCTION public.reserve_creator_os_credits_with_quantity(TEXT, INTEGER) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.reserve_creator_os_credits_with_quantity(TEXT, INTEGER) TO authenticated;
+
+-- Maintenance helper: list creator users with zero available credits
+CREATE OR REPLACE FUNCTION public.get_creator_users_with_zero_credits()
+RETURNS TABLE(id uuid)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT u.id
+  FROM public.users u
+  LEFT JOIN public.credit_lots l ON l.user_id = u.id AND (l.expires_at IS NULL OR l.expires_at > NOW())
+  WHERE u.subscription_tier = 'creator'
+  GROUP BY u.id
+  HAVING COALESCE(SUM(l.remaining_credits), 0) = 0
+$$;
+
+REVOKE ALL ON FUNCTION public.get_creator_users_with_zero_credits() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_creator_users_with_zero_credits() TO authenticated;
