@@ -13,6 +13,7 @@ export default function PricingPage() {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
   const { user, whopId } = useAuthStore();
+  const { subscriptionTier } = useAuthStore();
 
   const checkoutWithPassthrough = (checkoutUrl: string) => {
     if (!user?.id) return checkoutUrl;
@@ -81,7 +82,16 @@ export default function PricingPage() {
         </div>
 
         <div className="mx-auto mt-12 grid max-w-6xl grid-cols-1 gap-4 sm:mt-16 md:grid-cols-2 lg:grid-cols-3 lg:items-stretch lg:gap-5">
-          {pricingPlans.map((plan, index) => {
+          {(() => {
+            // Determine which plans to show based on subscriptionTier stored in DB
+            const tierOrder: Record<string, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
+            const userTier = (subscriptionTier ?? (user ? 'free' : 'free')) as keyof typeof tierOrder;
+            const visiblePlans = pricingPlans.filter((plan) => tierOrder[plan.id] > (tierOrder[userTier] ?? 0));
+            if (userTier === 'agency') {
+              return <div className="col-span-full rounded-lg border border-white/[0.06] bg-[#0b0b0b] p-6 text-center text-[#A1A1AA]">You are on the highest plan — no upgrades available.</div>;
+            }
+            const toRender = (user ? visiblePlans : pricingPlans);
+            return toRender.map((plan, index) => {
             const savings = annualSavings(plan);
             const checkoutUrl = plan.checkout[billing].url;
             const isAnnual = billing === 'annual';
