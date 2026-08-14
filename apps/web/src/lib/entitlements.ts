@@ -19,6 +19,8 @@ export type PlanLimits = {
   ai_generations_per_month: number;
   content_batch_size: number;
   max_output_tokens: number;
+  knowledge_items_limit: number;
+  prompt_limit: number;
 };
 
 export type Entitlements = {
@@ -34,10 +36,10 @@ export type Entitlements = {
  * The database migration is authoritative for every enforceable limit.
  *
  * Tier summary:
- *   free    — all core tools, 1 workspace, 10 active campaigns
- *   creator — 3 workspaces, 50 active campaigns, 30-item batches
- *   pro     — 10 workspaces, 250 active campaigns, 50-item batches
- *   agency  — same capacity as pro, higher monthly credit allowance
+ *   free    — analytics + core tools are enabled, but knowledge vault and prompt library require an upgrade
+ *   creator — up to 2 knowledge resources and 5 saved prompts per workspace
+ *   pro     — up to 10 knowledge resources and 10 saved prompts per workspace
+ *   agency  — unlimited knowledge resources and prompts
  */
 export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities; limits: PlanLimits }> = {
   free: {
@@ -52,7 +54,15 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       knowledge_vault: false,
       prompt_library: false,
     },
-    limits: { workspaces: 1, active_campaigns: 10, ai_generations_per_month: 0, content_batch_size: 5, max_output_tokens: 4000 },
+    limits: {
+      workspaces: 1,
+      active_campaigns: 10,
+      ai_generations_per_month: 0,
+      content_batch_size: 5,
+      max_output_tokens: 4000,
+      knowledge_items_limit: 0,
+      prompt_limit: 0,
+    },
   },
   creator: {
     capabilities: {
@@ -66,7 +76,15 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       knowledge_vault: true,
       prompt_library: true,
     },
-    limits: { workspaces: 3, active_campaigns: 50, ai_generations_per_month: 250, content_batch_size: 30, max_output_tokens: 4000 },
+    limits: {
+      workspaces: 3,
+      active_campaigns: 50,
+      ai_generations_per_month: 250,
+      content_batch_size: 30,
+      max_output_tokens: 4000,
+      knowledge_items_limit: 2,
+      prompt_limit: 5,
+    },
   },
   pro: {
     capabilities: {
@@ -80,7 +98,15 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       knowledge_vault: true,
       prompt_library: true,
     },
-    limits: { workspaces: 10, active_campaigns: 250, ai_generations_per_month: 1000, content_batch_size: 50, max_output_tokens: 8000 },
+    limits: {
+      workspaces: 10,
+      active_campaigns: 250,
+      ai_generations_per_month: 1000,
+      content_batch_size: 50,
+      max_output_tokens: 8000,
+      knowledge_items_limit: 10,
+      prompt_limit: 10,
+    },
   },
   agency: {
     capabilities: {
@@ -94,7 +120,15 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       knowledge_vault: true,
       prompt_library: true,
     },
-    limits: { workspaces: 10, active_campaigns: 250, ai_generations_per_month: 3000, content_batch_size: 50, max_output_tokens: 8000 },
+    limits: {
+      workspaces: 10,
+      active_campaigns: 250,
+      ai_generations_per_month: 3000,
+      content_batch_size: 50,
+      max_output_tokens: 8000,
+      knowledge_items_limit: -1,
+      prompt_limit: -1,
+    },
   },
 };
 
@@ -143,7 +177,48 @@ export function normalizeLimits(limits: unknown, fallback: PlanLimits): PlanLimi
     ai_generations_per_month: Number(raw.ai_generations_per_month ?? fallback.ai_generations_per_month),
     content_batch_size: Number(raw.content_batch_size ?? fallback.content_batch_size),
     max_output_tokens: Number(raw.max_output_tokens ?? fallback.max_output_tokens),
+    knowledge_items_limit: Number(raw.knowledge_items_limit ?? raw.knowledge_limit ?? fallback.knowledge_items_limit),
+    prompt_limit: Number(raw.prompt_limit ?? raw.prompts_limit ?? fallback.prompt_limit),
   };
+}
+
+export function hasUnlimitedLimit(limit: number | undefined): boolean {
+  return typeof limit === 'number' && limit < 0;
+}
+
+export function getKnowledgeLimitForTier(tier: PlanTier | null | undefined): number {
+  if (!tier) return 0;
+  return planEntitlements[tier].limits.knowledge_items_limit;
+}
+
+export function getPromptLimitForTier(tier: PlanTier | null | undefined): number {
+  if (!tier) return 0;
+  return planEntitlements[tier].limits.prompt_limit;
+}
+
+export function isFeatureUnlockedForTier(tier: PlanTier | null | undefined, feature: 'knowledge_vault' | 'prompt_library'): boolean {
+  const currentTier = tier ?? 'free';
+  if (feature === 'knowledge_vault') {
+    return currentTier === 'creator' || currentTier === 'pro' || currentTier === 'agency';
+  }
+  return currentTier === 'creator' || currentTier === 'pro' || currentTier === 'agency';
+}
+
+export function getTierUpgradeMessage(tier: PlanTier | null | undefined, feature: 'knowledge_vault' | 'prompt_library'): string {
+  switch (feature) {
+    case 'knowledge_vault':
+      if (!tier || tier === 'free') return 'Free includes no Knowledge Vault access. Upgrade to Creator for 2 knowledge items, Pro for 10, or Agency for unlimited.';
+      if (tier === 'creator') return 'Creator includes 2 knowledge items. Upgrade to Pro for 10 or Agency for unlimited.';
+      if (tier === 'pro') return 'Pro includes 10 knowledge items. Upgrade to Agency for unlimited.';
+      return 'Agency includes unlimited knowledge items.';
+    case 'prompt_library':
+      if (!tier || tier === 'free') return 'Free includes no saved prompt access. Upgrade to Creator for 5 prompts, Pro for 10, or Agency for unlimited.';
+      if (tier === 'creator') return 'Creator includes 5 saved prompts. Upgrade to Pro for 10 or Agency for unlimited.';
+      if (tier === 'pro') return 'Pro includes 10 saved prompts. Upgrade to Agency for unlimited.';
+      return 'Agency includes unlimited saved prompts.';
+    default:
+      return 'Upgrade your plan to unlock this feature.';
+  }
 }
 
 export function isPlanTier(value: unknown): value is PlanTier {

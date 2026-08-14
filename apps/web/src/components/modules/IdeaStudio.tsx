@@ -10,6 +10,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lightbulb, Plus, Loader2, Sparkles, ChevronDown, Zap, Type } from 'lucide-react';
+import { useEntitlements } from '@/hooks/useEntitlements';
+import { getKnowledgeLimitForTier, getPromptLimitForTier, getTierUpgradeMessage, isFeatureUnlockedForTier, PlanTier } from '@/lib/entitlements';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 export function IdeaStudio() {
   const navigate = useNavigate();
@@ -28,6 +31,12 @@ export function IdeaStudio() {
 
   const { data: prompts } = useWorkspacePrompts();
   const { data: knowledge } = useWorkspaceKnowledge();
+  const { data: entitlements } = useEntitlements();
+  const currentTier = (entitlements?.tier ?? 'free') as PlanTier;
+  const canUsePrompts = isFeatureUnlockedForTier(currentTier, 'prompt_library');
+  const canUseKnowledge = isFeatureUnlockedForTier(currentTier, 'knowledge_vault');
+  const promptLimit = getPromptLimitForTier(currentTier);
+  const knowledgeLimit = getKnowledgeLimitForTier(currentTier);
 
   const promptList = prompts ?? [];
   const knowledgeList = knowledge ?? [];
@@ -148,6 +157,16 @@ export function IdeaStudio() {
 
   return (
     <div className="os-page max-w-5xl animate-in fade-in duration-500">
+      {!canUsePrompts && (
+        <div className="mb-5">
+          <UpgradePrompt feature="Prompt selector" requiredPlan="creator" description={getTierUpgradeMessage(currentTier, 'prompt_library')} />
+        </div>
+      )}
+      {!canUseKnowledge && (
+        <div className="mb-5">
+          <UpgradePrompt feature="Knowledge selector" requiredPlan="creator" description={getTierUpgradeMessage(currentTier, 'knowledge_vault')} />
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
           <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Idea Studio</h2>
@@ -155,7 +174,8 @@ export function IdeaStudio() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative" ref={promptMenuRef}>
-            <button
+            {canUsePrompts ? (
+              <button
               type="button"
               onClick={() => setIsPromptOpen((open) => !open)}
               className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
@@ -163,8 +183,14 @@ export function IdeaStudio() {
               <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</span>
               <span className="max-w-[160px] truncate text-[#FAFAFA]">{allPromptsSelected ? 'All prompts' : selectedPromptTitles.length ? `${selectedPromptTitles.length} prompt${selectedPromptTitles.length > 1 ? 's' : ''}` : 'No prompt'}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
-            </button>
-            {isPromptOpen && (
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[#111111] px-3 text-[12px] text-[#71717A]">
+                <span>Prompt limit</span>
+                <span className="text-primary">{promptLimit < 0 ? 'Unlimited' : `${promptLimit}`}</span>
+              </div>
+            )}
+            {isPromptOpen && canUsePrompts && (
               <div className="absolute left-0 z-20 mt-2 w-80 max-h-72 overflow-auto rounded-[16px] border border-white/[0.08] bg-[#111111]/95 p-1.5 shadow-[0_18px_44px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,58,237,0.12)] backdrop-blur-md">
                 <div className="mb-1 px-2 pt-1 pb-1.5">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompts</p>
@@ -232,15 +258,22 @@ export function IdeaStudio() {
             )}
           </div>
           <div className="relative" ref={knowledgeMenuRef}>
-            <button
+            {canUseKnowledge ? (
+              <button
               type="button"
               onClick={() => setIsKnowledgeOpen((open) => !open)}
               className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
             >
               <span>{allKnowledgeSelected ? 'All knowledge' : selectedKnowledgeSnippets.length ? `${selectedKnowledgeSnippets.length} knowledge` : 'Knowledge'}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
-            </button>
-            {isKnowledgeOpen && (
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[#111111] px-3 text-[12px] text-[#71717A]">
+                <span>Knowledge limit</span>
+                <span className="text-primary">{knowledgeLimit < 0 ? 'Unlimited' : `${knowledgeLimit}`}</span>
+              </div>
+            )}
+            {isKnowledgeOpen && canUseKnowledge && (
               <div className="absolute right-0 z-20 mt-2 w-80 max-h-72 overflow-auto rounded-[16px] border border-white/[0.08] bg-[#111111]/95 p-1.5 shadow-[0_18px_44px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,58,237,0.12)] backdrop-blur-md">
                 <div className="mb-1 px-2 pt-1 pb-1.5">
                   <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Knowledge sources</p>

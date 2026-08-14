@@ -11,6 +11,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useCredits } from '@/hooks/useCredits';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useEntitlements } from '@/hooks/useEntitlements';
 
 // ---- Animated counter ---------------------------------------
 function Counter({ value, prefix = '', suffix = '', duration = 1.2 }: { value: number; prefix?: string; suffix?: string; duration?: number }) {
@@ -91,9 +92,11 @@ function PlatformBar({ platform, pct, count }: { platform: string; pct: number; 
 
 export default function AnalyticsDashboard() {
   const { data: credits } = useCredits();
+  const { data: entitlements } = useEntitlements();
   const { data: campaigns } = useCampaigns();
   const { data: ideas } = useClipIdeas();
   const { data: stats } = useAnalyticsStats();
+  const analyticsEnabled = entitlements?.capabilities?.basic_analytics !== false;
   const genCount  = useHistoryStore(s => s.records.length);
   const favCount  = useHistoryStore(s => s.getFavorites().length);
   const totalCost = useHistoryStore(s => s.getTotalCost());
@@ -113,7 +116,7 @@ export default function AnalyticsDashboard() {
         <p className="text-[14px] text-[#71717A] mt-1">Workspace performance at a glance.</p>
       </div>
 
-      {credits?.tier === 'free' ? (
+      {!analyticsEnabled ? (
         <div className="mt-8">
           <UpgradePrompt
             feature="Advanced Analytics"

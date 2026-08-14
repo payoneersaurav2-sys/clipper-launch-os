@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 
 type UpgradePromptProps = {
   feature: string;
-  requiredPlan: Exclude<PlanTier, 'free'>;
+  requiredPlan?: Exclude<PlanTier, 'free'>;
   description: string;
   compact?: boolean;
 };
@@ -20,16 +20,18 @@ export function UpgradePrompt({
   description,
   compact = false,
 }: UpgradePromptProps) {
-  const plan = pricingPlans.find((entry) => entry.id === requiredPlan);
-  const checkoutUrl = plan?.checkout.monthly.url;
   const { data: entitlements } = useEntitlements();
   const { subscriptionTier } = useAuthStore();
   const { user } = useAuthStore();
 
+  const resolvedRequiredPlan = requiredPlan ?? 'creator';
+  const plan = pricingPlans.find((entry) => entry.id === resolvedRequiredPlan);
+  const checkoutUrl = plan?.checkout.monthly.url;
+
   // If the user already has the required plan or better, show next actions
   const tierOrder: Record<PlanTier, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
   const userTier = (entitlements?.tier ?? subscriptionTier ?? 'free') as PlanTier;
-  const alreadyHas = tierOrder[userTier] >= tierOrder[requiredPlan];
+  const alreadyHas = tierOrder[userTier] >= tierOrder[resolvedRequiredPlan];
 
   // If entitlements are not active but user has available credits, treat as having access
   const { data: creditSum } = useQuery([
@@ -65,9 +67,9 @@ export function UpgradePrompt({
               <Button size="sm" onClick={() => window.location.assign('/dashboard/credits')}>
                 Buy Credits
               </Button>
-              {tierOrder[userTier] < tierOrder['pro'] && (
+              {tierOrder[userTier] < tierOrder['creator'] && (
                 <Button size="sm" variant="outline" onClick={() => window.location.assign('/dashboard/pricing')}>
-                  Upgrade to Pro
+                  Upgrade plans
                 </Button>
               )}
             </div>
@@ -88,7 +90,7 @@ export function UpgradePrompt({
         <div>
           <p className="text-sm font-semibold text-foreground">{feature}</p>
           <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-            {description} Available with {plan?.name ?? requiredPlan}.
+            {description} Available with {plan?.name ?? resolvedRequiredPlan}.
           </p>
         </div>
       </div>
@@ -98,7 +100,7 @@ export function UpgradePrompt({
           size="sm"
           className="shrink-0"
           onClick={() => window.location.assign(checkoutUrl)}
-          aria-label={`Upgrade to ${plan?.name ?? requiredPlan}`}
+          aria-label={`Upgrade to ${plan?.name ?? resolvedRequiredPlan}`}
         >
           Upgrade <ArrowUpRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
         </Button>
