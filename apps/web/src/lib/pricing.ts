@@ -61,7 +61,7 @@ const proFeatures = [
 
 export const pricingPlans: PricingPlan[] = [
   {
-    id: 'creator', name: 'Creator', positioning: 'Build your content engine.', monthlyPrice: 19, annualPrice: 190, cta: 'Start Creating',
+    id: 'creator', name: 'Creator', positioning: 'Build your content engine.', monthlyPrice: 29, annualPrice: 290, cta: 'Start Creating',
     features: creatorFeatures,
     checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
   },
