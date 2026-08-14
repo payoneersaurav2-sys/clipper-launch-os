@@ -24,7 +24,7 @@ export type PricingPlan = {
 // two Whop plans are the exception: source #6 is monthly and source #2 annual.
 // Source #5 deliberately remains unassigned because it duplicates source #4.
 const suppliedCheckoutUrls = [
-  'https://whop.com/checkout/plan_x36ZUqtqy8DUf',
+  'https://whop.com/checkout/plan_aebXspbqY5fMR',
   'https://whop.com/checkout/plan_FAWP5M3r4he3u',
   'https://whop.com/checkout/plan_JBRDyCvvE29lS',
   'https://whop.com/checkout/plan_qDlONxyQFdDMf',

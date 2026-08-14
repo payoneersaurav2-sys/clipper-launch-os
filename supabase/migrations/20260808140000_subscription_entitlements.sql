@@ -45,7 +45,7 @@ SET capabilities = EXCLUDED.capabilities, limits = EXCLUDED.limits, updated_at =
 -- The duplicate, unassigned source #5 is intentionally not mapped.
 INSERT INTO public.whop_plan_mappings (whop_plan_id, tier, billing_interval)
 VALUES
-  ('plan_x36ZUqtqy8DUf', 'creator', 'monthly'),
+  ('plan_aebXspbqY5fMR', 'creator', 'monthly'),
   ('plan_qDlONxyQFdDMf', 'creator', 'annual'),
   ('plan_DqQz98z72Us8l', 'pro', 'monthly'),
   ('plan_FAWP5M3r4he3u', 'pro', 'annual'),
