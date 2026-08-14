@@ -94,7 +94,7 @@ export default function AnalyticsDashboard() {
   const { data: campaigns } = useCampaigns();
   const { data: ideas } = useClipIdeas();
   const { data: stats } = useAnalyticsStats();
-  const analyticsEnabled = entitlements?.capabilities?.basic_analytics !== false;
+  const analyticsEnabled = entitlements?.status === 'active' && ['creator', 'pro', 'agency'].includes(entitlements.tier ?? '');
   const genCount  = useHistoryStore(s => s.records.length);
   const favCount  = useHistoryStore(s => s.getFavorites().length);
   const totalCost = useHistoryStore(s => s.getTotalCost());
@@ -119,7 +119,7 @@ export default function AnalyticsDashboard() {
           <UpgradePrompt
             feature="Advanced Analytics"
             requiredPlan="creator"
-            description="Track performance, AI usage, and calculate ROI across all your workspaces to scale your content engine."
+            description="Analytics unlocks on the Creator plan and includes performance tracking, AI usage, and ROI insights for your workspace."
           />
         </div>
       ) : (

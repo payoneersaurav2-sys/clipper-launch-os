@@ -36,8 +36,8 @@ export type Entitlements = {
  * The database migration is authoritative for every enforceable limit.
  *
  * Tier summary:
- *   free    — analytics + core tools are enabled, but knowledge vault and prompt library require an upgrade
- *   creator — up to 2 knowledge resources and 5 saved prompts per workspace
+ *   free    — core tools are enabled, but analytics, knowledge vault, and prompt library require an upgrade
+ *   creator — analytics unlocks here, plus up to 2 knowledge resources and 5 saved prompts per workspace
  *   pro     — up to 10 knowledge resources and 10 saved prompts per workspace
  *   agency  — unlimited knowledge resources and prompts
  */
@@ -47,7 +47,7 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       core_ai: true,
       campaigns: true,
       clip_pipeline: true,
-      basic_analytics: true,
+      basic_analytics: false,
       scheduling: true,
       batch_generation: false,
       multi_workspace: false,
