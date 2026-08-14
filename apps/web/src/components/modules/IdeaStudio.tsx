@@ -48,6 +48,7 @@ export function IdeaStudio() {
   const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>([]);
   const [allPromptsSelected, setAllPromptsSelected] = useState(false);
   const [allKnowledgeSelected, setAllKnowledgeSelected] = useState(false);
+  const [upgradeTarget, setUpgradeTarget] = useState<'prompt' | 'knowledge' | null>(null);
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
   const promptMenuRef = useRef<HTMLDivElement | null>(null);
@@ -114,6 +115,11 @@ export function IdeaStudio() {
       setGenerationNotice('Choose or create a workspace before generating ideas.');
       return;
     }
+    if (!canUsePrompts && !canUseKnowledge) {
+      setUpgradeTarget('prompt');
+      setGenerationNotice('Upgrade to unlock saved prompt and knowledge selectors.');
+      return;
+    }
     try {
       const data = await generateJSON<{ ideas?: Array<{ title?: string; context?: string }> }>(
         buildGenerateIdeasPrompt({
@@ -157,12 +163,12 @@ export function IdeaStudio() {
 
   return (
     <div className="os-page max-w-5xl animate-in fade-in duration-500">
-      {!canUsePrompts && (
+      {upgradeTarget === 'prompt' && !canUsePrompts && (
         <div className="mb-5">
           <UpgradePrompt feature="Prompt selector" requiredPlan="creator" description={getTierUpgradeMessage(currentTier, 'prompt_library')} />
         </div>
       )}
-      {!canUseKnowledge && (
+      {upgradeTarget === 'knowledge' && !canUseKnowledge && (
         <div className="mb-5">
           <UpgradePrompt feature="Knowledge selector" requiredPlan="creator" description={getTierUpgradeMessage(currentTier, 'knowledge_vault')} />
         </div>
@@ -174,22 +180,21 @@ export function IdeaStudio() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative" ref={promptMenuRef}>
-            {canUsePrompts ? (
-              <button
+            <button
               type="button"
-              onClick={() => setIsPromptOpen((open) => !open)}
-              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30"
+              onClick={() => {
+                if (!canUsePrompts) {
+                  setUpgradeTarget('prompt');
+                  return;
+                }
+                setIsPromptOpen((open) => !open);
+              }}
+              className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[linear-gradient(180deg,rgba(17,17,17,0.98),rgba(13,13,13,0.96))] px-3 text-[12px] text-[#FAFAFA] shadow-[0_0_0_1px_rgba(124,58,237,0.08),0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:border-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#71717A]">Saved prompt</span>
-              <span className="max-w-[160px] truncate text-[#FAFAFA]">{allPromptsSelected ? 'All prompts' : selectedPromptTitles.length ? `${selectedPromptTitles.length} prompt${selectedPromptTitles.length > 1 ? 's' : ''}` : 'No prompt'}</span>
+              <span className="max-w-[160px] truncate text-[#FAFAFA]">{canUsePrompts ? (allPromptsSelected ? 'All prompts' : selectedPromptTitles.length ? `${selectedPromptTitles.length} prompt${selectedPromptTitles.length > 1 ? 's' : ''}` : 'No prompt') : `Limit ${promptLimit < 0 ? 'Unlimited' : promptLimit}`}</span>
               <ChevronDown className="h-3.5 w-3.5 text-[#A1A1AA]" />
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 h-8 rounded-full border border-white/[0.08] bg-[#111111] px-3 text-[12px] text-[#71717A]">
-                <span>Prompt limit</span>
-                <span className="text-primary">{promptLimit < 0 ? 'Unlimited' : `${promptLimit}`}</span>
-              </div>
-            )}
+            </button>
             {isPromptOpen && canUsePrompts && (
               <div className="absolute left-0 z-20 mt-2 w-80 max-h-72 overflow-auto rounded-[16px] border border-white/[0.08] bg-[#111111]/95 p-1.5 shadow-[0_18px_44px_rgba(0,0,0,0.38),0_0_0_1px_rgba(124,58,237,0.12)] backdrop-blur-md">
                 <div className="mb-1 px-2 pt-1 pb-1.5">

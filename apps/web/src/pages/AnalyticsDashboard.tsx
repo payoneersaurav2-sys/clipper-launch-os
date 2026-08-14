@@ -9,7 +9,6 @@ import {
   Star, BarChart2, Activity, Target 
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useCredits } from '@/hooks/useCredits';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { useEntitlements } from '@/hooks/useEntitlements';
 
@@ -91,7 +90,6 @@ function PlatformBar({ platform, pct, count }: { platform: string; pct: number; 
 }
 
 export default function AnalyticsDashboard() {
-  const { data: credits } = useCredits();
   const { data: entitlements } = useEntitlements();
   const { data: campaigns } = useCampaigns();
   const { data: ideas } = useClipIdeas();

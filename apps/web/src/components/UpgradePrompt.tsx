@@ -34,19 +34,21 @@ export function UpgradePrompt({
   const alreadyHas = tierOrder[userTier] >= tierOrder[resolvedRequiredPlan];
 
   // If entitlements are not active but user has available credits, treat as having access
-  const { data: creditSum } = useQuery([
-    'available_credits', user?.id,
-  ], async () => {
-    if (!user?.id) return 0;
-    const { data } = await supabase
-      .from('credit_lots')
-      .select('remaining_credits', { count: 'exact' })
-      .eq('user_id', user.id)
-      .gt('remaining_credits', 0);
-    if (!data) return 0;
-    // sum remaining_credits
-    return data.reduce((acc: number, r: any) => acc + Number(r.remaining_credits ?? 0), 0);
-  }, { enabled: Boolean(user?.id), staleTime: 30_000 });
+  const { data: creditSum } = useQuery({
+    queryKey: ['available_credits', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return 0;
+      const { data } = await supabase
+        .from('credit_lots')
+        .select('remaining_credits', { count: 'exact' })
+        .eq('user_id', user.id)
+        .gt('remaining_credits', 0);
+      if (!data) return 0;
+      return data.reduce((acc: number, r: any) => acc + Number(r.remaining_credits ?? 0), 0);
+    },
+    enabled: Boolean(user?.id),
+    staleTime: 30_000,
+  });
 
   const hasCredits = Number(creditSum ?? 0) > 0;
   const effectiveHas = alreadyHas || hasCredits;
