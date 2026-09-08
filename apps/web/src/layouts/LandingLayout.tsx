@@ -60,6 +60,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 Sign In
               </Button>
             </Link>
+            <Link to="/login?mode=signup">
+              <Button className="h-9 rounded-[10px] px-4 lg:px-5 text-[13px] lg:text-[14px] font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.25)] hover:shadow-[0_0_22px_rgba(124,58,237,0.45)] transition-all duration-300">
+                Get Started
+              </Button>
+            </Link>
             <Link to="/pricing">
               <Button className="h-9 rounded-[10px] px-4 lg:px-5 text-[13px] lg:text-[14px] font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.25)] hover:shadow-[0_0_22px_rgba(124,58,237,0.45)] transition-all duration-300">
                 View Plans
@@ -99,6 +104,11 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start text-[14px] font-medium text-[#A1A1AA] hover:text-[#FAFAFA] h-10 rounded-[10px]">
                     Sign In
+                  </Button>
+                </Link>
+                <Link to="/login?mode=signup" onClick={() => setMobileMenuOpen(false)}>
+                  <Button className="w-full h-10 rounded-[10px] text-[14px] font-medium bg-primary text-white hover:bg-primary/90">
+                    Get Started
                   </Button>
                 </Link>
                 <div className="flex items-center justify-between px-3 py-2">

@@ -23,7 +23,7 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup'>(() => searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [success, setSuccess] = useState('');
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -150,7 +150,7 @@ export default function LoginPage() {
           className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
           {loading
             ? <Loader2 className="h-4 w-4 animate-spin" />
-            : mode === 'login' ? 'Sign In' : 'Create Account'
+            : mode === 'login' ? 'Sign In' : 'Get Started'
           }
         </Button>
       </form>

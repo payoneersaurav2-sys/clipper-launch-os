@@ -76,6 +76,11 @@ export default function LandingPage() {
               Sign In
             </Button>
           </a>
+          <Link to="/login?mode=signup" className="w-full sm:w-auto">
+            <Button variant="outline" size="lg" className="w-full h-12 rounded-[12px] px-8 text-[15px] font-medium bg-[#111111] border border-white/[0.06] text-[#FAFAFA] hover:bg-white/[0.03] transition-all duration-300">
+              Get Started
+            </Button>
+          </Link>
         </motion.div>
       </section>
 
