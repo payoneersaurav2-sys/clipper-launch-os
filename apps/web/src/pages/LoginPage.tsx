@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import BrandMark from '@/components/BrandMark';
 import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { BOT_PROTECTION_ENABLED, loadTurnstileScript, verifyTurnstileToken } from '@/lib/botProtection';
 
 const AUTH_ATTEMPT_STORAGE_KEY = 'creator_os_auth_attempts';
 
@@ -44,11 +45,65 @@ export default function LoginPage() {
   const [err, setErr] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>(() => searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [success, setSuccess] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const captchaWidgetRef = React.useRef<string | null>(null);
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return sessionStorage.getItem('creator_os_remember_me') === 'true';
   });
   const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+  const resetCaptcha = React.useCallback(() => {
+    setCaptchaToken('');
+    const activeWidgetId = captchaWidgetRef.current;
+    if (activeWidgetId && window.turnstile) {
+      window.turnstile.reset(activeWidgetId);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    if (!BOT_PROTECTION_ENABLED || typeof document === 'undefined') return;
+
+    let isMounted = true;
+
+    const renderCaptcha = async () => {
+      try {
+        await loadTurnstileScript();
+        const container = document.getElementById('creator-os-turnstile');
+        if (!container || !window.turnstile || !isMounted) return;
+
+        const widgetId = window.turnstile.render(container, {
+          sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+          action: mode === 'signup' ? 'creator_os_signup' : 'creator_os_login',
+          callback: (token: string) => setCaptchaToken(token),
+          'error-callback': () => setCaptchaToken(''),
+          'expired-callback': () => setCaptchaToken(''),
+          'timeout-callback': () => setCaptchaToken(''),
+        });
+
+        captchaWidgetRef.current = widgetId;
+      } catch {
+        setCaptchaToken('');
+      }
+    };
+
+    setCaptchaToken('');
+    if (captchaWidgetRef.current && window.turnstile) {
+      window.turnstile.remove(captchaWidgetRef.current);
+      captchaWidgetRef.current = null;
+    }
+
+    renderCaptcha();
+
+    return () => {
+      isMounted = false;
+      const currentWidgetId = captchaWidgetRef.current;
+      if (currentWidgetId && window.turnstile) {
+        window.turnstile.remove(currentWidgetId);
+      }
+      captchaWidgetRef.current = null;
+    };
+  }, [mode]);
 
   const persistRememberPreference = (next: boolean) => {
     if (next) {
@@ -61,6 +116,20 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
+
+    if (BOT_PROTECTION_ENABLED && !captchaToken) {
+      setErr('Please complete the security check before continuing.');
+      return;
+    }
+
+    if (BOT_PROTECTION_ENABLED) {
+      const captchaValid = await verifyTurnstileToken(captchaToken, mode === 'signup' ? 'creator_os_signup' : 'creator_os_login');
+      if (!captchaValid) {
+        setErr('Security check failed. Please try again.');
+        resetCaptcha();
+        return;
+      }
+    }
 
     const attemptState = getAuthAttemptState();
     const windowMs = 60_000;
@@ -84,6 +153,7 @@ export default function LoginPage() {
         const next = getAuthAttemptState();
         const updated = { count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs };
         setAuthAttemptState(updated);
+        resetCaptcha();
         setErr(signUpErr.message);
         setLoading(false);
         return;
@@ -100,12 +170,14 @@ export default function LoginPage() {
       if (signInErr) {
         const next = getAuthAttemptState();
         setAuthAttemptState({ count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs });
+        resetCaptcha();
         setSuccess('Account created! Check your inbox and confirm your email, then sign in.');
         setMode('login');
         setLoading(false);
         return;
       }
       setAuthAttemptState({ count: 0, resetAt: Date.now() + windowMs });
+      resetCaptcha();
       persistRememberPreference(rememberMe);
       setLoading(false);
       navigate('/dashboard');
@@ -116,11 +188,13 @@ export default function LoginPage() {
     if (error) {
       const next = getAuthAttemptState();
       setAuthAttemptState({ count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs });
+      resetCaptcha();
       setErr(error.message);
       setLoading(false);
       return;
     }
     setAuthAttemptState({ count: 0, resetAt: Date.now() + windowMs });
+    resetCaptcha();
     persistRememberPreference(rememberMe);
     setLoading(false);
     navigate('/dashboard');
@@ -186,7 +260,12 @@ export default function LoginPage() {
           />
           Remember me
         </label>
-        <Button type="submit" disabled={loading || !email || !password}
+        {BOT_PROTECTION_ENABLED && (
+          <div className="rounded-[12px] border border-white/[0.06] bg-[#0D0D0D] p-2">
+            <div id="creator-os-turnstile" className="min-h-[65px]" />
+          </div>
+        )}
+        <Button type="submit" disabled={loading || !email || !password || (BOT_PROTECTION_ENABLED && !captchaToken)}
           className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
           {loading
             ? <Loader2 className="h-4 w-4 animate-spin" />

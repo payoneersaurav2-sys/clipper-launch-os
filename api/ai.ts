@@ -7,6 +7,10 @@ const json = (body: unknown, status: number) => new Response(JSON.stringify(body
 
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
+const MAX_REQUEST_BYTES = 250_000;
+const MAX_PROMPT_CHARS = 20_000;
+const MAX_MESSAGES = 20;
+const MAX_OUTPUT_TOKENS = 8_000;
 const RATE_LIMIT_BUCKETS = new Map<string, { count: number; resetAt: number }>();
 const IN_FLIGHT_BY_USER = new Map<string, number>();
 
@@ -154,7 +158,7 @@ export default async function handler(request: Request) {
   const authorization = request.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) return json({ error: 'Sign in again to use AI generation.', code: 'AUTH_FAILED' }, 401);
   const contentLength = Number(request.headers.get('content-length') ?? '0');
-  if (contentLength > 250_000) return json({ error: 'AI request payload is too large.', code: 'REQUEST_TOO_LARGE' }, 413);
+  if (contentLength > MAX_REQUEST_BYTES) return json({ error: 'AI request payload is too large.', code: 'REQUEST_TOO_LARGE' }, 413);
   const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, authorization } });
   if (!userResponse.ok) return json({ error: 'Sign in again to use AI generation.', code: 'AUTH_FAILED' }, 401);
   const userPayload = await userResponse.json().catch(() => null) as { user?: { id?: string } } | null;
@@ -246,7 +250,14 @@ export default async function handler(request: Request) {
     }
     creditReservationId = reservation.reservationId;
     const built = PromptEngine.build(PromptEngine.compress(context));
-    const maxTokens = Math.min(context.maxTokens ?? 4000, 8000);
+    const totalPromptChars = built.messages.reduce((total, message) => total + String(message.content ?? '').length, 0);
+    if (built.messages.length > MAX_MESSAGES) {
+      return json({ error: 'AI request contains too many messages.', code: 'REQUEST_TOO_LARGE' }, 413);
+    }
+    if (totalPromptChars > MAX_PROMPT_CHARS) {
+      return json({ error: 'AI prompt exceeds the maximum supported size.', code: 'REQUEST_TOO_LARGE' }, 413);
+    }
+    const maxTokens = Math.min(context.maxTokens ?? 4000, MAX_OUTPUT_TOKENS);
     let upstream = await generateFromOpenRouter(openRouterKey, built.model, built.messages, built.temperature, maxTokens, context.expectedJsonSchema);
     if (!upstream.ok) {
       const detail = await upstream.text().catch(() => 'OpenRouter rejected the request.');

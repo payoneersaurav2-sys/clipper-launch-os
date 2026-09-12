@@ -19,6 +19,34 @@ async function resolveMappedTier(admin: ReturnType<typeof createClient>, planId:
   return data?.tier;
 }
 
+async function recordWebhookEvent(admin: ReturnType<typeof createClient>, eventId: string, eventType: string) {
+  if (!eventId) return;
+
+  const { data: existing, error: lookupError } = await admin
+    .from('whop_webhook_events')
+    .select('id')
+    .eq('id', eventId)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw lookupError;
+  }
+
+  if (existing?.id) {
+    return 'duplicate';
+  }
+
+  const { error: insertError } = await admin
+    .from('whop_webhook_events')
+    .insert({ id: eventId, event_type: eventType, received_at: new Date().toISOString() });
+
+  if (insertError && insertError.code !== '23505') {
+    throw insertError;
+  }
+
+  return insertError?.code === '23505' ? 'duplicate' : 'inserted';
+}
+
 function normalize(value: unknown): string {
   return String(value ?? '').trim();
 }
@@ -58,6 +86,19 @@ serve(async (request) => {
   const body = JSON.parse(payload);
   const data = body.data ?? body;
   const membership = data.membership ?? data;
+  const eventId = normalize(body.id ?? data.id ?? body.event_id ?? data.event_id ?? '');
+  const eventType = normalize(body.type ?? data.type ?? 'whop.membership');
+
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  try {
+    const eventResult = await recordWebhookEvent(admin, eventId, eventType);
+    if (eventResult === 'duplicate') {
+      return new Response(JSON.stringify({ success: true, duplicate: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+  } catch (eventError) {
+    console.error('Webhook dedupe check failed:', eventError instanceof Error ? eventError.message : eventError);
+    return new Response(JSON.stringify({ error: 'Failed to guard against duplicate webhook events.' }), { status: 500 });
+  }
 
   const userEmail = normalize(data.user?.email || data.email || membership.user?.email);
   const whopUserId = normalize(membership.user?.id || data.user?.id || data.user_id || data.userId || '');
@@ -67,7 +108,6 @@ serve(async (request) => {
   const expiresAt = normalize(membership.current_period_end || membership.current_period_end_at || membership.expires_at || membership.expiry || '');
   const passthroughId = normalize(data.passthrough || data.passthrough_id || body.passthrough || '');
 
-  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const isActive = ACCESS_GRANTING_STATUSES.has(status.toLowerCase());
   const selectedTier = await resolveMappedTier(admin, planId);
 
