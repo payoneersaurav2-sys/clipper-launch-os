@@ -14,11 +14,6 @@ import { useMemoryStore } from '@/stores/useMemoryStore';
 import { useAISettingsStore } from '@/stores/useAISettingsStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
-// Singleton provider — created once, reused across hook instances
-export function refreshProvider() {
-  // AI configuration is read by the authenticated server gateway on every request.
-}
-
 // ---- Types --------------------------------------------------
 
 interface UseAIState {

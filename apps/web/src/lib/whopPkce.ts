@@ -5,10 +5,19 @@
  * opaque CSRF token; never place the verifier in a callback URL.
  */
 
-export const WHOP_REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
-export const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || 'app_NsohXjOYOE0EkK';
+const WHOP_ENV_REDIRECT_URI = import.meta.env.VITE_WHOP_REDIRECT_URI;
+const WHOP_ENV_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID;
+
+export const WHOP_REDIRECT_URI = WHOP_ENV_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
+export const WHOP_CLIENT_ID = WHOP_ENV_CLIENT_ID ?? '';
 
 const PKCE_STORAGE_KEY = 'creator_os_whop_oauth';
+
+export function assertWhopRuntimeConfig() {
+  if (!WHOP_CLIENT_ID || !WHOP_REDIRECT_URI) {
+    throw new Error('Whop OAuth is not configured. Set VITE_WHOP_CLIENT_ID and VITE_WHOP_REDIRECT_URI before starting the auth flow.');
+  }
+}
 
 interface PkceTransaction {
   codeVerifier: string;
@@ -36,6 +45,8 @@ async function createS256Challenge(verifier: string): Promise<string> {
 }
 
 export async function buildWhopOAuthUrl(intent: PkceTransaction['intent'] = 'sign_in'): Promise<string> {
+  assertWhopRuntimeConfig();
+
   const transaction: PkceTransaction = {
     codeVerifier: randomString(32),
     state: randomString(16),

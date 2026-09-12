@@ -3,6 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 let profileSubscription: ReturnType<typeof supabase.channel> | null = null;
+let authStateListenerRegistered = false;
 
 interface AuthState {
   user: User | null;
@@ -103,9 +104,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     await attachProfileSubscription(session);
 
-    supabase.auth.onAuthStateChange(async (_event, nextSession) => {
-      await get().syncSession(nextSession);
-      await attachProfileSubscription(nextSession);
-    });
+    if (!authStateListenerRegistered) {
+      authStateListenerRegistered = true;
+      supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+        await get().syncSession(nextSession);
+        await attachProfileSubscription(nextSession);
+      });
+    }
   },
 }));
