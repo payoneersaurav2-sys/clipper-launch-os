@@ -1,8 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { Webhook } from 'npm:svix';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const ACCESS_GRANTING_STATUSES = new Set(['active', 'trialing', 'past_due', 'completed']);
+import { ACCESS_GRANTING_STATUSES, resolveWhopPlan } from '../shared/whop-membership.ts';
 
 async function resolveMappedTier(admin: ReturnType<typeof createClient>, planId: string) {
   if (!planId) return undefined;
@@ -71,6 +70,7 @@ serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const isActive = ACCESS_GRANTING_STATUSES.has(status.toLowerCase());
   const selectedTier = await resolveMappedTier(admin, planId);
+  const resolvedPlan = planId ? await resolveWhopPlan(admin, Deno.env.get('WHOP_API_KEY') ?? '', whopUserId || passthroughId || userEmail) : null;
 
   if (!passthroughId && !userEmail && !whopUserId) {
     console.log('No user identity found in webhook payload. Skipping.');
