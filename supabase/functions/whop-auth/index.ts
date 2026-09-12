@@ -7,9 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? 'app_NsohXjOYOE0EkK';
+const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? '';
 const WHOP_CLIENT_SECRET = Deno.env.get('WHOP_CLIENT_SECRET') ?? '';
-const DEFAULT_REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
+const DEFAULT_REDIRECT_URI = Deno.env.get('WHOP_REDIRECT_URI') ?? '';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -17,14 +17,28 @@ serve(async (req) => {
   }
 
   let code = '';
-  let redirectUri = DEFAULT_REDIRECT_URI;
+  const redirectUri = DEFAULT_REDIRECT_URI;
   let codeVerifier = '';
 
   try {
     const body = await req.json();
     code = body.code ?? '';
-    redirectUri = body.redirect_uri ?? DEFAULT_REDIRECT_URI;
     codeVerifier = body.code_verifier ?? '';
+
+    if (!WHOP_CLIENT_ID || !redirectUri) {
+      return new Response(
+        JSON.stringify({ error: 'Whop OAuth is not configured. Set WHOP_CLIENT_ID and WHOP_REDIRECT_URI before signing in.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const configuredRedirect = new URL(redirectUri);
+    if (configuredRedirect.protocol !== 'https:' && configuredRedirect.hostname !== 'localhost' && configuredRedirect.hostname !== '127.0.0.1') {
+      return new Response(
+        JSON.stringify({ error: 'Whop OAuth redirect URI is not allowed in this environment.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (!code) {
       return new Response(

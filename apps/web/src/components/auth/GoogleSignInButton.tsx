@@ -12,9 +12,9 @@ export function GoogleSignInButton({ onError, rememberMe = false }: GoogleSignIn
     setLoading(true);
     try {
       if (rememberMe) {
-        localStorage.setItem('creator_os_remember_me', 'true');
+        sessionStorage.setItem('creator_os_remember_me', 'true');
       } else {
-        localStorage.removeItem('creator_os_remember_me');
+        sessionStorage.removeItem('creator_os_remember_me');
       }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

@@ -8,6 +8,25 @@ import BrandMark from '@/components/BrandMark';
 import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 
+const AUTH_ATTEMPT_STORAGE_KEY = 'creator_os_auth_attempts';
+
+function getAuthAttemptState() {
+  try {
+    const raw = sessionStorage.getItem(AUTH_ATTEMPT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) as { count: number; resetAt: number } : { count: 0, resetAt: 0 };
+  } catch {
+    return { count: 0, resetAt: 0 };
+  }
+}
+
+function setAuthAttemptState(next: { count: number; resetAt: number }) {
+  try {
+    sessionStorage.setItem(AUTH_ATTEMPT_STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Ignore storage failures; the app still blocks obvious abuse in memory.
+  }
+}
+
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -27,31 +46,49 @@ export default function LoginPage() {
   const [success, setSuccess] = useState('');
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    return localStorage.getItem('creator_os_remember_me') === 'true';
+    return sessionStorage.getItem('creator_os_remember_me') === 'true';
   });
   const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   const persistRememberPreference = (next: boolean) => {
     if (next) {
-      localStorage.setItem('creator_os_remember_me', 'true');
+      sessionStorage.setItem('creator_os_remember_me', 'true');
     } else {
-      localStorage.removeItem('creator_os_remember_me');
+      sessionStorage.removeItem('creator_os_remember_me');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
+
+    const attemptState = getAuthAttemptState();
+    const windowMs = 60_000;
+    const now = Date.now();
+    if (attemptState.resetAt > now && attemptState.count >= 5) {
+      setErr('Too many attempts. Please wait a minute before trying again.');
+      return;
+    }
+
+    if (attemptState.resetAt <= now) {
+      setAuthAttemptState({ count: 0, resetAt: now + windowMs });
+    }
+
     setLoading(true);
     setErr('');
     setSuccess('');
 
     if (mode === 'signup') {
-      // 1. Create the Supabase auth user
       const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
-      if (signUpErr) { setErr(signUpErr.message); setLoading(false); return; }
+      if (signUpErr) {
+        const next = getAuthAttemptState();
+        const updated = { count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs };
+        setAuthAttemptState(updated);
+        setErr(signUpErr.message);
+        setLoading(false);
+        return;
+      }
 
-      // 2. Upsert into public.users with active membership
       if (signUpData.user) {
         await supabase.from('users').upsert({
           id: signUpData.user.id,
@@ -59,28 +96,31 @@ export default function LoginPage() {
         });
       }
 
-      // 3. Auto sign-in immediately (works when email confirm is disabled)
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) {
-        // Email confirmation required — tell user
+        const next = getAuthAttemptState();
+        setAuthAttemptState({ count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs });
         setSuccess('Account created! Check your inbox and confirm your email, then sign in.');
         setMode('login');
         setLoading(false);
         return;
       }
+      setAuthAttemptState({ count: 0, resetAt: Date.now() + windowMs });
       persistRememberPreference(rememberMe);
       setLoading(false);
       navigate('/dashboard');
       return;
     }
 
-    // Login
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      const next = getAuthAttemptState();
+      setAuthAttemptState({ count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs });
       setErr(error.message);
       setLoading(false);
       return;
     }
+    setAuthAttemptState({ count: 0, resetAt: Date.now() + windowMs });
     persistRememberPreference(rememberMe);
     setLoading(false);
     navigate('/dashboard');

@@ -5,7 +5,90 @@ export const config = { runtime: 'edge' };
 const environment = () => (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
 const json = (body: unknown, status: number) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 8;
+const RATE_LIMIT_BUCKETS = new Map<string, { count: number; resetAt: number }>();
+const IN_FLIGHT_BY_USER = new Map<string, number>();
+
+interface RateLimitDecision { allowed: boolean; retryAfterMs?: number; reason?: string; }
+
+async function checkDistributedRateLimit(request: Request, userId: string, endpoint: string, requestSizeBytes: number): Promise<RateLimitDecision> {
+  const clientIp = getClientIp(request);
+  const supabaseUrl = environment().SUPABASE_URL || environment().VITE_SUPABASE_URL;
+  const supabaseAnonKey = environment().SUPABASE_ANON_KEY || environment().VITE_SUPABASE_ANON_KEY;
+  const authorization = request.headers.get('authorization');
+
+  if (!supabaseUrl || !supabaseAnonKey || !authorization?.startsWith('Bearer ')) {
+    return checkLocalRateLimit(clientIp, userId, endpoint, requestSizeBytes);
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/check_ai_request_limit`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseAnonKey,
+        authorization,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        p_user_id: userId,
+        p_ip: clientIp,
+        p_endpoint: endpoint,
+        p_window_ms: RATE_LIMIT_WINDOW_MS,
+        p_max_requests: RATE_LIMIT_MAX_REQUESTS,
+        p_request_size_bytes: requestSizeBytes,
+      }),
+    });
+
+    if (!response.ok) {
+      return checkLocalRateLimit(clientIp, userId, endpoint, requestSizeBytes);
+    }
+
+    const payload = await response.json() as { allowed?: boolean; retry_after_ms?: number; reason?: string };
+    return {
+      allowed: payload.allowed !== false,
+      retryAfterMs: payload.retry_after_ms ?? 0,
+      reason: payload.reason,
+    };
+  } catch {
+    return checkLocalRateLimit(clientIp, userId, endpoint, requestSizeBytes);
+  }
+}
+
+function checkLocalRateLimit(clientIp: string, userId: string, endpoint: string, requestSizeBytes: number): RateLimitDecision {
+  const key = `${endpoint}:${userId}:${clientIp}`;
+  const now = Date.now();
+  const entry = RATE_LIMIT_BUCKETS.get(key);
+
+  if (requestSizeBytes > 250_000) {
+    return { allowed: false, retryAfterMs: 60_000, reason: 'REQUEST_TOO_LARGE' };
+  }
+
+  if (!entry || entry.resetAt <= now) {
+    RATE_LIMIT_BUCKETS.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true };
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, retryAfterMs: Math.max(0, entry.resetAt - now), reason: 'RATE_LIMITED' };
+  }
+
+  entry.count += 1;
+  return { allowed: true };
+}
+
 type CreditReservation = { allowed?: boolean; code?: string; reservationId?: string; credits?: number; required?: number; available?: number };
+
+function getClientIp(request: Request): string {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('cf-connecting-ip')?.trim()
+    || request.headers.get('x-real-ip')?.trim()
+    || 'unknown';
+}
+
+function checkRateLimit(request: Request, userId: string): RateLimitDecision {
+  return checkLocalRateLimit(getClientIp(request), userId, '/api/ai', Number(request.headers.get('content-length') ?? '0'));
+}
 
 async function invokeEntitlementRpc(
   supabaseUrl: string,
@@ -70,8 +153,27 @@ export default async function handler(request: Request) {
   if (!supabaseUrl || !supabaseAnonKey || !openRouterKey) return json({ error: 'AI gateway is not configured.', code: 'AUTH_FAILED' }, 503);
   const authorization = request.headers.get('authorization');
   if (!authorization?.startsWith('Bearer ')) return json({ error: 'Sign in again to use AI generation.', code: 'AUTH_FAILED' }, 401);
+  const contentLength = Number(request.headers.get('content-length') ?? '0');
+  if (contentLength > 250_000) return json({ error: 'AI request payload is too large.', code: 'REQUEST_TOO_LARGE' }, 413);
   const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, { headers: { apikey: supabaseAnonKey, authorization } });
   if (!userResponse.ok) return json({ error: 'Sign in again to use AI generation.', code: 'AUTH_FAILED' }, 401);
+  const userPayload = await userResponse.json().catch(() => null) as { user?: { id?: string } } | null;
+  const userId = userPayload?.user?.id ?? 'anonymous';
+
+  const currentInFlight = IN_FLIGHT_BY_USER.get(userId) ?? 0;
+  if (currentInFlight >= 2) {
+    return json({ error: 'Too many AI requests are already running for this account. Please wait and retry.', code: 'RATE_LIMITED' }, 429);
+  }
+  IN_FLIGHT_BY_USER.set(userId, currentInFlight + 1);
+
+  try {
+    const rateLimit = await checkDistributedRateLimit(request, userId, '/api/ai', contentLength);
+    if (!rateLimit.allowed) {
+      return json({ error: 'Too many AI requests. Please wait a minute and try again.', code: 'RATE_LIMITED' }, 429);
+    }
+  } catch {
+    return json({ error: 'AI rate limiting is temporarily unavailable. Please retry.', code: 'RATE_LIMITED' }, 429);
+  }
   let creditReservationId: string | undefined;
   try {
     const { context } = await request.json() as { context?: AIPromptContext };
@@ -185,5 +287,11 @@ export default async function handler(request: Request) {
       await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
     }
     return json({ error: 'AI gateway could not process this request.', code: 'PROVIDER_OFFLINE' }, 500);
+  } finally {
+    if (userId && userId !== 'anonymous') {
+      const inFlight = IN_FLIGHT_BY_USER.get(userId) ?? 0;
+      if (inFlight <= 1) IN_FLIGHT_BY_USER.delete(userId);
+      else IN_FLIGHT_BY_USER.set(userId, inFlight - 1);
+    }
   }
 }

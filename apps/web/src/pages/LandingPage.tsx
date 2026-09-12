@@ -10,7 +10,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const remembered = localStorage.getItem('creator_os_remember_me') === 'true';
+    const remembered = sessionStorage.getItem('creator_os_remember_me') === 'true';
     if (!remembered) return;
 
     (async () => {

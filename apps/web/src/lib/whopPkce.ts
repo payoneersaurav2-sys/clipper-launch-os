@@ -5,17 +5,50 @@
  * opaque CSRF token; never place the verifier in a callback URL.
  */
 
-const WHOP_ENV_REDIRECT_URI = import.meta.env.VITE_WHOP_REDIRECT_URI;
-const WHOP_ENV_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID;
+const WHOP_ENV_REDIRECT_URI = import.meta.env.VITE_WHOP_REDIRECT_URI?.trim();
+const WHOP_ENV_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID?.trim();
+const isProduction = import.meta.env.PROD;
 
-export const WHOP_REDIRECT_URI = WHOP_ENV_REDIRECT_URI ?? `${window.location.origin}/auth/callback`;
-export const WHOP_CLIENT_ID = WHOP_ENV_CLIENT_ID ?? '';
+const allowedOrigin = (() => {
+  try {
+    return new URL(window.location.href).origin;
+  } catch {
+    return '';
+  }
+})();
+
+export const WHOP_REDIRECT_URI = WHOP_ENV_REDIRECT_URI || (!isProduction ? `${allowedOrigin}/auth/callback` : '');
+export const WHOP_CLIENT_ID = WHOP_ENV_CLIENT_ID || '';
 
 const PKCE_STORAGE_KEY = 'creator_os_whop_oauth';
 
 export function assertWhopRuntimeConfig() {
-  if (!WHOP_CLIENT_ID || !WHOP_REDIRECT_URI) {
-    throw new Error('Whop OAuth is not configured. Set VITE_WHOP_CLIENT_ID and VITE_WHOP_REDIRECT_URI before starting the auth flow.');
+  if (!WHOP_CLIENT_ID) {
+    throw new Error('Whop OAuth is not configured. Set VITE_WHOP_CLIENT_ID before starting the auth flow.');
+  }
+
+  if (!WHOP_REDIRECT_URI) {
+    throw new Error('Whop OAuth is not configured for production. Set VITE_WHOP_REDIRECT_URI to the exact app callback URL.');
+  }
+
+  try {
+    const redirectUrl = new URL(WHOP_REDIRECT_URI);
+    const currentUrl = new URL(window.location.href);
+    const allowedHostnames = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+    if (redirectUrl.protocol !== 'https:' && !allowedHostnames.has(currentUrl.hostname)) {
+      throw new Error('Whop redirect URI must use HTTPS in production.');
+    }
+
+    const exactOriginMatch = redirectUrl.origin === currentUrl.origin;
+    const exactPathMatch = redirectUrl.pathname === '/auth/callback';
+    const exactHostAllowed = exactOriginMatch || allowedHostnames.has(currentUrl.hostname);
+
+    if (!exactHostAllowed || !exactPathMatch) {
+      throw new Error('Whop redirect URI must match the exact app callback URL for this environment.');
+    }
+  } catch {
+    throw new Error('Whop redirect URI is invalid. Use the exact app callback URL configured for this environment.');
   }
 }
 

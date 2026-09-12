@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await profileSubscription.unsubscribe();
       profileSubscription = null;
     }
-    localStorage.removeItem('creator_os_remember_me');
+    sessionStorage.removeItem('creator_os_remember_me');
     await supabase.auth.signOut();
     set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null });
   },

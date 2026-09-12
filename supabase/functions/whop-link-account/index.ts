@@ -1,8 +1,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const corsHeaders = { 'Access-Control-Allow-Origin': 'https://creator-os999.vercel.app', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
-const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? 'app_NsohXjOYOE0EkK';
+const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
+const WHOP_CLIENT_ID = Deno.env.get('WHOP_CLIENT_ID') ?? '';
 const WHOP_CLIENT_SECRET = Deno.env.get('WHOP_CLIENT_SECRET') ?? '';
 
 serve(async (request) => {
@@ -13,15 +13,24 @@ serve(async (request) => {
     if (!authorization.startsWith('Bearer ')) throw new Error('Sign in before connecting Whop.');
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const configuredRedirect = Deno.env.get('WHOP_REDIRECT_URI') ?? '';
     if (!supabaseUrl || !serviceRoleKey) throw new Error('CreatorOS account linking is not configured.');
+    if (!configuredRedirect) throw new Error('Whop OAuth is not configured. Set WHOP_REDIRECT_URI before linking an account.');
     const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const token = authorization.slice('Bearer '.length);
     const { data: authData, error: authError } = await admin.auth.getUser(token);
     if (authError || !authData.user) throw new Error('Your CreatorOS session has expired.');
 
-    const { code, redirect_uri, code_verifier } = await request.json();
-    if (!code || !redirect_uri || !code_verifier) throw new Error('The Whop linking session is incomplete. Please try again.');
-    const payload: Record<string, string> = { grant_type: 'authorization_code', client_id: WHOP_CLIENT_ID, code, redirect_uri, code_verifier };
+    if (!WHOP_CLIENT_ID) throw new Error('Whop OAuth is not configured. Set WHOP_CLIENT_ID before linking an account.');
+    const { code, code_verifier } = await request.json();
+    if (!code || !code_verifier) throw new Error('The Whop linking session is incomplete. Please try again.');
+
+    const parsedRedirect = new URL(configuredRedirect);
+    if (parsedRedirect.protocol !== 'https:' && parsedRedirect.hostname !== 'localhost' && parsedRedirect.hostname !== '127.0.0.1') {
+      throw new Error('Whop redirect URI is not valid in this environment.');
+    }
+
+    const payload: Record<string, string> = { grant_type: 'authorization_code', client_id: WHOP_CLIENT_ID, code, redirect_uri: configuredRedirect, code_verifier };
     if (WHOP_CLIENT_SECRET) payload.client_secret = WHOP_CLIENT_SECRET;
     const tokenResponse = await fetch('https://api.whop.com/oauth/token', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     if (!tokenResponse.ok) throw new Error('Whop could not confirm this authorization. Please restart the connection.');
