@@ -12,8 +12,8 @@ import {
   StreamChunk,
   AIError,
   TokenUsage,
-} from './types';
-import { PromptEngine } from './prompt-engine';
+} from './types.ts';
+import { PromptEngine } from './prompt-engine.ts';
 
 // ---- Cost table (per 1M tokens, USD) -----------------------
 const COST_PER_1M: Record<string, { prompt: number; completion: number }> = {

@@ -4,7 +4,7 @@
 // Developers never concatenate strings manually.
 // ============================================================
 
-import { AIPromptContext, ChatMessage, BuiltPrompt, MemoryItem } from './types';
+import { AIPromptContext, ChatMessage, BuiltPrompt, MemoryItem } from './types.ts';
 
 const ENGINE_VERSION = '2.0.0';
 

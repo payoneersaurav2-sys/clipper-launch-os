@@ -2,4 +2,4 @@ export {
   OpenRouterProvider,
   createProvider,
   createDefaultProvider,
-} from '../../../packages/core/src/ai/provider';
+} from '../../../packages/core/src/ai/provider.ts';
