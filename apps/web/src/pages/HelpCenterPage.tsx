@@ -107,7 +107,7 @@ export default function HelpCenterPage() {
           <h3 className="text-[16px] font-semibold text-[#FAFAFA] mb-1">Still need help?</h3>
           <p className="text-[13px] text-[#71717A]">Use the feedback button (bottom-right) to reach our team directly.</p>
         </div>
-        <a href="mailto:support@creatorOS.app"
+        <a href="mailto:sauravwhop@gmail.com"
           className="flex items-center gap-2 h-10 px-5 rounded-[12px] bg-primary text-white hover:bg-primary/90 text-[13px] font-medium whitespace-nowrap shrink-0">
           <ExternalLink className="h-4 w-4" />Contact Support
         </a>

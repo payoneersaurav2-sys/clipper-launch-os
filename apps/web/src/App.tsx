@@ -24,10 +24,17 @@ const AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));
 const AISettingsPage     = lazy(() => import('./pages/AISettingsPage'));
 const SettingsPage       = lazy(() => import('./pages/SettingsPage'));
 const OnboardingPage     = lazy(() => import('./pages/OnboardingPage'));
+const LegalAcceptancePage = lazy(() => import('./pages/LegalAcceptancePage'));
 const HelpCenterPage     = lazy(() => import('./pages/HelpCenterPage'));
 const ChangelogPage      = lazy(() => import('./pages/ChangelogPage'));
 const SignupPage          = lazy(() => import('./pages/SignupPage'));
-const TermsPage           = lazy(() => import('./pages/TermsPage'));
+const TermsPage           = lazy(() => import('./pages/legal/TermsPage'));
+const PrivacyPage         = lazy(() => import('./pages/legal/PrivacyPage'));
+const AcceptableUsePage   = lazy(() => import('./pages/legal/AcceptableUsePage'));
+const RefundPolicyPage    = lazy(() => import('./pages/legal/RefundPolicyPage'));
+const CookiePolicyPage    = lazy(() => import('./pages/legal/CookiePolicyPage'));
+const AIDisclaimerPage    = lazy(() => import('./pages/legal/AIDisclaimerPage'));
+const DMCAPage            = lazy(() => import('./pages/legal/DMCAPage'));
 const FAQPage             = lazy(() => import('./pages/FAQPage'));
 const PricingPage         = lazy(() => import('./pages/PricingPage'));
 const CreditStorePage     = lazy(() => import('./pages/CreditStorePage'));
@@ -58,6 +65,12 @@ function CreatorOSRoutes() {
             <Route path="/faq"       element={<LandingLayout><FAQPage /></LandingLayout>} />
             <Route path="/pricing"   element={<LandingLayout><PricingPage /></LandingLayout>} />
             <Route path="/terms"     element={<LandingLayout><TermsPage /></LandingLayout>} />
+            <Route path="/privacy"   element={<LandingLayout><PrivacyPage /></LandingLayout>} />
+            <Route path="/acceptable-use" element={<LandingLayout><AcceptableUsePage /></LandingLayout>} />
+            <Route path="/refund-policy"  element={<LandingLayout><RefundPolicyPage /></LandingLayout>} />
+            <Route path="/cookies"        element={<LandingLayout><CookiePolicyPage /></LandingLayout>} />
+            <Route path="/ai-disclaimer"  element={<LandingLayout><AIDisclaimerPage /></LandingLayout>} />
+            <Route path="/dmca"           element={<LandingLayout><DMCAPage /></LandingLayout>} />
             <Route path="/changelog" element={<LandingLayout><ChangelogPage /></LandingLayout>} />
             <Route path="/help"      element={<LandingLayout><HelpCenterPage /></LandingLayout>} />
             <Route path="/500"       element={<ServerErrorPage />} />
@@ -71,6 +84,7 @@ function CreatorOSRoutes() {
             <Route path="/experiences/:experienceId/*" element={<AuthIframe />} />
             <Route path="/expired"       element={<ExpiredPage />} />
             <Route path="/onboarding"    element={<OnboardingPage />} />
+            <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
 
             {/* Protected */}
             <Route element={<ProtectedRoute />}>

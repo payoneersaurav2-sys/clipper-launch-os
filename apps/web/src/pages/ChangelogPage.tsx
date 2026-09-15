@@ -123,7 +123,7 @@ export default function ChangelogPage() {
       <div className="text-center pt-4">
         <p className="text-[12px] text-[#71717A]">
           Future releases will follow semantic versioning (v1.1, v1.2, v2.0…).{' '}
-          <a href="mailto:support@creatorOS.app" className="text-primary hover:underline inline-flex items-center gap-1">
+          <a href="mailto:sauravwhop@gmail.com" className="text-primary hover:underline inline-flex items-center gap-1">
             Subscribe to updates <ArrowUpRight className="h-3 w-3" />
           </a>
         </p>

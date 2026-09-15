@@ -57,16 +57,19 @@
     }
     </script>
 
-    <!-- X conversion tracking base code -->
+    <!-- MARKETING PIXELS DISABLED PENDING CONSENT MANAGER IMPLEMENTATION -->
+    <!-- X conversion tracking base code (Uncomment when consent manager is active) -->
+    <!--
     <script>
       !function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
       },s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='https://static.ads-twitter.com/uwt.js',
       a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
       twq('config','regmw');
     </script>
-    <!-- End X conversion tracking base code -->
+    -->
 
-    <!-- Meta Pixel Code -->
+    <!-- Meta Pixel Code (Uncomment when consent manager is active) -->
+    <!--
     <script>
       !function(f,b,e,v,n,t,s)
       {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -79,12 +82,15 @@
       fbq('init', '2327126687821555');
       fbq('track', 'PageView');
     </script>
-    <!-- End Meta Pixel Code -->
+    -->
 
+    <!-- Whop Tracking (Uncomment when consent manager is active) -->
+    <!--
     <script>!function(w,d,s,u,n,a,b){if(w[n])return;a=w[n]={q:[],t:+new Date,s:[],o:u,track:function(){a.q.push([+new Date].concat([].slice.call(arguments)))},setScope:function(){a.s=[].slice.call(arguments).filter(function(x){return typeof x==="string"});a.q.push([+new Date,"setScope"].concat(a.s))},scope:function(){var c=[].slice.call(arguments);return{track:function(){a.q.push([+new Date].concat([].slice.call(arguments)).concat([{__scope:c}]))}}}};b=d.createElement(s);b.async=1;b.src=u+"/s.js";d.getElementsByTagName(s)[0].parentNode.insertBefore(b,d.getElementsByTagName(s)[0])}(window,document,"script","https://t.whop.tw","whop");whop.setScope("biz_jc9WEc2QYJHHBG");whop.track("page");</script>
+    -->
   </head>
   <body>
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2327126687821555&ev=PageView&noscript=1" /></noscript>
+    <!-- <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2327126687821555&ev=PageView&noscript=1" /></noscript> -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

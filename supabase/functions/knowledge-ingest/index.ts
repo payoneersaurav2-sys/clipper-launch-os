@@ -298,6 +298,15 @@ serve(async (req) => {
       }, 401);
     }
 
+    try {
+      const { assertCurrentLegalAcceptance } = await import('../shared/legal-gate.ts');
+      await assertCurrentLegalAcceptance(supabase, userId);
+    } catch (e: any) {
+      return json({
+        ...buildError('LEGAL_ACCEPTANCE_REQUIRED', 'Please accept the current Terms of Service.'),
+      }, 403);
+    }
+
     const payload = await req.json();
     const workspaceId = String(payload.workspace_id ?? '').trim();
     const title = String(payload.title ?? '').trim();

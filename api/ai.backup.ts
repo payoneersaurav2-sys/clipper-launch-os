@@ -262,20 +262,6 @@ export default async function handler(request: Request) {
     }
     creditReservationId = reservation.reservationId;
     const built = PromptEngine.build(PromptEngine.compress(context));
-
-    const AI_PROVIDER_POLICY = [
-      { provider: 'OpenAI', openRouterIdentifier: 'openai/gpt-4o-mini', enabledInProduction: true, approvedForUserContent: true, retentionPolicyStatus: 'PROVIDER_DEFAULT', trainingPolicyStatus: 'VERIFIED_NO_TRAINING' },
-      { provider: 'OpenAI', openRouterIdentifier: 'openai/gpt-4o', enabledInProduction: true, approvedForUserContent: true, retentionPolicyStatus: 'PROVIDER_DEFAULT', trainingPolicyStatus: 'VERIFIED_NO_TRAINING' },
-      { provider: 'Anthropic', openRouterIdentifier: 'anthropic/claude-3.5-sonnet', enabledInProduction: true, approvedForUserContent: true, retentionPolicyStatus: 'PROVIDER_DEFAULT', trainingPolicyStatus: 'VERIFIED_NO_TRAINING' },
-      { provider: 'Anthropic', openRouterIdentifier: 'anthropic/claude-3-haiku', enabledInProduction: true, approvedForUserContent: true, retentionPolicyStatus: 'PROVIDER_DEFAULT', trainingPolicyStatus: 'VERIFIED_NO_TRAINING' }
-    ];
-
-    const allowedPolicy = AI_PROVIDER_POLICY.find(p => p.openRouterIdentifier === built.model && p.enabledInProduction && p.approvedForUserContent);
-    if (!allowedPolicy) {
-      if (creditReservationId) await invokeEntitlementRpc(supabaseUrl, supabaseAnonKey, authorization, 'release_creator_os_credit_reservation', { p_reservation_id: creditReservationId }).catch(() => undefined);
-      return json({ error: 'The requested AI model is not approved for production use.', code: 'MODEL_NOT_APPROVED' }, 403);
-    }
-
     const totalPromptChars = built.messages.reduce((total, message) => total + String(message.content ?? '').length, 0);
     if (built.messages.length > MAX_MESSAGES) {
       return json({ error: 'AI request contains too many messages.', code: 'REQUEST_TOO_LARGE' }, 413);

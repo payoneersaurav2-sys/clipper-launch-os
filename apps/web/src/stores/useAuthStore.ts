@@ -13,6 +13,7 @@ interface AuthState {
   whopId: string | null;
   avatarUrl: string | null;
   onboardingComplete: boolean | null;
+  requiresLegalAcceptance: boolean | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
@@ -29,6 +30,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   whopId: null,
   avatarUrl: null,
   onboardingComplete: null,
+  requiresLegalAcceptance: null,
   isLoading: true,
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session, user: session?.user ?? null, isLoading: false }),
@@ -38,13 +40,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     let whopId = null;
     let avatarUrl = null;
     let onboarded = null;
+    let requiresLegalAcceptance = false;
 
     if (session?.user) {
-      const { data } = await supabase
-        .from('users')
-        .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url')
-        .eq('id', session.user.id)
-        .single();
+      // Parallelize profile and legal status fetches
+      const [userRes, legalRes] = await Promise.all([
+        supabase
+          .from('users')
+          .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url')
+          .eq('id', session.user.id)
+          .single(),
+        supabase.rpc('check_legal_status')
+      ]);
+
+      const data = userRes.data;
       if (data) {
         const expired = Boolean(data.membership_expires_at && new Date(data.membership_expires_at).getTime() <= Date.now());
         const storedTier = data.subscription_tier ?? 'free';
@@ -53,6 +62,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         whopId = data.whop_id;
         avatarUrl = data.avatar_url;
         onboarded = data.onboarding_complete;
+      }
+      if (legalRes.data) {
+        requiresLegalAcceptance = Boolean(legalRes.data.requires_acceptance);
       }
     }
 
@@ -64,6 +76,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       whopId,
       avatarUrl,
       onboardingComplete: onboarded,
+      requiresLegalAcceptance,
       isLoading: false,
     });
   },
@@ -74,7 +87,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     sessionStorage.removeItem('creator_os_remember_me');
     await supabase.auth.signOut();
-    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null });
+    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null, requiresLegalAcceptance: null });
   },
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession();

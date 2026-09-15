@@ -51,6 +51,7 @@ export default function LoginPage() {
     if (typeof window === 'undefined') return false;
     return sessionStorage.getItem('creator_os_remember_me') === 'true';
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   const resetCaptcha = React.useCallback(() => {
@@ -117,6 +118,11 @@ export default function LoginPage() {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
 
+    if (mode === 'signup' && !termsAccepted) {
+      setErr('You must accept the Terms of Service to create an account.');
+      return;
+    }
+
     if (BOT_PROTECTION_ENABLED && !captchaToken) {
       setErr('Please complete the security check before continuing.');
       return;
@@ -148,7 +154,15 @@ export default function LoginPage() {
     setSuccess('');
 
     if (mode === 'signup') {
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            terms_accepted: termsAccepted
+          }
+        }
+      });
       if (signUpErr) {
         const next = getAuthAttemptState();
         const updated = { count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs };
@@ -260,12 +274,26 @@ export default function LoginPage() {
           />
           Remember me
         </label>
+        {mode === 'signup' && (
+          <label className="flex items-start gap-2 text-[12px] text-[#A1A1AA] mt-3">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(event) => setTermsAccepted(event.target.checked)}
+              className="h-4 w-4 rounded border-white/10 bg-[#0D0D0D] text-primary focus:ring-primary mt-0.5 shrink-0"
+              aria-label="I agree to the Terms of Service and Privacy Policy"
+            />
+            <span className="leading-relaxed">
+              I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary transition-colors underline underline-offset-2">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-white hover:text-primary transition-colors underline underline-offset-2">Privacy Policy</a>.
+            </span>
+          </label>
+        )}
         {BOT_PROTECTION_ENABLED && (
           <div className="rounded-[12px] border border-white/[0.06] bg-[#0D0D0D] p-2">
             <div id="creator-os-turnstile" className="min-h-[65px]" />
           </div>
         )}
-        <Button type="submit" disabled={loading || !email || !password || (BOT_PROTECTION_ENABLED && !captchaToken)}
+        <Button type="submit" disabled={loading || !email || !password || (BOT_PROTECTION_ENABLED && !captchaToken) || (mode === 'signup' && !termsAccepted)}
           className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
           {loading
             ? <Loader2 className="h-4 w-4 animate-spin" />

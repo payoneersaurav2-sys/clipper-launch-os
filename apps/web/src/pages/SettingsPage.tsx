@@ -185,20 +185,13 @@ function SecurityTab() {
     if (!user) return;
     setDeleting(true);
     setDeleteError(null);
-    try {
-      // Delete all user data then sign out — Supabase cascade handles DB rows
-      // We sign out first to clear the session, then the auth user row is
-      // cleaned by the Supabase service role via the admin API.
-      // Since we only have the anon key client-side, we delete data then sign out.
-      await supabase.from('credit_lots').delete().eq('user_id', user.id);
-      await supabase.from('credit_transactions').delete().eq('user_id', user.id);
-      await supabase.from('workspace_members').delete().eq('user_id', user.id);
-      await supabase.from('workspaces').delete().eq('owner_id', user.id);
-      await supabase.from('users').delete().eq('id', user.id);
-      await supabase.auth.signOut();
-      navigate('/login');
-    } catch {
-      setDeleting(false);
+      try {
+        // Use secure backend RPC for complete account deletion (DB + Storage + Auth)
+        await supabase.rpc('delete_user_account');
+        await supabase.auth.signOut();
+        navigate('/login');
+      } catch {
+        setDeleting(false);
       setDeleteError('Could not delete your account. Please contact support.');
     }
   };

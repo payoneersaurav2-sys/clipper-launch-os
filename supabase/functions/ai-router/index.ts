@@ -25,6 +25,10 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) throw new Error('Unauthorized');
 
+    // Verify legal acceptance
+    const { assertCurrentLegalAcceptance } = await import('../shared/legal-gate.ts');
+    await assertCurrentLegalAcceptance(supabase, user.id);
+
     const body: AIPromptContext = await req.json();
 
     // Init provider (Only OpenRouter implemented for now)

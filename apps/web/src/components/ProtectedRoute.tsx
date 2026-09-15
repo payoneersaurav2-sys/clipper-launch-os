@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function ProtectedRoute() {
-  const { user, membershipStatus, subscriptionTier, onboardingComplete, isLoading } = useAuthStore();
+  const { user, membershipStatus, subscriptionTier, onboardingComplete, requiresLegalAcceptance, isLoading } = useAuthStore();
   const location = useLocation();
   const isLocalAccess = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 
@@ -33,6 +33,11 @@ export default function ProtectedRoute() {
   // server-side iframe flow. Web users retain the normal onboarding flow.
   if (onboardingComplete !== true && !isLocalAccess) {
     return <Navigate to="/onboarding" replace />;
+  }
+
+  // Legal Acceptance check
+  if (requiresLegalAcceptance === true && !isLocalAccess) {
+    return <Navigate to="/legal-acceptance" replace />;
   }
 
   return <Outlet />;
