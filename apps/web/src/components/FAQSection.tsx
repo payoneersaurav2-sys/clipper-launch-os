@@ -21,11 +21,11 @@ export function FAQSection() {
   ];
 
   return (
-    <section id="faq" aria-label="AEO Structured Questions & Answers" className="py-16 sm:py-24 px-4 bg-[#080808] relative z-10 text-[#FAFAFA]">
+    <section id="faq" aria-label="AEO Structured Questions & Answers" className="py-16 sm:py-24 px-4 bg-background relative z-10 text-foreground">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-[30px] sm:text-[40px] font-semibold tracking-[-0.04em] mb-4 leading-none">Frequently Asked Questions</h2>
-          <p className="text-[#A1A1AA] text-[16px] tracking-tight">Everything you need to know about the Creator OS platform.</p>
+          <p className="text-muted-foreground text-[16px] tracking-tight">Everything you need to know about the Creator OS platform.</p>
         </div>
         
         <div className="space-y-8">
@@ -36,10 +36,10 @@ export function FAQSection() {
               whileInView={{ opacity: 1, y: 0 }} 
               viewport={{ once: true, amount: 0.8 }} 
               transition={{ duration: 0.3, delay: index * 0.1 }}
-              className="bg-[#111111] border border-white/[0.06] rounded-[16px] p-6 sm:p-8"
+              className="bg-card border border-border rounded-[16px] p-6 sm:p-8"
             >
               <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-tight mb-3 text-primary">{faq.question}</h3>
-              <p className="text-[#A1A1AA] text-[15px] leading-relaxed">{faq.answer}</p>
+              <p className="text-muted-foreground text-[15px] leading-relaxed">{faq.answer}</p>
             </motion.div>
           ))}
         </div>
