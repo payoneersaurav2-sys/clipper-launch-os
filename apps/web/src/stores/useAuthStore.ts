@@ -49,7 +49,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .from('users')
           .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url')
           .eq('id', session.user.id)
-          .single(),
+          .maybeSingle(),
         supabase.rpc('check_legal_status')
       ]);
 

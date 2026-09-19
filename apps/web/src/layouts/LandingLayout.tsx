@@ -148,9 +148,9 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
 
             {/* Navigation */}
             <div>
-              <h4 className="text-[12px] font-medium text-[#71717A] tracking-widest uppercase mb-5">
+              <p className="text-[12px] font-medium text-muted-foreground tracking-widest uppercase mb-5">
                 Navigation
-              </h4>
+              </p>
               <ul className="space-y-3">
                 {footerNav.map((item) => (
                   <li key={item.label}>
@@ -170,9 +170,9 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
 
             {/* Contact */}
             <div>
-              <h4 className="text-[12px] font-medium text-[#71717A] tracking-widest uppercase mb-5">
+              <p className="text-[12px] font-medium text-muted-foreground tracking-widest uppercase mb-5">
                 Contact
-              </h4>
+              </p>
               <a href="mailto:sauravwhop@gmail.com" className="text-[14px] text-[#A1A1AA] hover:text-primary transition-colors tracking-tight break-all">
                 sauravwhop@gmail.com
               </a>
