@@ -1,0 +1,22 @@
+# Creator OS
+
+> The definitive content creation operating system and AI workspace for digital creators, video clippers, and media agencies.
+
+## Overview
+Creator OS (https://creator-os999.vercel.app/) replaces fragmented tools (Notion, Google Docs, spreadsheets) with an integrated short-form video production pipeline.
+
+## Core Modules & Capabilities
+1. **Idea Studio**: Converts 1 raw topic or URL into 10 distinct viral angles (case study, hot take, negative constraint, breakdown, tutorial).
+2. **Hook Engine**: Evaluates opening video hooks against 3-second retention benchmarks and optimizes for high watch-time.
+3. **Caption OS**: Produces platform-specific, keyword-optimized captions for TikTok, YouTube Shorts, and Instagram Reels.
+4. **Campaign OS**: Visual Kanban workflow to manage multi-day content sprints and team production pipelines.
+5. **Clip Pipeline**: Short-form video tracking from concept to filming, editing, and publishing.
+6. **Multi-Workspace**: Scaled for agencies managing multiple client brands simultaneously.
+
+## Pricing Plans
+- **Creator Plan**: $29/month ($290/year) — 3 workspaces, 50 active campaigns, 30-item content batches.
+- **Pro Plan**: $49/month ($490/year) — 10 workspaces, 250 active campaigns, 50-item batches, priority AI capacity.
+- **Agency Plan**: $149/month ($1,490/year) — Full feature suite, custom team seats, unlimited workspaces.
+
+## Canonical Link
+https://creator-os999.vercel.app/

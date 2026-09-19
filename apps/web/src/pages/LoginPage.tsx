@@ -7,26 +7,6 @@ import { supabase } from '@/lib/supabase';
 import BrandMark from '@/components/BrandMark';
 import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
-import { BOT_PROTECTION_ENABLED, loadTurnstileScript, verifyTurnstileToken } from '@/lib/botProtection';
-
-const AUTH_ATTEMPT_STORAGE_KEY = 'creator_os_auth_attempts';
-
-function getAuthAttemptState() {
-  try {
-    const raw = sessionStorage.getItem(AUTH_ATTEMPT_STORAGE_KEY);
-    return raw ? JSON.parse(raw) as { count: number; resetAt: number } : { count: 0, resetAt: 0 };
-  } catch {
-    return { count: 0, resetAt: 0 };
-  }
-}
-
-function setAuthAttemptState(next: { count: number; resetAt: number }) {
-  try {
-    sessionStorage.setItem(AUTH_ATTEMPT_STORAGE_KEY, JSON.stringify(next));
-  } catch {
-    // Ignore storage failures; the app still blocks obvious abuse in memory.
-  }
-}
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -45,129 +25,33 @@ export default function LoginPage() {
   const [err, setErr] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>(() => searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [success, setSuccess] = useState('');
-  const [captchaToken, setCaptchaToken] = useState('');
-  const captchaWidgetRef = React.useRef<string | null>(null);
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem('creator_os_remember_me') === 'true';
+    return localStorage.getItem('creator_os_remember_me') === 'true';
   });
-    const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
-
-  const resetCaptcha = React.useCallback(() => {
-    setCaptchaToken('');
-    const activeWidgetId = captchaWidgetRef.current;
-    if (activeWidgetId && window.turnstile) {
-      window.turnstile.reset(activeWidgetId);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (!BOT_PROTECTION_ENABLED || typeof document === 'undefined') return;
-
-    let isMounted = true;
-
-    const renderCaptcha = async () => {
-      try {
-        await loadTurnstileScript();
-        const container = document.getElementById('creator-os-turnstile');
-        if (!container || !window.turnstile || !isMounted) return;
-
-        const widgetId = window.turnstile.render(container, {
-          sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
-          action: mode === 'signup' ? 'creator_os_signup' : 'creator_os_login',
-          callback: (token: string) => setCaptchaToken(token),
-          'error-callback': () => setCaptchaToken(''),
-          'expired-callback': () => setCaptchaToken(''),
-          'timeout-callback': () => setCaptchaToken(''),
-        });
-
-        captchaWidgetRef.current = widgetId;
-      } catch {
-        setCaptchaToken('');
-      }
-    };
-
-    setCaptchaToken('');
-    if (captchaWidgetRef.current && window.turnstile) {
-      window.turnstile.remove(captchaWidgetRef.current);
-      captchaWidgetRef.current = null;
-    }
-
-    renderCaptcha();
-
-    return () => {
-      isMounted = false;
-      const currentWidgetId = captchaWidgetRef.current;
-      if (currentWidgetId && window.turnstile) {
-        window.turnstile.remove(currentWidgetId);
-      }
-      captchaWidgetRef.current = null;
-    };
-  }, [mode]);
+  const googleConfigured = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
   const persistRememberPreference = (next: boolean) => {
     if (next) {
-      sessionStorage.setItem('creator_os_remember_me', 'true');
+      localStorage.setItem('creator_os_remember_me', 'true');
     } else {
-      sessionStorage.removeItem('creator_os_remember_me');
+      localStorage.removeItem('creator_os_remember_me');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
-
-    
-    if (BOT_PROTECTION_ENABLED && !captchaToken) {
-      setErr('Please complete the security check before continuing.');
-      return;
-    }
-
-    if (BOT_PROTECTION_ENABLED) {
-      const captchaValid = await verifyTurnstileToken(captchaToken, mode === 'signup' ? 'creator_os_signup' : 'creator_os_login');
-      if (!captchaValid) {
-        setErr('Security check failed. Please try again.');
-        resetCaptcha();
-        return;
-      }
-    }
-
-    const attemptState = getAuthAttemptState();
-    const windowMs = 60_000;
-    const now = Date.now();
-    if (attemptState.resetAt > now && attemptState.count >= 5) {
-      setErr('Too many attempts. Please wait a minute before trying again.');
-      return;
-    }
-
-    if (attemptState.resetAt <= now) {
-      setAuthAttemptState({ count: 0, resetAt: now + windowMs });
-    }
-
     setLoading(true);
     setErr('');
     setSuccess('');
 
     if (mode === 'signup') {
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            terms_accepted: true
-          }
-        }
-      });
-      if (signUpErr) {
-        const next = getAuthAttemptState();
-        const updated = { count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs };
-        setAuthAttemptState(updated);
-        resetCaptcha();
-        setErr(signUpErr.message);
-        setLoading(false);
-        return;
-      }
+      // 1. Create the Supabase auth user
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+      if (signUpErr) { setErr(signUpErr.message); setLoading(false); return; }
 
+      // 2. Upsert into public.users with active membership
       if (signUpData.user) {
         await supabase.from('users').upsert({
           id: signUpData.user.id,
@@ -175,35 +59,28 @@ export default function LoginPage() {
         });
       }
 
+      // 3. Auto sign-in immediately (works when email confirm is disabled)
       const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
       if (signInErr) {
-        const next = getAuthAttemptState();
-        setAuthAttemptState({ count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs });
-        resetCaptcha();
+        // Email confirmation required — tell user
         setSuccess('Account created! Check your inbox and confirm your email, then sign in.');
         setMode('login');
         setLoading(false);
         return;
       }
-      setAuthAttemptState({ count: 0, resetAt: Date.now() + windowMs });
-      resetCaptcha();
       persistRememberPreference(rememberMe);
       setLoading(false);
       navigate('/dashboard');
       return;
     }
 
+    // Login
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      const next = getAuthAttemptState();
-      setAuthAttemptState({ count: next.count + 1, resetAt: next.resetAt || Date.now() + windowMs });
-      resetCaptcha();
       setErr(error.message);
       setLoading(false);
       return;
     }
-    setAuthAttemptState({ count: 0, resetAt: Date.now() + windowMs });
-    resetCaptcha();
     persistRememberPreference(rememberMe);
     setLoading(false);
     navigate('/dashboard');
@@ -269,12 +146,7 @@ export default function LoginPage() {
           />
           Remember me
         </label>
-                {BOT_PROTECTION_ENABLED && (
-          <div className="rounded-[12px] border border-white/[0.06] bg-[#0D0D0D] p-2">
-            <div id="creator-os-turnstile" className="min-h-[65px]" />
-          </div>
-        )}
-        <Button type="submit" disabled={loading || !email || !password || (BOT_PROTECTION_ENABLED && !captchaToken)}
+        <Button type="submit" disabled={loading || !email || !password}
           className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
           {loading
             ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -312,10 +184,6 @@ export default function LoginPage() {
       )}
 
       {/* Toggle login/signup */}
-            <p className="text-center text-[11px] leading-relaxed text-[#71717A]">
-        By continuing, you agree to Creator OS's <a href="/terms" className="text-white hover:text-primary transition-colors underline underline-offset-2">Terms of Service</a> and <a href="/privacy" className="text-white hover:text-primary transition-colors underline underline-offset-2">Privacy Policy</a>.
-      </p>
-
       <div className="text-center text-[13px] text-[#71717A]">
         {mode === 'login' ? (
           <>Don't have an account?{' '}

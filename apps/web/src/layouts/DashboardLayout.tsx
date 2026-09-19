@@ -128,7 +128,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
       <div className="p-3 border-t border-white/[0.06]">
         <div className={cn('flex items-center gap-3 p-2 rounded-[10px] hover:bg-white/[0.04] transition-colors cursor-pointer group', collapsed && 'justify-center')}>
           <div className="h-7 w-7 overflow-hidden rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-[12px] font-medium text-primary shrink-0">
-            {avatarUrl ? <img src={avatarUrl} alt="" className="h-full w-full object-cover" /> : (user?.email?.charAt(0).toUpperCase() || 'C')}
+            {avatarUrl ? <img src={avatarUrl} alt="Creator OS user profile" className="h-full w-full object-cover" /> : (user?.email?.charAt(0).toUpperCase() || 'C')}
           </div>
           {!collapsed && (
             <>

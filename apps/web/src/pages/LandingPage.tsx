@@ -4,13 +4,15 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { FAQSection } from '@/components/FAQSection';
+import { ComparisonMatrix } from '@/components/ComparisonMatrix';
 
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const remembered = sessionStorage.getItem('creator_os_remember_me') === 'true';
+    const remembered = localStorage.getItem('creator_os_remember_me') === 'true';
     if (!remembered) return;
 
     (async () => {
@@ -38,17 +40,7 @@ export default function LandingPage() {
           <span className="text-[#A1A1AA]">The operating system for modern creators.</span>
         </motion.div>
         
-        <motion.h1 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-          className="text-[36px] sm:text-[52px] md:text-[72px] lg:text-[84px] font-semibold tracking-tighter max-w-5xl mb-6 text-[#FAFAFA] leading-[1.05]"
-        >
-          Build your audience.<br />
-          <span className="text-primary">
-            Engineer your growth.
-          </span>
-        </motion.h1>
+        <h1 className="text-[36px] sm:text-[52px] md:text-[72px] lg:text-[84px] font-semibold tracking-tighter max-w-5xl mb-6 text-[#FAFAFA] leading-[1.05]">The Operating System for Modern Creators & Video Agencies</h1>
         
         <motion.p 
           initial={{ opacity: 0, y: 10 }}
@@ -164,6 +156,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <ComparisonMatrix />
+      <FAQSection />
 
       <section className="relative px-4 pb-20 sm:px-6 sm:pb-28">
         <div className="mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-primary/25 bg-[radial-gradient(ellipse_70%_120%_at_50%_0%,rgba(124,58,237,.24),transparent_65%),#111111] px-6 py-12 text-center sm:px-12 sm:py-16">

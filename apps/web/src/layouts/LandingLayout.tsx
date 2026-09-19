@@ -10,17 +10,8 @@ const footerNav = [
   { label: 'Features', href: '/#features' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'FAQ', href: '/faq' },
+  { label: 'Terms', href: '/terms' },
   { label: 'Contact', href: 'mailto:sauravwhop@gmail.com' },
-];
-
-const legalNav = [
-  { label: 'Terms of Service', href: '/terms' },
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Acceptable Use', href: '/acceptable-use' },
-  { label: 'Refund Policy', href: '/refund-policy' },
-  { label: 'Cookie Policy', href: '/cookies' },
-  { label: 'AI Disclaimer', href: '/ai-disclaimer' },
-  { label: 'DMCA', href: '/dmca' },
 ];
 
 export default function LandingLayout({ children }: { children: React.ReactNode }) {
@@ -145,10 +136,10 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 lg:pt-16 pb-10 lg:pb-12">
 
           {/* Top Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 pb-10 border-b border-white/[0.06]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 lg:gap-12 pb-10 border-b border-white/[0.06]">
 
             {/* Brand Column */}
-            <div className="sm:col-span-2 md:col-span-2">
+            <div className="sm:col-span-2 md:col-span-1">
               <Wordmark size="md" as="div" />
               <p className="mt-3 text-[14px] text-[#71717A] leading-relaxed tracking-tight max-w-[260px]">
                 Operating System for Modern Creators.
@@ -177,22 +168,6 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               </ul>
             </div>
 
-            {/* Legal */}
-            <div>
-              <h4 className="text-[12px] font-medium text-[#71717A] tracking-widest uppercase mb-5">
-                Legal
-              </h4>
-              <ul className="space-y-3">
-                {legalNav.map((item) => (
-                  <li key={item.label}>
-                    <Link to={item.href} className="text-[14px] text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors tracking-tight">
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
             {/* Contact */}
             <div>
               <h4 className="text-[12px] font-medium text-[#71717A] tracking-widest uppercase mb-5">
@@ -205,10 +180,13 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
           </div>
 
           {/* Bottom Row */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-            <p className="text-[13px] text-[#71717A] tracking-tight text-center">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8">
+            <p className="text-[13px] text-[#71717A] tracking-tight text-center sm:text-left">
               © 2026 Creator OS. All rights reserved.
             </p>
+            <Link to="/terms" className="text-[13px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+              Terms & Conditions
+            </Link>
           </div>
         </div>
       </footer>
