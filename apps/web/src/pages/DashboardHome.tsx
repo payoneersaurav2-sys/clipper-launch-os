@@ -161,8 +161,7 @@ export default function DashboardHome() {
                     <span className={`text-[10px] capitalize shrink-0 ${STATUS_COLORS[c.status] ?? 'text-[#71717A]'}`}>{c.status}</span>
                   </div>
                   <div className="h-1 w-full bg-white/[0.06] rounded-full overflow-hidden">
-                    <motion.div className="h-full bg-primary rounded-full"
-                      initial={{ width: 0 }} animate={{ width: `${c.completion_pct ?? 20}%` }} transition={{ duration: 0.8 }} />
+                    <motion.div className="h-full bg-primary rounded-full origin-left" initial={{ scaleX: 0 }} animate={{ scaleX: (c.completion_pct ?? 20) / 100 }} transition={{ duration: 0.8 }} />
                   </div>
                 </div>
               ))}

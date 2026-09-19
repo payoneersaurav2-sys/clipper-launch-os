@@ -86,7 +86,7 @@ export function NotificationCenter() {
   return (
     <div className="relative">
       {/* Bell trigger */}
-      <button onClick={() => setOpen(v => !v)}
+      <button onClick={() => setOpen(v => !v)} aria-label="Open notifications"
         className="relative h-8 w-8 rounded-[8px] flex items-center justify-center text-[#71717A] hover:text-[#FAFAFA] hover:bg-white/[0.05] transition-colors">
         <Bell className="h-4 w-4" />
         {unread > 0 && (
@@ -121,7 +121,7 @@ export function NotificationCenter() {
                       Mark all read
                     </button>
                   )}
-                  <button onClick={() => setOpen(false)} className="text-[#71717A] hover:text-[#FAFAFA] transition-colors">
+                  <button onClick={() => setOpen(false)} aria-label="Close notifications" className="text-[#71717A] hover:text-[#FAFAFA] transition-colors">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>

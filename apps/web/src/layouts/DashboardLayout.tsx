@@ -236,8 +236,7 @@ export default function DashboardLayout() {
             {/* Mobile drawer header */}
             <div className="flex h-16 items-center justify-between px-4 shrink-0">
               <Wordmark size="md" href="/dashboard" />
-              <button onClick={() => setMobileOpen(false)}
-                className="text-[#71717A] hover:text-[#FAFAFA] p-1.5 rounded-[8px] hover:bg-white/[0.05]">
+              <button onClick={() => setMobileOpen(false)} aria-label="Close sidebar" className="text-[#71717A] hover:text-[#FAFAFA] p-1.5 rounded-[8px] hover:bg-white/[0.05]">
                 <X className="h-4 w-4" />
               </button>
             </div>
