@@ -3,7 +3,7 @@ import { Check, X, AlertTriangle } from 'lucide-react';
 
 export function ComparisonMatrix() {
   return (
-    <section id="comparison" className="py-16 sm:py-24 px-4 bg-[#080808] relative z-10 text-[#FAFAFA]">
+    <section id="comparison" aria-label="Spreadsheets vs. Generic AI vs. Creator OS Table" className="py-16 sm:py-24 px-4 bg-[#080808] relative z-10 text-[#FAFAFA]">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-[30px] sm:text-[40px] font-semibold tracking-[-0.04em] mb-4 leading-none">Why Creator OS?</h2>

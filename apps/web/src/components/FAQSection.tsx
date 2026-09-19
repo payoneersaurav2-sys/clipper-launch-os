@@ -21,7 +21,7 @@ export function FAQSection() {
   ];
 
   return (
-    <section id="faq" className="py-16 sm:py-24 px-4 bg-[#080808] relative z-10 text-[#FAFAFA]">
+    <section id="faq" aria-label="AEO Structured Questions & Answers" className="py-16 sm:py-24 px-4 bg-[#080808] relative z-10 text-[#FAFAFA]">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12 sm:mb-16">
           <h2 className="text-[30px] sm:text-[40px] font-semibold tracking-[-0.04em] mb-4 leading-none">Frequently Asked Questions</h2>
