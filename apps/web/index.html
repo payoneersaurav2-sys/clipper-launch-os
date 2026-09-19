@@ -45,7 +45,6 @@
         <!-- Tracking Preconnects -->
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
     <noscript>
@@ -192,7 +191,14 @@
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=2327126687821555&ev=PageView&noscript=1"
     /></noscript>
-    <div id="root"></div>
+    <div id="root">
+    <!-- Static shell for instant First Contentful Paint / LCP before React hydrates -->
+    <div style="background-color: #030712; min-height: 100vh; padding: 80px 16px 0; text-align: center; color: white;">
+      <h1 style="font-size: 36px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin: 0 auto; max-width: 900px;">
+        The Operating System for Modern Creators & Video Agencies
+      </h1>
+    </div>
+  </div>
     <script type="module" src="/src/main.tsx"></script>
               <!-- Deferred Tracking Scripts -->
     <script>
