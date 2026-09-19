@@ -27,9 +27,9 @@ const MISSIONS = [
 ];
 
 const PRIORITY_COLOR: Record<string, string> = {
-  high:   'text-red-400 bg-red-400/10 border-red-400/20',
-  medium: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20',
-  low:    'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  high:   'border-red-500/30 bg-red-950/60 text-red-300',
+  medium: 'border-amber-500/30 bg-amber-950/60 text-amber-300',
+  low:    'border-emerald-500/30 bg-emerald-950/60 text-emerald-300',
 };
 
 // ---- Quick Actions ------------------------------------------
@@ -64,6 +64,7 @@ export default function DashboardHome() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20 animate-in fade-in slide-in-from-bottom-6 duration-500 font-sans text-[#FAFAFA]">
+      <h1 className="sr-only">CreatorOS Dashboard</h1>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -103,7 +104,7 @@ export default function DashboardHome() {
         <div className="md:col-span-2 bg-[#111111] border border-white/[0.06] rounded-[18px] p-4 sm:p-6 lg:p-7 overflow-hidden">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-[16px] font-semibold text-[#FAFAFA] tracking-tight">Today's Mission</h3>
+              <h2 className="text-[16px] font-semibold text-[#FAFAFA] tracking-tight">Today's Mission</h2>
               <p className="text-[12px] text-[#71717A] mt-1">{completedCount} of {MISSIONS.length} complete</p>
             </div>
             {/* Circular progress */}
@@ -136,7 +137,7 @@ export default function DashboardHome() {
                     <span className="text-[11px] text-[#71717A] hidden sm:flex items-center gap-1">
                       <Clock className="h-3 w-3" />{m.time}
                     </span>
-                    <Link to={m.href} onClick={e => e.stopPropagation()}>
+                    <Link to={m.href} onClick={e => e.stopPropagation()} aria-label={`Open ${m.title}`} data-discover="true">
                       <ArrowRight className="h-4 w-4 text-[#71717A] hover:text-primary transition-colors" />
                     </Link>
                   </div>
@@ -149,7 +150,7 @@ export default function DashboardHome() {
         {/* Active Campaigns */}
         <div className="bg-[#111111] border border-white/[0.06] rounded-[18px] p-6 flex flex-col">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight">Active Campaigns</h3>
+            <h2 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight">Active Campaigns</h2>
             <Link to="/dashboard/campaign-os" className="text-[12px] text-[#71717A] hover:text-primary transition-colors">View all</Link>
           </div>
           {activeCampaigns?.length ? (
@@ -183,7 +184,7 @@ export default function DashboardHome() {
         {/* Recent Ideas */}
         <div className="bg-[#111111] border border-white/[0.06] rounded-[18px] p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight">Recent Ideas</h3>
+            <h2 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight">Recent Ideas</h2>
             <Link to="/dashboard/idea-studio" className="text-[12px] text-[#71717A] hover:text-primary transition-colors">View all</Link>
           </div>
           {recentIdeas?.length ? (
@@ -214,7 +215,7 @@ export default function DashboardHome() {
         {/* Recent AI Activity */}
         <div className="bg-[#111111] border border-white/[0.06] rounded-[18px] p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight">Recent AI Activity</h3>
+            <h2 className="text-[14px] font-semibold text-[#FAFAFA] tracking-tight">Recent AI Activity</h2>
             <span className="text-[12px] text-[#71717A]">{genCount} total</span>
           </div>
           {recentGens.length ? (
