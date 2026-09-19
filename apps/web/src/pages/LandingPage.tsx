@@ -40,7 +40,9 @@ export default function LandingPage() {
           <span className="text-muted-foreground">The Notion alternative for creators.</span>
         </motion.div>
         
-        <h1 className="text-[36px] sm:text-[52px] md:text-[72px] lg:text-[84px] font-semibold tracking-tighter max-w-5xl mb-6 text-foreground leading-[1.05]">The Operating System for Modern Creators & Video Agencies</h1>
+        <h1 className="text-[36px] sm:text-[52px] md:text-[72px] lg:text-[84px] font-semibold tracking-tight text-foreground max-w-5xl mb-6 leading-[1.05]">
+          The Operating System for Modern Creators & Video Agencies
+        </h1>
         
         <motion.p 
           initial={{ opacity: 0, y: 10 }}

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Check, X, AlertTriangle } from 'lucide-react';
 
 export function ComparisonMatrix() {
