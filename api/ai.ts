@@ -11,8 +11,32 @@ const MAX_REQUEST_BYTES = 250_000;
 const MAX_PROMPT_CHARS = 20_000;
 const MAX_MESSAGES = 20;
 const MAX_OUTPUT_TOKENS = 8_000;
+const IN_FLIGHT_MAX_AGE_MS = 90_000; // Safety valve: forget stale in-flight entries after 90s
 const RATE_LIMIT_BUCKETS = new Map<string, { count: number; resetAt: number }>();
-const IN_FLIGHT_BY_USER = new Map<string, number>();
+const IN_FLIGHT_BY_USER = new Map<string, { count: number; lastAt: number }>();
+
+/** Returns current in-flight count, treating entries older than IN_FLIGHT_MAX_AGE_MS as expired. */
+function getInFlight(userId: string): number {
+  const entry = IN_FLIGHT_BY_USER.get(userId);
+  if (!entry) return 0;
+  if (Date.now() - entry.lastAt > IN_FLIGHT_MAX_AGE_MS) {
+    IN_FLIGHT_BY_USER.delete(userId);
+    return 0;
+  }
+  return entry.count;
+}
+
+function incrementInFlight(userId: string): void {
+  const current = getInFlight(userId);
+  IN_FLIGHT_BY_USER.set(userId, { count: current + 1, lastAt: Date.now() });
+}
+
+function decrementInFlight(userId: string): void {
+  const entry = IN_FLIGHT_BY_USER.get(userId);
+  if (!entry) return;
+  if (entry.count <= 1) IN_FLIGHT_BY_USER.delete(userId);
+  else IN_FLIGHT_BY_USER.set(userId, { count: entry.count - 1, lastAt: entry.lastAt });
+}
 
 interface RateLimitDecision { allowed: boolean; retryAfterMs?: number; reason?: string; }
 
@@ -176,22 +200,21 @@ export default async function handler(request: Request) {
     if (requiresAcceptance === true) return json({ error: 'Please accept the updated Terms of Service to use AI.', code: 'AUTH_FAILED' }, 403);
   }
 
-  const currentInFlight = IN_FLIGHT_BY_USER.get(userId) ?? 0;
+  const currentInFlight = getInFlight(userId);
   if (currentInFlight >= 2) {
     return json({ error: 'Too many AI requests are already running for this account. Please wait and retry.', code: 'RATE_LIMITED' }, 429);
   }
-  IN_FLIGHT_BY_USER.set(userId, currentInFlight + 1);
+  incrementInFlight(userId);
 
+  // NOTE: from this point on the finally block always decrements the counter.
+  // The rate-limit check MUST be inside the try so it is covered by finally.
+  let creditReservationId: string | undefined;
   try {
     const rateLimit = await checkDistributedRateLimit(request, userId, '/api/ai', contentLength);
     if (!rateLimit.allowed) {
       return json({ error: 'Too many AI requests. Please wait a minute and try again.', code: 'RATE_LIMITED' }, 429);
     }
-  } catch {
-    return json({ error: 'AI rate limiting is temporarily unavailable. Please retry.', code: 'RATE_LIMITED' }, 429);
-  }
-  let creditReservationId: string | undefined;
-  try {
+
     const { context } = await request.json() as { context?: AIPromptContext };
     if (!context?.systemPrompt || !context?.developerPrompt || !context?.taskContext?.workspace?.id) return json({ error: 'Invalid AI request.', code: 'PROVIDER_OFFLINE' }, 400);
     const operation = String(context.billingOperation ?? '').slice(0, 64);
@@ -326,9 +349,7 @@ export default async function handler(request: Request) {
     return json({ error: 'AI gateway could not process this request.', code: 'PROVIDER_OFFLINE' }, 500);
   } finally {
     if (userId && userId !== 'anonymous') {
-      const inFlight = IN_FLIGHT_BY_USER.get(userId) ?? 0;
-      if (inFlight <= 1) IN_FLIGHT_BY_USER.delete(userId);
-      else IN_FLIGHT_BY_USER.set(userId, inFlight - 1);
+      decrementInFlight(userId);
     }
   }
 }
