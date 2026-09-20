@@ -125,11 +125,7 @@ export function HookEngine() {
       setMessage('Select or create a workspace before generating hooks.');
       return;
     }
-    if (!canUsePrompts && !canUseKnowledge) {
-      setUpgradeTarget('prompt');
-      setMessage('Upgrade to unlock saved prompts and knowledge context.');
-      return;
-    }
+
     const data = await generateJSON<{ hooks: any[] }>(
       buildGenerateHooksPrompt({
         workspaceId: ws.id, workspaceName: ws.name,

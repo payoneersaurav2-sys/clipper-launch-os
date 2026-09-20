@@ -125,11 +125,7 @@ export function CaptionOS() {
       setMessage('Select or create a workspace before generating captions.');
       return;
     }
-    if (!canUsePrompts && !canUseKnowledge) {
-      setUpgradeTarget('prompt');
-      setMessage('Upgrade to unlock saved prompts and knowledge context.');
-      return;
-    }
+
     const data = await generateJSON<any>(
       buildGenerateCaptionPrompt({
         workspaceId: ws.id,

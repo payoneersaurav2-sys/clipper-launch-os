@@ -115,11 +115,7 @@ export function IdeaStudio() {
       setGenerationNotice('Choose or create a workspace before generating ideas.');
       return;
     }
-    if (!canUsePrompts && !canUseKnowledge) {
-      setUpgradeTarget('prompt');
-      setGenerationNotice('Upgrade to unlock saved prompt and knowledge selectors.');
-      return;
-    }
+
     try {
       const data = await generateJSON<{ ideas?: Array<{ title?: string; context?: string }> }>(
         buildGenerateIdeasPrompt({
