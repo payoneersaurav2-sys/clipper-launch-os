@@ -2,12 +2,12 @@
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT false;
 
 -- 2. Create review status enum
-DO $$$
+DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'review_status') THEN
         CREATE TYPE review_status AS ENUM ('pending', 'approved', 'rejected', 'hidden');
     END IF;
-END$$$;
+END$$;
 
 -- 3. Create reviews table
 CREATE TABLE IF NOT EXISTS public.reviews (
@@ -69,7 +69,7 @@ USING (
 
 -- 5. Triggers to enforce read-only columns for non-admins and auto-verification
 CREATE OR REPLACE FUNCTION public.handle_review_insert()
-RETURNS TRIGGER AS $$$
+RETURNS TRIGGER AS $$
 DECLARE
     v_membership_status TEXT;
 BEGIN
@@ -80,14 +80,14 @@ BEGIN
     NEW.approved_at := NULL;
     RETURN NEW;
 END;
-$$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE TRIGGER on_review_insert
 BEFORE INSERT ON public.reviews
 FOR EACH ROW EXECUTE FUNCTION public.handle_review_insert();
 
 CREATE OR REPLACE FUNCTION public.handle_review_update()
-RETURNS TRIGGER AS $$$
+RETURNS TRIGGER AS $$
 BEGIN
     -- If user is updating their own review (not an admin overriding it):
     IF auth.uid() = NEW.user_id AND NOT (SELECT is_admin FROM public.users WHERE id = auth.uid()) THEN
@@ -99,7 +99,7 @@ BEGIN
     NEW.updated_at := NOW();
     RETURN NEW;
 END;
-$$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE TRIGGER on_review_update
 BEFORE UPDATE ON public.reviews
@@ -109,11 +109,11 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_review_update();
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public
-AS $$$
+AS $$
 DECLARE
     v_is_admin BOOLEAN;
 BEGIN
     SELECT is_admin INTO v_is_admin FROM public.users WHERE id = auth.uid();
     RETURN COALESCE(v_is_admin, false);
 END;
-$$$;
+$$;
