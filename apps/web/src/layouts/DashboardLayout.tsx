@@ -119,7 +119,9 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                   </Link>
                 );
               })}
-            </nav>`n            </div>`n          )})}
+            </nav>
+            </div>
+          ) })}
       </div>
 
       {/* User / logout */}
