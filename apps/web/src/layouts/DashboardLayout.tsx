@@ -64,7 +64,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
   const location = useLocation();
   const navigate = useNavigate();
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { signOut, user, avatarUrl } = useAuthStore();
+  const { signOut, user, avatarUrl, isAdmin } = useAuthStore();
 
   const isActive = (href: string) =>
     href === '/dashboard' ? location.pathname === href : location.pathname.startsWith(href);
@@ -92,15 +92,14 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 
       {/* Nav groups */}
       <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5">
-        {navGroups.map(group => (
-          <div key={group.label}>
+        {navGroups.map(group => { const filteredItems = group.items.filter(item => item.name !== 'Review Moderation' || isAdmin); if (filteredItems.length === 0) return null; return (          <div key={group.label}>
             {!collapsed && (
               <p className="text-[10px] font-semibold text-[#71717A] uppercase tracking-widest px-2 mb-1.5">
                 {group.label}
               </p>
             )}
             <nav className="space-y-0.5">
-              {group.items.map(item => {
+              {filteredItems.map(item => {
                 const active = isActive(item.href);
                 return (
                   <Link key={item.name} to={item.href}
@@ -120,9 +119,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                   </Link>
                 );
               })}
-            </nav>
-          </div>
-        ))}
+            </nav>`n            </div>`n          )})}
       </div>
 
       {/* User / logout */}

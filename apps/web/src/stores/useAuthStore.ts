@@ -14,6 +14,7 @@ interface AuthState {
   avatarUrl: string | null;
   onboardingComplete: boolean | null;
   requiresLegalAcceptance: boolean | null;
+  isAdmin: boolean;
   isLoading: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: Session | null) => void;
@@ -31,6 +32,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   avatarUrl: null,
   onboardingComplete: null,
   requiresLegalAcceptance: null,
+  isAdmin: false,
   isLoading: true,
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session, user: session?.user ?? null, isLoading: false }),
@@ -41,13 +43,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     let avatarUrl = null;
     let onboarded = null;
     let requiresLegalAcceptance = false;
+    let isAdmin = false;
 
     if (session?.user) {
       // Parallelize profile and legal status fetches
       const [userRes, legalRes] = await Promise.all([
         supabase
           .from('users')
-          .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url')
+          .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url, is_admin')
           .eq('id', session.user.id)
           .maybeSingle(),
         supabase.rpc('check_legal_status')
@@ -62,6 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         whopId = data.whop_id;
         avatarUrl = data.avatar_url;
         onboarded = data.onboarding_complete;
+        isAdmin = Boolean(data.is_admin);
       }
       if (legalRes.data) {
         requiresLegalAcceptance = Boolean(legalRes.data.requires_acceptance);
@@ -77,6 +81,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       avatarUrl,
       onboardingComplete: onboarded,
       requiresLegalAcceptance,
+      isAdmin,
       isLoading: false,
     });
   },
@@ -87,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     sessionStorage.removeItem('creator_os_remember_me');
     await supabase.auth.signOut();
-    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null, requiresLegalAcceptance: null });
+    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null, requiresLegalAcceptance: null, isAdmin: false });
   },
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession();

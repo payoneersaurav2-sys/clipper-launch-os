@@ -1,17 +1,25 @@
 import { useState } from 'react';
 import { useAdminReviews, useUpdateReviewAdmin } from '@/hooks/useReviews';
-import { Loader2, Star, CheckCircle, XCircle, EyeOff, Star as StarOutline } from 'lucide-react';
+import { Loader2, Star, CheckCircle, XCircle, EyeOff, Star as StarOutline, Shield } from 'lucide-react';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function AdminReviewsPage() {
+  const { isAdmin } = useAuthStore();
   const { data: reviews, isLoading } = useAdminReviews();
   const updateReview = useUpdateReviewAdmin();
   const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'rejected' | 'hidden' | 'featured'>('all');
 
   // Verify admin authorization strictly.
-  // Assuming the user_metadata or app_metadata contains the admin flag, or we just rely on RLS.
-  // Actually, we must rely on RLS and graceful error handling if they are not admin.
-  // We'll show a basic check here. If the query fails due to RLS, it handles it.
-  
+  if (!isAdmin) {
+    return (
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
+        <Shield className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-semibold text-white">Access Denied</h2>
+        <p className="text-[#A1A1AA]">You do not have permission to view this page.</p>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-full min-h-[400px] items-center justify-center">
@@ -20,7 +28,6 @@ export default function AdminReviewsPage() {
     );
   }
 
-  // If no reviews and an error occurred, the user might not be an admin.
   if (!reviews) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
