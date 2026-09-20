@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { 
   LayoutDashboard, Lightbulb, PenTool, Type, Rocket, 
   Video, Library, TerminalSquare, LineChart, Settings,
-  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag, Menu, X, Coins, Sparkles, ArrowUpRight
+  Search, LogOut, ChevronLeft, ChevronRight, UserCircle, HelpCircle, Tag, Menu, X, Coins, Sparkles, ArrowUpRight, Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -52,6 +52,7 @@ const navGroups = [
       { name: 'Credits',     href: '/dashboard/credits',     icon: Coins },
       { name: 'Upgrade Plans', href: '/dashboard/pricing', icon: ArrowUpRight },
       { name: 'Settings',    href: '/dashboard/settings',    icon: UserCircle },
+      { name: 'Review Moderation', href: '/dashboard/admin/reviews', icon: Shield },
       { name: 'Help',        href: '/dashboard/help',        icon: HelpCircle },
       { name: 'Changelog',   href: '/dashboard/changelog',   icon: Tag },
     ],

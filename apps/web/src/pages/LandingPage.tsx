@@ -1,3 +1,4 @@
+import { ReviewsSection } from '@/components/landing/ReviewsSection';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3, PlayCircle } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -162,6 +163,8 @@ export default function LandingPage() {
 
       <ComparisonMatrix />
       <FAQSection />
+
+      <ReviewsSection />
 
       <section id="pricing" aria-label="Creator ($29), Pro ($49), and Agency ($149) Tiers" className="relative px-4 pb-20 sm:px-6 sm:pb-28">
         <div className="mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-primary/25 bg-[radial-gradient(ellipse_70%_120%_at_50%_0%,rgba(124,58,237,.15),transparent_65%)] bg-card px-6 py-12 text-center sm:px-12 sm:py-16">

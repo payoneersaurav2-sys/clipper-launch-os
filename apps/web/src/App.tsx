@@ -38,6 +38,7 @@ const DMCAPage            = lazy(() => import('./pages/legal/DMCAPage'));
 const FAQPage             = lazy(() => import('./pages/FAQPage'));
 const PricingPage         = lazy(() => import('./pages/PricingPage'));
 const CreditStorePage     = lazy(() => import('./pages/CreditStorePage'));
+const AdminReviewsPage    = lazy(() => import('./pages/AdminReviewsPage'));
 
 const IdeaStudio     = lazy(() => import('./components/modules/IdeaStudio').then(m => ({ default: m.IdeaStudio })));
 const HookEngine     = lazy(() => import('./components/modules/HookEngine').then(m => ({ default: m.HookEngine })));
@@ -103,6 +104,7 @@ function CreatorOSRoutes() {
                 <Route path="prompt-library"  element={<PromptLibrary />} />
                 <Route path="ai-settings"     element={<AISettingsPage />} />
                 <Route path="settings"        element={<SettingsPage />} />
+                <Route path="admin/reviews"   element={<AdminReviewsPage />} />
                 <Route path="credits"         element={<CreditStorePage />} />
                 <Route path="pricing"         element={<PricingPage />} />
                 <Route path="help"            element={<HelpCenterPage />} />
