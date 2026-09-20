@@ -16,6 +16,7 @@ import { CommandPalette } from '@/components/CommandPalette';
 import { NotificationCenter } from '@/components/NotificationCenter';
 import { ProductTour, useTour } from '@/components/ProductTour';
 import { FeedbackWidget } from '@/components/FeedbackWidget';
+import { FeedbackPopup } from '@/components/FeedbackPopup';
 import { AppearanceSwitcher } from '@/components/AppearanceSwitcher';
 
 // ---- Nav groups ---------------------------------------------
@@ -312,6 +313,9 @@ export default function DashboardLayout() {
 
       {/* ---- Feedback Widget ------------------------------- */}
       <FeedbackWidget />
+
+      {/* ---- Smart Feedback Popup (triggers after AI success) */}
+      <FeedbackPopup />
 
       <AnimatePresence>
         {creditNotice && (

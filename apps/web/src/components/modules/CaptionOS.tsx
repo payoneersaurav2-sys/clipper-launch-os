@@ -14,6 +14,7 @@ import { Plus, Loader2, Sparkles, Copy, Check, Layers, ChevronDown } from 'lucid
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { getKnowledgeLimitForTier, getPromptLimitForTier, getTierUpgradeMessage, isFeatureUnlockedForTier, PlanTier } from '@/lib/entitlements';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { recordFeedbackEvent } from '@/lib/feedbackEngine';
 
 const PLATFORMS = ['tiktok', 'youtube', 'instagram', 'twitter'];
 
@@ -142,6 +143,7 @@ export function CaptionOS() {
     );
     const full = [data.hook, data.body ?? data.caption, data.cta, (data.hashtags ?? []).join(' ')].filter(Boolean).join('\n\n');
     await createCaption.mutateAsync({ content: full, platform, clip_idea_id: latestIdea.id });
+    recordFeedbackEvent({ feature: 'caption_os', event: 'captions_generated', success: true });
   };
 
   const handleVariants = async () => {

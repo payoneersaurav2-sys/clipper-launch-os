@@ -76,6 +76,8 @@ export function ReviewModal({ isOpen, onClose }: ReviewModalProps) {
         review_text: reviewText.trim(),
       });
       setSuccess(true);
+      // Notify FeedbackPopup engine that a review was submitted
+      window.dispatchEvent(new CustomEvent('creator-os-review-submitted'));
     } catch (err: any) {
       setError(err.message || 'An error occurred while submitting your review. Please try again.');
     }

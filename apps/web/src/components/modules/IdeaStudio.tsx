@@ -13,6 +13,7 @@ import { Lightbulb, Plus, Loader2, Sparkles, ChevronDown, Zap, Type } from 'luci
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { getKnowledgeLimitForTier, getPromptLimitForTier, getTierUpgradeMessage, isFeatureUnlockedForTier, PlanTier } from '@/lib/entitlements';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { recordFeedbackEvent } from '@/lib/feedbackEngine';
 
 export function IdeaStudio() {
   const navigate = useNavigate();
@@ -133,6 +134,7 @@ export function IdeaStudio() {
       }
       await Promise.all(generatedIdeas.map((idea) => createIdea.mutateAsync({ title: idea.title!.trim(), context: idea.context?.trim() ?? '' })));
       setGenerationNotice(`${generatedIdeas.length} ideas added to your workspace.`);
+      recordFeedbackEvent({ feature: 'idea_studio', event: 'ideas_generated', success: true });
     } catch (generationError) {
       setGenerationNotice(generationError instanceof Error ? generationError.message : 'Could not generate ideas. Please retry.');
     }

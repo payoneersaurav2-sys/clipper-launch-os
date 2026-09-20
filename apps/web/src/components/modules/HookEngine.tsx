@@ -14,6 +14,7 @@ import { Plus, Loader2, Sparkles, Star, BarChart2, CheckCircle2, ChevronDown } f
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { getKnowledgeLimitForTier, getPromptLimitForTier, getTierUpgradeMessage, isFeatureUnlockedForTier, PlanTier } from '@/lib/entitlements';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { recordFeedbackEvent } from '@/lib/feedbackEngine';
 
 export function HookEngine() {
   const location = useLocation();
@@ -142,6 +143,7 @@ export function HookEngine() {
     for (const hook of data.hooks ?? []) {
       await createHook.mutateAsync({ content: hook.content, clip_idea_id: latestIdea.id });
     }
+    recordFeedbackEvent({ feature: 'hook_engine', event: 'hooks_generated', success: true });
   };
 
   const handleScore = async (hook: any) => {
