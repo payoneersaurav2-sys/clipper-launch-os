@@ -1,4 +1,6 @@
 import { ReviewsSection } from '@/components/landing/ReviewsSection';
+import { HeroTrustStrip, FeatureReviewSnippet, PricingTrustSnippet } from '@/components/landing/TrustElements';
+import { useApprovedReviews } from '@/hooks/useReviews';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3, PlayCircle } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -11,6 +13,16 @@ import { ComparisonMatrix } from '@/components/ComparisonMatrix';
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
+
+  const { data: reviews } = useApprovedReviews();
+  const approved = reviews || [];
+  const featured = approved.find(r => r.is_featured) || approved[0];
+  const otherReviews = approved.filter(r => r.id !== featured?.id);
+
+  const heroReview = featured;
+  const ideaReview = otherReviews[0] || heroReview;
+  const campaignReview = otherReviews[1] || otherReviews[0] || heroReview;
+  const pricingReview = otherReviews[2] || otherReviews[1] || heroReview;
 
   useEffect(() => {
     const remembered = localStorage.getItem('creator_os_remember_me') === 'true';
@@ -73,16 +85,11 @@ export default function LandingPage() {
           </Link>
         </motion.div>
 
-        {/* Feature Queries Footer */}
-        <div className="mt-16 sm:mt-24 flex flex-wrap justify-center gap-x-8 gap-y-4 max-w-3xl">
-          {[['Viral retention benchmark tool', 'Data-driven insights.'], ['Batch short-form script generator', 'Create weeks of content fast.'], ['Multi-brand social media calendar', 'The ultimate SMMA client content dashboard.']].map(([title, copy], index) => (
-            <motion.div key={title} initial={reduceMotion ? false : { opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.7 }} transition={{ duration: 0.32, delay: index * 0.07 }} className="px-4 py-1">
-              <p className="text-[13px] font-medium text-foreground">{title}</p>
-              <p className="mt-1 text-[12px] text-muted-foreground">{copy}</p>
-            </motion.div>
-          ))}
-        </div>
+        <HeroTrustStrip review={heroReview} />
       </section>
+
+      {/* Early Social Proof */}
+      <ReviewsSection />
 
       {/* Workflow Bento Grid */}
       <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-background relative z-10">
@@ -102,6 +109,7 @@ export default function LandingPage() {
               <Workflow className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">1. Idea Studio</h3>
               <p className="text-muted-foreground leading-relaxed max-w-md text-[15px] tracking-tight">Capture concepts and instantly generate variations with context-aware AI. Drop in a link, and watch the studio break it down into 10 viral angles.</p>
+              <FeatureReviewSnippet review={ideaReview} />
             </motion.div>
 
             <motion.div 
@@ -135,6 +143,7 @@ export default function LandingPage() {
               <BarChart className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">4. Campaign Center</h3>
               <p className="text-muted-foreground leading-relaxed max-w-md text-[15px] tracking-tight">Plan launches, track production across your entire freelance video clipper pipeline, and review automated analytics all in one beautiful kanban board. The TubeBuddy alternative 2026.</p>
+              <FeatureReviewSnippet review={campaignReview} />
             </motion.div>
           </div>
         </div>
@@ -164,13 +173,12 @@ export default function LandingPage() {
       <ComparisonMatrix />
       <FAQSection />
 
-      <ReviewsSection />
-
       <section id="pricing" aria-label="Creator ($29), Pro ($49), and Agency ($149) Tiers" className="relative px-4 pb-20 sm:px-6 sm:pb-28">
         <div className="mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-primary/25 bg-[radial-gradient(ellipse_70%_120%_at_50%_0%,rgba(124,58,237,.15),transparent_65%)] bg-card px-6 py-12 text-center sm:px-12 sm:py-16">
           <PlayCircle className="mx-auto h-6 w-6 text-primary" aria-hidden="true" />
           <h2 className="mx-auto mt-5 max-w-2xl text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-[46px]">Build the system behind your next level of content.</h2>
           <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">Start with the workflow you use today. Scale only when your short-form video editor software needs it.</p>
+          <PricingTrustSnippet review={pricingReview} />
           <Link to="/pricing" className="mt-8 inline-flex"><Button size="lg" className="h-12 rounded-[12px] px-7 text-[14px]">Explore Creator OS <ArrowRight className="h-4 w-4" /></Button></Link>
         </div>
       </section>
