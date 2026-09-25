@@ -6,6 +6,7 @@ import { BillingInterval, annualSavings, pricingPlans, unresolvedCheckoutMapping
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { buildWhopOAuthUrl } from '@/lib/whopPkce';
+import { FAQSection, pricingFaqs } from '@/components/FAQSection';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
@@ -123,6 +124,13 @@ export default function PricingPage() {
         </div>
         <p className="mx-auto mt-10 max-w-2xl text-center text-[12px] leading-relaxed text-muted-foreground">Secure checkout is handled by Whop. Annual billing is clearly shown before checkout.</p>
       </section>
+
+      {/* Pricing FAQ */}
+      <FAQSection 
+        title="Questions before you start?" 
+        subtitle="Everything you need to know about access, billing, cancellation, and support." 
+        items={pricingFaqs} 
+      />
     </div>
   );
 }
