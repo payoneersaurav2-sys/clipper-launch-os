@@ -1,21 +1,28 @@
 import { useApprovedReviews } from '@/hooks/useReviews';
+import { usePublicStats } from '@/hooks/usePublicStats';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Star } from 'lucide-react';
 
 export function SocialProofStrip() {
   const { data: reviews } = useApprovedReviews();
+  const { data: stats } = usePublicStats();
   const reduceMotion = useReducedMotion();
 
-  // We only display the section if we have verified evidence to show.
-  if (!reviews || reviews.length === 0) return null;
+  // Wait for data
+  if (!reviews || !stats) return null;
 
+  const totalUsers = stats.total_users;
   const totalReviews = reviews.length;
-  const averageRating = reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews;
+  const averageRating = totalReviews > 0 
+    ? reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews 
+    : 5; // fallback to 5 if no reviews but users exist
   
-  // Format logically. If exactly 4, display "4". If more, display "4+". 
-  // We use actual verified data.
-  const displayCount = totalReviews > 10 ? '10+' : totalReviews > 4 ? '4+' : totalReviews.toString();
+  // Format logically.
+  const displayCount = totalUsers > 10 ? '10+' : totalUsers > 4 ? '4+' : totalUsers.toString();
   const displayRating = averageRating % 1 === 0 ? averageRating.toString() + '.0' : averageRating.toFixed(1);
+
+  // If no users, don't show
+  if (totalUsers === 0) return null;
 
   return (
     <section className="relative z-10 w-full bg-background border-t border-border/40 py-8" aria-label="Social Proof">
@@ -31,22 +38,26 @@ export function SocialProofStrip() {
             <span className="text-sm font-medium tracking-wide text-muted-foreground uppercase">Verified Creators</span>
           </div>
           
-          <div className="hidden sm:block w-px h-12 bg-border/50" aria-hidden="true" />
-          
-          <div className="flex flex-col items-center text-center">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-3xl font-bold tracking-tight text-foreground">{displayRating}/5</span>
-            </div>
-            <div className="flex items-center gap-1 mb-1" aria-label={`${displayRating} stars`}>
-              {[...Array(5)].map((_, i) => (
-                <Star 
-                  key={i} 
-                  className={`h-3.5 w-3.5 ${i < Math.round(averageRating) ? 'fill-primary text-primary' : 'text-muted-foreground/30'}`} 
-                />
-              ))}
-            </div>
-            <span className="text-sm font-medium tracking-wide text-muted-foreground uppercase mt-0.5">Average Rating</span>
-          </div>
+          {totalReviews > 0 && (
+            <>
+              <div className="hidden sm:block w-px h-12 bg-border/50" aria-hidden="true" />
+              
+              <div className="flex flex-col items-center text-center">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-3xl font-bold tracking-tight text-foreground">{displayRating}/5</span>
+                </div>
+                <div className="flex items-center gap-1 mb-1" aria-label={`${displayRating} stars`}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className={`h-3.5 w-3.5 ${i < Math.round(averageRating) ? 'fill-primary text-primary' : 'text-muted-foreground/30'}`} 
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-medium tracking-wide text-muted-foreground uppercase mt-0.5">Average Rating</span>
+              </div>
+            </>
+          )}
 
           <div className="hidden sm:block w-px h-12 bg-border/50" aria-hidden="true" />
 
