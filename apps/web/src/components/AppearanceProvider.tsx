@@ -1,52 +1,34 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo } from 'react';
 
-export type AppearanceMode = 'light' | 'dark' | 'system';
+export type AppearanceMode = 'dark'; // Force dark mode only
 
 type AppearanceContextValue = {
   mode: AppearanceMode;
-  resolvedMode: 'light' | 'dark';
+  resolvedMode: 'dark';
   setMode: (mode: AppearanceMode) => void;
 };
 
-const STORAGE_KEY = 'creator-os-appearance';
 const AppearanceContext = createContext<AppearanceContextValue | null>(null);
 
-function getSystemMode(): 'light' | 'dark' {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function applyAppearance(mode: AppearanceMode) {
-  const resolvedMode = mode === 'system' ? getSystemMode() : mode;
+function applyAppearance() {
   const root = document.documentElement;
-  root.dataset.theme = resolvedMode;
-  root.classList.toggle('dark', resolvedMode === 'dark');
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', resolvedMode === 'dark' ? '#080808' : '#F7F7FA');
-  return resolvedMode;
+  root.dataset.theme = 'dark';
+  root.classList.add('dark');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#080808');
 }
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<AppearanceMode>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
-  });
-  const [resolvedMode, setResolvedMode] = useState<'light' | 'dark'>(() => applyAppearance(mode));
-
+  // Always enforce dark mode on mount
   useEffect(() => {
-    setResolvedMode(applyAppearance(mode));
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    const syncSystemMode = () => {
-      if (mode === 'system') setResolvedMode(applyAppearance('system'));
-    };
-    media.addEventListener('change', syncSystemMode);
-    return () => media.removeEventListener('change', syncSystemMode);
-  }, [mode]);
+    applyAppearance();
+  }, []);
 
-  const setMode = (nextMode: AppearanceMode) => {
-    localStorage.setItem(STORAGE_KEY, nextMode);
-    setModeState(nextMode);
-  };
-
-  const value = useMemo(() => ({ mode, resolvedMode, setMode }), [mode, resolvedMode]);
+  const value = useMemo<AppearanceContextValue>(() => ({ 
+    mode: 'dark', 
+    resolvedMode: 'dark', 
+    setMode: () => {} // No-op
+  }), []);
+  
   return <AppearanceContext.Provider value={value}>{children}</AppearanceContext.Provider>;
 }
 
