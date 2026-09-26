@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom'; from 'react';
 import { useAdminReviews, useUpdateReviewAdmin } from '@/hooks/useReviews';
 import { useAdminProductFeedback } from '@/hooks/useProductFeedback';
 import { Loader2, Star, CheckCircle, XCircle, EyeOff, Star as StarOutline, Shield, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
@@ -21,13 +22,7 @@ export default function AdminReviewsPage() {
 
   // Verify admin authorization strictly (frontend guard — RLS enforces server-side)
   if (!isAdmin) {
-    return (
-      <div className="flex h-full min-h-[400px] flex-col items-center justify-center space-y-4">
-        <Shield className="h-12 w-12 text-red-500" />
-        <h2 className="text-xl font-semibold text-white">Access Denied</h2>
-        <p className="text-[#A1A1AA]">You do not have permission to view this page.</p>
-      </div>
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleStatusChange = async (id: string, status: string) => {

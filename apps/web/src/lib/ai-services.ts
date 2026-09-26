@@ -37,7 +37,7 @@ function buildWorkflowResourceInstructions(input: {
 
 export function buildGenerateIdeasPrompt(input: {
   workspaceId: string; workspaceName: string;
-  niche?: string; platform?: string; tone?: string;
+  niche?: string; platform?: string; tone?: string; campaignTitle?: string; campaignGoal?: string;
   count?: number; previousIdeas?: string[];
   selectedPromptTitle?: string; selectedPrompt?: string;
   selectedPromptTitles?: string[]; selectedPromptContents?: string[];
@@ -86,6 +86,7 @@ export function buildGenerateHooksPrompt(input: {
   workspaceId: string; workspaceName: string;
   ideaTitle: string; ideaContext?: string;
   platform?: string; count?: number; previousHooks?: string[];
+  campaignTitle?: string; campaignGoal?: string;
   selectedPromptTitle?: string; selectedPrompt?: string;
   selectedPromptTitles?: string[]; selectedPromptContents?: string[];
   knowledgeSnippets?: string[];
@@ -106,6 +107,7 @@ export function buildGenerateHooksPrompt(input: {
       workflowStage: 'hook',
       previousGenerations: input.previousHooks ?? [],
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform },
+      campaign: (input.campaignTitle || input.campaignGoal) ? { title: input.campaignTitle, goal: input.campaignGoal } : undefined,
     },
     expectedJsonSchema: AI_SCHEMAS.hooks,
     billingOperation: 'hook_generation',
@@ -132,7 +134,7 @@ export function buildScoreHookPrompt(input: {
 export function buildGenerateCaptionPrompt(input: {
   workspaceId: string; workspaceName: string;
   ideaTitle: string; selectedHook?: string;
-  platform?: string; tone?: string;
+  platform?: string; tone?: string; campaignTitle?: string; campaignGoal?: string;
   selectedPromptTitle?: string; selectedPrompt?: string;
   selectedPromptTitles?: string[]; selectedPromptContents?: string[];
   knowledgeSnippets?: string[];
@@ -152,6 +154,7 @@ export function buildGenerateCaptionPrompt(input: {
       ...baseContext(input.workspaceId, input.workspaceName),
       workflowStage: 'caption',
       workspace: { id: input.workspaceId, name: input.workspaceName, platform: input.platform, tone: input.tone },
+      campaign: (input.campaignTitle || input.campaignGoal) ? { title: input.campaignTitle, goal: input.campaignGoal } : undefined,
     },
     expectedJsonSchema: AI_SCHEMAS.captions,
     billingOperation: 'caption_generation',
@@ -257,3 +260,6 @@ export function buildKnowledgeAnswerPrompt(input: {
     temperature: 0.3,
   };
 }
+
+
+

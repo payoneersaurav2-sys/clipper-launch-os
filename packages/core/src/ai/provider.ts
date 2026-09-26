@@ -2,7 +2,21 @@
 // CREATOR OS — AI PROVIDER LAYER
 // Provider-agnostic abstraction. Switching providers = 1 line.
 // Currently: OpenRouter (routes to Claude, GPT, Gemini, etc.)
+//
+// ⚠️  SERVER-ONLY MODULE ⚠️
+// This file makes direct HTTP requests to OpenRouter using an
+// API key supplied via process.env.OPENROUTER_API_KEY.
+// It MUST NOT be imported from any browser/frontend code.
+// Frontend AI calls go through: useAI → ai-api.ts → POST /api/ai
 // ============================================================
+
+// Runtime guard: throw immediately if accidentally loaded in a browser
+if (typeof window !== 'undefined') {
+  throw new Error(
+    '[Creator OS] packages/core/src/ai/provider.ts is a server-only module and ' +
+    'must not be imported in browser code. Use useAI() → /api/ai instead.'
+  );
+}
 
 import {
   IAIProvider,

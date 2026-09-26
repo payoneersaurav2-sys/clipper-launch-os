@@ -14,6 +14,7 @@ import { useEntitlements } from '@/hooks/useEntitlements';
 import { getKnowledgeLimitForTier, getPromptLimitForTier, getTierUpgradeMessage, isFeatureUnlockedForTier, PlanTier } from '@/lib/entitlements';
 import { UpgradePrompt } from '@/components/UpgradePrompt';
 import { recordFeedbackEvent } from '@/lib/feedbackEngine';
+import { trackEvent } from '@/lib/analytics';
 
 export function IdeaStudio() {
   const navigate = useNavigate();
@@ -124,6 +125,9 @@ export function IdeaStudio() {
           workspaceName: ws.name,
           niche: ws.niche ?? undefined,
           platform: ws.platform ?? undefined,
+          selectedPromptTitles: selectedPromptTitles,
+          selectedPromptContents: selectedPromptContents,
+          knowledgeSnippets: selectedKnowledgeSnippets,
         }),
         { category: 'idea', promptSummary: 'Generate viral ideas' }
       );
@@ -135,6 +139,7 @@ export function IdeaStudio() {
       await Promise.all(generatedIdeas.map((idea) => createIdea.mutateAsync({ title: idea.title!.trim(), context: idea.context?.trim() ?? '' })));
       setGenerationNotice(`${generatedIdeas.length} ideas added to your workspace.`);
       recordFeedbackEvent({ feature: 'idea_studio', event: 'ideas_generated', success: true });
+      trackEvent('ai_request_completed', { feature: 'idea_studio', count: generatedIdeas.length });
     } catch (generationError) {
       setGenerationNotice(generationError instanceof Error ? generationError.message : 'Could not generate ideas. Please retry.');
     }
@@ -450,3 +455,5 @@ export function IdeaStudio() {
     </div>
   );
 }
+
+

@@ -214,7 +214,12 @@ export default function CampaignDetailPage() {
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">
+                          {activeWorkspace?.name && (
+                <div className="text-[11px] uppercase tracking-wider text-primary mb-1 font-semibold flex items-center gap-2">
+                  <span>Current Client: {activeWorkspace.name}</span>
+                </div>
+              )}
+              <h2 className="text-[26px] font-semibold tracking-tight text-[#FAFAFA]">
               {campaign.title}
             </h2>
             <p className="mt-1 text-[13px] text-[#71717A]">
@@ -404,3 +409,4 @@ export default function CampaignDetailPage() {
     </div>
   );
 }
+

@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { useEntitlements } from '@/hooks/useEntitlements';
 import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 import { FAQSection, pricingFaqs } from '@/components/FAQSection';
+import { ReviewsSection } from '@/components/landing/ReviewsSection';
 
 const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
@@ -101,7 +102,7 @@ export default function PricingPage() {
               const isAnnual = billing === 'annual';
               const displayedPrice = isAnnual ? plan.annualPrice : plan.monthlyPrice;
               return (
-                <motion.article key={plan.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: reduceMotion ? 0 : 0.08 * index }} whileHover={reduceMotion ? undefined : { y: -5 }} className={`relative flex min-h-[500px] flex-col overflow-hidden rounded-[22px] border p-6 transition-shadow sm:p-7 ${plan.recommended ? 'border-primary/70 bg-[linear-gradient(145deg,rgba(124,58,237,0.08),#ffffff_42%,#ffffff)] shadow-[0_12px_45px_rgba(124,58,237,0.14)] dark:bg-[linear-gradient(145deg,rgba(124,58,237,0.16),#111111_36%,#111111)] dark:shadow-[0_12px_45px_rgba(124,58,237,0.12)]' : 'border-border bg-card shadow-[0_16px_42px_rgba(24,24,27,0.08)] hover:border-primary/40 dark:border-white/[0.08] dark:bg-[#111111] dark:shadow-[0_16px_42px_rgba(0,0,0,0.15)] dark:hover:border-white/[0.14]'}`}>
+                <motion.article key={plan.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: reduceMotion ? 0 : 0.08 * index }} whileHover={reduceMotion ? undefined : { y: -5 }} className={`relative flex min-h-[500px] flex-col overflow-hidden rounded-[22px] border p-6 transition-shadow sm:p-7 ${plan.id === 'agency' ? 'border-primary/40 bg-[linear-gradient(145deg,rgba(124,58,237,0.05),#ffffff_42%,#ffffff)] shadow-[0_12px_45px_rgba(124,58,237,0.2)] dark:bg-[linear-gradient(145deg,rgba(124,58,237,0.12),#111111_36%,#111111)] dark:shadow-[0_12px_45px_rgba(124,58,237,0.25)] dark:border-primary/50' : plan.recommended ? 'border-border bg-[linear-gradient(145deg,rgba(24,24,27,0.02),#ffffff_42%,#ffffff)] shadow-[0_12px_30px_rgba(24,24,27,0.06)] dark:bg-[linear-gradient(145deg,#161616_36%,#111111)] dark:shadow-[0_12px_30px_rgba(0,0,0,0.15)] dark:border-white/[0.14]' : 'border-border bg-card shadow-[0_12px_30px_rgba(24,24,27,0.04)] hover:border-border/80 dark:border-white/[0.06] dark:bg-[#0A0A0A] dark:shadow-[0_12px_30px_rgba(0,0,0,0.1)] dark:hover:border-white/[0.1]'}`}>
                   {plan.recommended && <><div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary to-transparent" /><span className="absolute right-6 top-6 inline-flex rounded-full border border-primary/40 bg-primary/15 px-2.5 py-1 text-[11px] font-semibold tracking-[0.12em] text-[#C4B5FD] sm:right-7 sm:top-7">MOST POPULAR</span></>}
                   <div className="pt-1">
                     <h2 className="text-[22px] font-semibold tracking-tight">{plan.name}</h2>
@@ -111,12 +112,37 @@ export default function PricingPage() {
                     <div className="flex items-end gap-2"><AnimatePresence mode="wait" initial={false}><motion.span key={`${plan.id}-${billing}`} initial={reduceMotion ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -6 }} transition={{ duration: 0.18 }} className="text-[45px] font-semibold leading-none tracking-[-0.06em]">{money.format(displayedPrice)}</motion.span></AnimatePresence><span className="mb-1 text-[14px] text-muted-foreground dark:text-[#A1A1AA]">/{isAnnual ? 'year' : 'month'}</span></div>
                     <div className="mt-3 min-h-[40px] text-[12px] leading-5 text-muted-foreground">{isAnnual ? <><span>Billed annually.</span><br /><span className="font-medium text-primary">Save {money.format(savings.amount)}/year &middot; {savings.percent}%</span></> : <><span>Billed monthly.</span><br /><span>Pay annually to save {money.format(savings.amount)}/year.</span></>}</div>
                   </div>
-                  <div className="mt-6">
-                  <ul className="space-y-4" aria-label={`${plan.name} capabilities`}>
-                    {plan.features.map((feature) => <li key={feature} className="flex gap-3 text-[14px] leading-5 text-foreground/80 dark:text-[#D4D4D8]"><Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" strokeWidth={2.4} aria-hidden="true" />{feature}</li>)}
-                  </ul>
+                  <div className="mt-6 flex flex-col gap-6">
+                    {plan.features.map((group) => (
+                      <div key={group.group}>
+                        <h4 className="mb-3 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground dark:text-[#71717A]">{group.group}</h4>
+                        <ul className="space-y-3" aria-label={`${group.group} capabilities`}>
+                          {group.items.map((feature) => {
+                            const isAgencyFeature = plan.id === 'agency' && (
+                              feature.includes('Multi-client') ||
+                              feature.includes('Client-scoped') ||
+                              feature.includes('Team roles') ||
+                              feature.includes('Dedicated Agency HQ')
+                            );
+                            return (
+                              <li key={feature} className="flex items-start gap-3 text-[13px] font-medium leading-tight text-foreground/90 dark:text-[#E4E4E7]">
+                                <Check className="mt-[2px] h-[14px] w-[14px] shrink-0 text-primary" strokeWidth={3} aria-hidden="true" />
+                                <span className="flex-1">
+                                  {feature}
+                                  {isAgencyFeature && (
+                                    <span className="ml-2 inline-flex items-center rounded border border-primary/25 bg-[linear-gradient(180deg,rgba(124,58,237,0.12),rgba(17,17,17,0.5))] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary shadow-sm">
+                                      AGENCY
+                                    </span>
+                                  )}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
-                  <button type="button" onClick={() => beginCheckout(checkoutUrl)} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-[#111111] ${plan.recommended ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.3)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.48)]' : 'border border-border bg-secondary text-foreground hover:border-primary/50 hover:bg-primary/15 dark:border-white/[0.1] dark:bg-white/[0.04] dark:text-white'}`}>{!user ? 'Sign in to start' : !whopId ? 'Connect Whop to start' : plan.cta}</button>
+                  <button type="button" onClick={() => beginCheckout(checkoutUrl)} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-[#111111] ${plan.id === 'agency' ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.4)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.6)]' : plan.recommended ? 'bg-foreground text-background hover:bg-foreground/90 dark:bg-white dark:text-black dark:hover:bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'border border-border bg-secondary text-foreground hover:border-primary/30 hover:bg-primary/10 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:hover:bg-primary/15'}`}>{!user ? 'Sign in to start' : !whopId ? 'Connect Whop to start' : plan.cta}</button>
                 </motion.article>
               );
             })
@@ -125,7 +151,7 @@ export default function PricingPage() {
         <p className="mx-auto mt-10 max-w-2xl text-center text-[12px] leading-relaxed text-muted-foreground">Secure checkout is handled by Whop. Annual billing is clearly shown before checkout.</p>
       </section>
 
-      {/* Pricing FAQ */}
+      <ReviewsSection />`n`n      {/* Pricing FAQ */}
       <FAQSection 
         title="Questions before you start?" 
         subtitle="Everything you need to know about access, billing, cancellation, and support." 
@@ -134,3 +160,6 @@ export default function PricingPage() {
     </div>
   );
 }
+
+
+

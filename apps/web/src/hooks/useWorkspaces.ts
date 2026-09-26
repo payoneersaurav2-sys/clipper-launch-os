@@ -38,10 +38,13 @@ export const useWorkspaces = () => {
   });
 
   const createWorkspace = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async (input: string | { name: string; agency_id?: string }) => {
+      const name = typeof input === 'string' ? input : input.name;
+      const agency_id = typeof input === 'string' ? undefined : input.agency_id;
+      
       const { data, error } = await supabase
         .from('workspaces')
-        .insert([{ name, owner_id: user?.id }])
+        .insert([{ name, owner_id: user?.id, agency_id }])
         .select()
         .single();
       

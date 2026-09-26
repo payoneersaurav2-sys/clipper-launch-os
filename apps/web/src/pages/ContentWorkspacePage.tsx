@@ -343,6 +343,8 @@ export default function ContentWorkspacePage() {
           workspaceName: workspace.name,
           ideaTitle: draft.title || clip.title,
           platform: draft.platform,
+          campaignTitle: campaign?.title,
+          campaignGoal: campaign?.goal,
         }),
         { category: "hook", promptSummary: `Hook: ${clip.title}` },
       );
@@ -367,6 +369,8 @@ export default function ContentWorkspacePage() {
           ideaTitle: draft.title || clip.title,
           selectedHook: draft.hook,
           platform: draft.platform,
+          campaignTitle: campaign?.title,
+          campaignGoal: campaign?.goal,
         }),
         { category: "caption", promptSummary: `Caption: ${clip.title}` },
       );
@@ -396,7 +400,12 @@ export default function ContentWorkspacePage() {
             <ArrowLeft className="h-3.5 w-3.5" />
             {campaign.title}
           </Link>
-          <h2 className="mt-2 text-[24px] font-semibold text-[#FAFAFA]">
+                      {activeWorkspace?.name && (
+              <div className="mt-2 text-[11px] uppercase tracking-wider text-primary font-semibold flex items-center gap-2">
+                <span>Current Client: {activeWorkspace.name}</span>
+              </div>
+            )}
+            <h2 className="mt-1 text-[24px] font-semibold text-[#FAFAFA]">
             {clip.title}
           </h2>
         </div>
@@ -660,3 +669,6 @@ export default function ContentWorkspacePage() {
     </div>
   );
 }
+
+
+

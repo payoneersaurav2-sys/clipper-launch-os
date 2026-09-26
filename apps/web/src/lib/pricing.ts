@@ -14,7 +14,7 @@ export type PricingPlan = {
   monthlyPrice: number;
   annualPrice: number;
   cta: string;
-  features: string[];
+  features: { group: string; items: string[] }[];
   recommended?: boolean;
   checkout: Record<BillingInterval, CheckoutSlot>;
 };
@@ -39,24 +39,28 @@ export const unresolvedCheckoutMapping = {
   reason: 'Duplicates source #4. It is deliberately unassigned; confirm the Whop plan before using it.',
 } as const;
 
-const baseFeatures = [
-  'Idea Studio and Hook Engine',
-  'Platform-ready Caption OS',
-  'Core Campaign OS and Clip Pipeline',
-];
+
+
+
+
+
 
 const creatorFeatures = [
-  ...baseFeatures,
-  '3 workspaces · 50 active campaigns',
-  '30-item content batches',
-  'Higher AI workflow capacity',
+  { group: 'WORKSPACE & KNOWLEDGE', items: ['3 Workspaces', 'Knowledge Vault'] },
+  { group: 'CAMPAIGNS & CONTENT', items: ['50 Active campaigns', '30-Item content batches'] },
+  { group: 'AI & CREATION', items: ['Idea Studio & Hook Engine', 'Platform-ready Caption OS', 'High AI workflow capacity'] },
 ];
 
 const proFeatures = [
-  ...baseFeatures,
-  '10 workspaces · 250 active campaigns',
-  '50-item content batches',
-  'Highest AI workflow capacity',
+  { group: 'WORKSPACE & KNOWLEDGE', items: ['10 Workspaces', 'Advanced Knowledge Vault'] },
+  { group: 'CAMPAIGNS & CONTENT', items: ['250 Active campaigns', '50-Item content batches'] },
+  { group: 'AI & CREATION', items: ['Idea Studio & Hook Engine', 'Platform-ready Caption OS', 'Highest AI workflow capacity'] },
+];
+
+const agencyFeatures = [
+  { group: 'AGENCY HQ', items: ['Multi-client environment isolation', 'Team roles & client access permissions'] },
+  { group: 'CLIENT OPERATIONS', items: ['10 Workspaces', '250 Active campaigns', 'Client-scoped Knowledge & AI context'] },
+  { group: 'AI & CREATION', items: ['Idea Studio & Hook Engine', 'Platform-ready Caption OS', 'Highest AI workflow capacity'] },
 ];
 
 export const pricingPlans: PricingPlan[] = [
@@ -66,13 +70,13 @@ export const pricingPlans: PricingPlan[] = [
     checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
   },
   {
-    id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Start Pro', recommended: true,
+    id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Go Pro', recommended: true,
     features: proFeatures,
     checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[1], billing: 'annual', sourceIndex: 2 } },
   },
   {
-    id: 'agency', name: 'Agency', positioning: 'Scale content across brands and clients.', monthlyPrice: 149, annualPrice: 1490, cta: 'Start Scaling',
-    features: proFeatures, // Agency has the same capacity limits as Pro in the current configuration
+    id: 'agency', name: 'Agency', positioning: 'For agencies managing multiple brands, clients, and content operations.', monthlyPrice: 199, annualPrice: 1990, cta: 'Start With Agency',
+    features: agencyFeatures,
     checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
   },
 ];
@@ -108,3 +112,10 @@ export function validatePricingConfiguration() {
   if (pricingPlans.length !== 3) warnings.push(`Expected exactly 3 pricing plans; found ${pricingPlans.length}.`);
   return warnings;
 }
+
+
+
+
+
+
+

@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FAQSection, pricingFaqs } from '@/components/FAQSection';
 import { ComparisonMatrix } from '@/components/ComparisonMatrix';
+import { AgencySection } from '@/components/landing/AgencySection';
 
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
@@ -92,6 +93,7 @@ export default function LandingPage() {
       <ReviewsSection />
 
       {/* Workflow Bento Grid */}
+      <AgencySection />
       <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-background relative z-10">
         <div className="max-w-6xl mx-auto">
           <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.45 }} transition={{ duration: 0.42 }} className="text-center mb-12 sm:mb-16 lg:mb-20">
@@ -174,7 +176,7 @@ export default function LandingPage() {
       <FAQSection />
 
       <FAQSection 
-        title="Pricing questions, answered." 
+        title="Questions before you start?" 
         subtitle="Everything you need to know about access, billing, cancellation, and support." 
         items={pricingFaqs} 
         className="pb-16 sm:pb-24 px-4 bg-background relative z-10 text-foreground"
@@ -192,3 +194,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+

@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { WHOP_REDIRECT_URI, getStoredWhopTransaction } from '@/lib/whopPkce';
 import { Loader2 } from 'lucide-react';
 import BrandMark from '@/components/BrandMark';
+import { trackEvent } from '@/lib/analytics';
 
 // Module-level flag — survives React Strict Mode's double-mount/unmount cycle.
 // Reset on every full page navigation (new module load).
@@ -71,6 +72,7 @@ export default function AuthCallback() {
               .single();
             if (insertError) throw insertError;
             profile = insertedProfile;
+            trackEvent('signup_completed');
           } else {
             const { data: updatedProfile, error: updateError } = await supabase
               .from('users')
@@ -128,6 +130,7 @@ export default function AuthCallback() {
               .single();
             if (insertError) throw insertError;
             profile = insertedProfile;
+            trackEvent('signup_completed');
           } else {
             const { data: updatedProfile, error: updateError } = await supabase
               .from('users')
@@ -223,3 +226,4 @@ export default function AuthCallback() {
     </div>
   );
 }
+

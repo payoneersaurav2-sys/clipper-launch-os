@@ -237,6 +237,19 @@ serve(async (request) => {
     // retried from server-side maintenance if needed.
   }
 
+  try {
+    if (isActive && (eventType.includes('valid') || eventType.includes('created') || eventType.includes('started'))) {
+      await admin.from('product_events').insert({
+        event_name: 'checkout_completed',
+        user_id: profileId,
+        properties_safe: { source: 'webhook', eventType, tier: selectedTier || 'unknown' }
+      });
+    }
+  } catch (metricsErr) {
+    console.error('Failed to record checkout_completed metric:', metricsErr instanceof Error ? metricsErr.message : metricsErr);
+  }
+
   console.log('Profile successfully updated:', updated);
   return new Response(JSON.stringify({ success: true }), { status: 200 });
 });
+

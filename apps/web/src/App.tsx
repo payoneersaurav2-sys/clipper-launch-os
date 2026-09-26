@@ -39,6 +39,16 @@ const FAQPage             = lazy(() => import('./pages/FAQPage'));
 const PricingPage         = lazy(() => import('./pages/PricingPage'));
 const CreditStorePage     = lazy(() => import('./pages/CreditStorePage'));
 const AdminReviewsPage    = lazy(() => import('./pages/AdminReviewsPage'));
+const AdminMetricsPage    = lazy(() => import('./pages/AdminMetricsPage'));
+
+// Agency
+const AgencyProtectedRoute = lazy(() => import('./components/AgencyProtectedRoute'));
+const AgencyLayout         = lazy(() => import('./layouts/AgencyLayout'));
+const AgencyOverview       = lazy(() => import('./pages/AgencyOverview'));
+const AgencyClients        = lazy(() => import('./pages/AgencyClients'));
+const AgencyTeam           = lazy(() => import('./pages/AgencyTeam'));
+const AgencyAcceptInvite   = lazy(() => import('./pages/AgencyAcceptInvite'));
+const BrandProfilePage     = lazy(() => import('./pages/BrandProfilePage'));
 
 const IdeaStudio     = lazy(() => import('./components/modules/IdeaStudio').then(m => ({ default: m.IdeaStudio })));
 const HookEngine     = lazy(() => import('./components/modules/HookEngine').then(m => ({ default: m.HookEngine })));
@@ -105,11 +115,23 @@ function CreatorOSRoutes() {
                 <Route path="ai-settings"     element={<AISettingsPage />} />
                 <Route path="settings"        element={<SettingsPage />} />
                 <Route path="admin/reviews"   element={<AdminReviewsPage />} />
+                <Route path="admin/metrics"   element={<AdminMetricsPage />} />
                 <Route path="credits"         element={<CreditStorePage />} />
                 <Route path="pricing"         element={<PricingPage />} />
                 <Route path="help"            element={<HelpCenterPage />} />
                 <Route path="changelog"       element={<ChangelogPage />} />
                 <Route path="*"               element={<NotFoundPage />} />
+              </Route>
+            </Route>
+
+            {/* Agency */}
+            <Route path="/agency/accept-invite" element={<AgencyAcceptInvite />} />
+            <Route element={<AgencyProtectedRoute />}>
+              <Route path="/agency" element={<AgencyLayout />}>
+                <Route index element={<AgencyOverview />} />
+                <Route path="clients" element={<AgencyClients />} />
+                <Route path="team" element={<AgencyTeam />} />
+                <Route path="profile" element={<BrandProfilePage />} />
               </Route>
             </Route>
 
@@ -124,3 +146,6 @@ function CreatorOSRoutes() {
 export default function App() {
   return <CreatorOSRoutes />;
 }
+
+
+

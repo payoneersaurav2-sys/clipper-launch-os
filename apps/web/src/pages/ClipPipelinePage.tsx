@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useClips, useCampaigns, ClipStatus, Clip } from '@/hooks/useCampaigns';
@@ -151,6 +152,7 @@ export default function ClipPipelinePage() {
   const { data: campaigns } = useCampaigns();
   const [selectedCampaign, setSelectedCampaign] = useState<string | undefined>(() => (location.state as { campaignId?: string } | null)?.campaignId);
   const { data: clips, isLoading, updateClip } = useClips(selectedCampaign);
+  const { activeWorkspace } = useWorkspaceStore();
   const [showAdd, setShowAdd] = useState(false);
   const [moveError, setMoveError] = useState('');
 
@@ -172,7 +174,12 @@ export default function ClipPipelinePage() {
     <div className="os-page animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Clip Pipeline</h2>
+                      {activeWorkspace?.name && (
+              <div className="text-[11px] uppercase tracking-wider text-primary mb-1 font-semibold flex items-center gap-2">
+                <span>Current Client: {activeWorkspace.name}</span>
+              </div>
+            )}
+            <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">Clip Pipeline</h2>
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">Kanban board from idea to published and analyzed.</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
@@ -243,3 +250,4 @@ export default function ClipPipelinePage() {
     </div>
   );
 }
+

@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCampaigns } from '@/hooks/useCampaigns';
 import { useClipIdeas } from '@/hooks/useClipIdeas';
+import { useWorkspaceKnowledge } from '@/hooks/useWorkflowResources';
 import { useHistoryStore } from '@/stores/useHistoryStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
+import { trackEvent } from '@/lib/analytics';
 import { Button } from '@/components/ui/button';
 import { 
   Sparkles, Rocket, Lightbulb, CheckCircle2, Circle,
@@ -51,20 +55,54 @@ const STATUS_COLORS: Record<string, string> = {
 export default function DashboardHome() {
   const { data: campaigns } = useCampaigns();
   const { data: ideas }     = useClipIdeas();
+  const { data: knowledge } = useWorkspaceKnowledge();
   const recentGens          = useHistoryStore(s => s.getRecent(4));
   const genCount            = useHistoryStore(s => s.records.length);
+  const { subscriptionTier } = useAuthStore();
 
   const [completed, setCompleted] = useState<number[]>([]);
   const [todayDate] = useState(() => new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }));
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => localStorage.getItem('hide_onboarding') !== 'true'
+  );
 
   const activeCampaigns = campaigns?.filter(c => !['completed','archived'].includes(c.status)).slice(0, 3);
   const recentIdeas     = ideas?.slice(0, 4);
   const completedCount  = completed.length;
   const missionPct      = Math.round((completedCount / MISSIONS.length) * 100);
 
+  // New users = no campaigns and no AI usage yet
+  const isNewUser = !genCount && !(activeCampaigns?.length);
+
+  useEffect(() => {
+    if (!sessionStorage.getItem('cos_login_tracked')) {
+      trackEvent('login_completed', { path: '/dashboard' });
+      sessionStorage.setItem('cos_login_tracked', 'true');
+    }
+  }, []);
+
+  const handleDismissOnboarding = () => {
+    setShowOnboarding(false);
+    localStorage.setItem('hide_onboarding', 'true');
+    trackEvent('onboarding_skipped');
+  };
+
   return (
+
     <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 lg:space-y-10 pb-16 sm:pb-20 animate-in fade-in slide-in-from-bottom-6 duration-500 font-sans text-[#FAFAFA]">
       <h1 className="sr-only">CreatorOS Dashboard</h1>
+
+      {/* Onboarding checklist — only for brand-new users who haven't dismissed it */}
+      {showOnboarding && isNewUser && (
+        <OnboardingChecklist
+          hasIdeas={Boolean(recentIdeas?.length)}
+          hasKnowledge={Boolean(knowledge?.length)}
+          hasAI={genCount > 0}
+          hasCampaign={Boolean(activeCampaigns?.length)}
+          onDismiss={handleDismissOnboarding}
+          isAgency={subscriptionTier === 'agency'}
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -253,3 +291,5 @@ export default function DashboardHome() {
     </div>
   );
 }
+
+

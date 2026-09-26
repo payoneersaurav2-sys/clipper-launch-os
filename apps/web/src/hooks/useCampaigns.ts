@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { trackEvent } from '@/lib/analytics';
 
 export type CampaignStatus =
   | 'researching' | 'planning' | 'recording'
@@ -102,7 +103,10 @@ export function useCampaigns() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['campaigns', wsId] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['campaigns', wsId] });
+      trackEvent('campaign_created', { platform: data.platform || 'none' }, wsId);
+    },
   });
 
   const updateCampaign = useMutation({
@@ -198,7 +202,10 @@ export function useClips(campaignId?: string) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['clips', wsId] });
+      trackEvent('content_created', { count: 1, platform: data.platform || 'none' }, wsId);
+    },
   });
 
   const createClips = useMutation({
@@ -211,7 +218,10 @@ export function useClips(campaignId?: string) {
       if (error) throw error;
       return data ?? [];
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['clips', wsId] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['clips', wsId] });
+      trackEvent('content_created', { count: data.length }, wsId);
+    },
   });
 
   const updateClip = useMutation({
@@ -268,3 +278,5 @@ export function useAnalyticsStats() {
     enabled: !!wsId,
   });
 }
+
+

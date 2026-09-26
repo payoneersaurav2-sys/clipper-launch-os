@@ -36,9 +36,10 @@ Creator OS (repository name: `clipper-launch-os`) is a premium creator workflow 
 
 ## Known constraints at takeover
 
-- OpenRouter requests currently run from the browser using `VITE_OPENROUTER_API_KEY`; this exposes a key to clients. The server-side `ai-router` exists but is not used by the web client and has correctness issues documented in `docs/ai.md`.
+- OpenRouter requests run **server-side only** via `api/ai.ts` (Vercel Edge). The browser sends a Supabase JWT to `/api/ai`; the key is `OPENROUTER_API_KEY` set as a server-only Vercel environment variable. `VITE_OPENROUTER_API_KEY` does not exist and is not needed. The legacy `supabase/functions/ai-router` is NOT used by the web client.
 - Prompt Library is a stub. Analytics has mocked sparklines/trends. Campaign edit is a no-op. Clip Pipeline supports manual stage moves, not drag-and-drop or source-clip extraction.
 
 ## Documentation
 
 See `README.md` for the inherited overview. Current evidence-based takeover documentation is in `docs/`: architecture, product, design system, authentication, database, AI, Whop, Clip Pipeline, and the master completion backlog in `docs/EXECUTION-PLAN.md`.
+

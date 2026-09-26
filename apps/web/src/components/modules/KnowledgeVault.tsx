@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Session } from '@supabase/supabase-js';
 import { supabase, supabaseUrl } from '@/lib/supabase';
+import { trackEvent } from '@/lib/analytics';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { buildKnowledgeAnswerPrompt } from '@/lib/ai-services';
@@ -118,7 +119,10 @@ function useKnowledge(enabled = true) {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['knowledge', wsId] }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['knowledge', wsId] });
+      trackEvent('knowledge_created', { source_type: data.source_type || 'text' }, wsId);
+    },
   });
 
   const deleteItem = useMutation({
@@ -584,3 +588,6 @@ export function KnowledgeVault() {
     </div>
   );
 }
+
+
+

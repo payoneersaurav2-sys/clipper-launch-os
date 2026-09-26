@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { BrandedDateField } from "@/components/BrandedDateControls";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { Link } from "react-router-dom";
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import {
   Plus,
   Loader2,
@@ -386,9 +387,15 @@ function CampaignModal({
 function CampaignCard({
   campaign,
   onEdit,
+  selectedPromptTitles,
+  selectedPromptContents,
+  selectedKnowledgeSnippets,
 }: {
   campaign: Campaign;
   onEdit: (campaign: Campaign) => void;
+  selectedPromptTitles?: string[];
+  selectedPromptContents?: string[];
+  selectedKnowledgeSnippets?: string[];
 }) {
   const { updateCampaign, deleteCampaign, duplicateCampaign } = useCampaigns();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -478,6 +485,7 @@ function CampaignCard({
 
       <Link
         to={`/dashboard/campaign-os/${campaign.id}`}
+        state={{ selectedPromptTitles, selectedPromptContents, selectedKnowledgeSnippets }}
         className="block text-[15px] font-semibold text-[#FAFAFA] tracking-tight mb-1.5 line-clamp-1 hover:text-primary transition-colors"
       >
         {campaign.title}
@@ -532,6 +540,7 @@ function CampaignCard({
 // ---- Main Page ----------------------------------------------
 export default function CampaignOSPage() {
   const { data: campaigns, isLoading } = useCampaigns();
+  const { activeWorkspace } = useWorkspaceStore();
   const { data: prompts } = useWorkspacePrompts();
   const { data: knowledge } = useWorkspaceKnowledge();
   const { data: entitlements } = useEntitlements();
@@ -548,6 +557,7 @@ export default function CampaignOSPage() {
   const [filter, setFilter] = useState<CampaignStatus | "all">("all");
   const [selectedPromptIds, setSelectedPromptIds] = useState<string[]>([]);
   const [selectedPromptTitles, setSelectedPromptTitles] = useState<string[]>([]);
+  const [selectedPromptContents, setSelectedPromptContents] = useState<string[]>([]);
   const [selectedKnowledgeSnippets, setSelectedKnowledgeSnippets] = useState<string[]>([]);
   const [allPromptsSelected, setAllPromptsSelected] = useState(false);
   const [allKnowledgeSelected, setAllKnowledgeSelected] = useState(false);
@@ -603,7 +613,12 @@ export default function CampaignOSPage() {
       )}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 justify-between">
         <div>
-          <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">
+                      {activeWorkspace?.name && (
+              <div className="text-[11px] uppercase tracking-wider text-primary mb-1 font-semibold flex items-center gap-2">
+                <span>Current Client: {activeWorkspace.name}</span>
+              </div>
+            )}
+            <h2 className="text-[22px] sm:text-[26px] font-semibold tracking-tight text-[#FAFAFA]">
             Campaign OS
           </h2>
           <p className="text-[13px] sm:text-[14px] text-[#71717A] mt-1">
@@ -653,6 +668,7 @@ export default function CampaignOSPage() {
                   onClick={() => {
                     setSelectedPromptIds([]);
                     setSelectedPromptTitles([]);
+                      setSelectedPromptContents([]);
                     setAllPromptsSelected(false);
                     setPromptOpen(false);
                   }}
@@ -668,9 +684,11 @@ export default function CampaignOSPage() {
                     if (nextAll) {
                       setSelectedPromptIds(promptList.map((p: any) => p.id));
                       setSelectedPromptTitles(promptList.map((p: any) => p.title));
+                      setSelectedPromptContents(promptList.map((p: any) => p.content));
                     } else {
                       setSelectedPromptIds([]);
                       setSelectedPromptTitles([]);
+                      setSelectedPromptContents([]);
                     }
                     setPromptOpen(false);
                   }}
@@ -692,6 +710,7 @@ export default function CampaignOSPage() {
                           setSelectedPromptIds((prev) => {
                             const next = isChecked ? [...new Set([...prev, p.id])] : prev.filter((id) => id !== p.id);
                             setSelectedPromptTitles(promptList.filter((item: any) => next.includes(item.id)).map((item: any) => item.title));
+                            setSelectedPromptContents(promptList.filter((item: any) => next.includes(item.id)).map((item: any) => item.content));
                             return next;
                           });
                           setPromptOpen(false);
@@ -837,6 +856,9 @@ export default function CampaignOSPage() {
                 key={c.id}
                 campaign={c}
                 onEdit={setEditingCampaign}
+                selectedPromptTitles={selectedPromptTitles}
+                selectedPromptContents={selectedPromptContents}
+                selectedKnowledgeSnippets={selectedKnowledgeSnippets}
               />
             ))}
           </AnimatePresence>
@@ -855,3 +877,6 @@ export default function CampaignOSPage() {
     </div>
   );
 }
+
+
+

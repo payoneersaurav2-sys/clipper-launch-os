@@ -5,6 +5,7 @@ export interface Workspace {
   id: string;
   name: string;
   owner_id: string;
+  agency_id?: string | null;
   niche?: string | null;
   platform?: string | null;
 }

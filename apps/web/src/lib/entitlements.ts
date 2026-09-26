@@ -121,7 +121,7 @@ export const planEntitlements: Record<PlanTier, { capabilities: PlanCapabilities
       prompt_library: true,
     },
     limits: {
-      workspaces: 10,
+      workspaces: 50,
       active_campaigns: 250,
       ai_generations_per_month: 3000,
       content_batch_size: 50,

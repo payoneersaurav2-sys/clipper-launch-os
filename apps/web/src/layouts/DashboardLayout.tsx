@@ -54,6 +54,7 @@ const navGroups = [
       { name: 'Upgrade Plans', href: '/dashboard/pricing', icon: ArrowUpRight },
       { name: 'Settings',    href: '/dashboard/settings',    icon: UserCircle },
       { name: 'Review Moderation', href: '/dashboard/admin/reviews', icon: Shield },
+      { name: 'Admin Metrics', href: '/dashboard/admin/metrics', icon: Shield },
       { name: 'Help',        href: '/dashboard/help',        icon: HelpCircle },
       { name: 'Changelog',   href: '/dashboard/changelog',   icon: Tag },
     ],
@@ -93,7 +94,18 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
 
       {/* Nav groups */}
       <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-5">
-        {navGroups.map(group => { const filteredItems = group.items.filter(item => item.name !== 'Review Moderation' || isAdmin); if (filteredItems.length === 0) return null; return (          <div key={group.label}>
+        {navGroups.map(group => { 
+          let filteredItems = group.items.filter(item =>
+            (item.name !== 'Review Moderation' && item.name !== 'Admin Metrics') || isAdmin
+          );
+          if (group.label === 'System' && useAuthStore.getState().subscriptionTier === 'agency') {
+            filteredItems = [
+              { name: 'Agency HQ', href: '/agency', icon: Shield },
+              ...filteredItems
+            ];
+          }
+          if (filteredItems.length === 0) return null; 
+          return (          <div key={group.label}>
             {!collapsed && (
               <p className="text-[10px] font-semibold text-[#71717A] uppercase tracking-widest px-2 mb-1.5">
                 {group.label}
@@ -341,3 +353,5 @@ export default function DashboardLayout() {
     </div>
   );
 }
+
+
