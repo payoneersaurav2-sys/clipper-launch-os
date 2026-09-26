@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { FAQSection, pricingFaqs } from '@/components/FAQSection';
 import { ComparisonMatrix } from '@/components/ComparisonMatrix';
 import { AgencySection } from '@/components/landing/AgencySection';
+import { PricingPreview } from '@/components/landing/PricingPreview';
 
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
@@ -88,6 +89,9 @@ export default function LandingPage() {
 
         <HeroTrustStrip review={heroReview} />
       </section>
+
+      {/* Compact Pricing Preview */}
+      <PricingPreview />
 
       {/* Early Social Proof */}
       <ReviewsSection />
