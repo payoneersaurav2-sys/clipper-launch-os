@@ -26,7 +26,7 @@ export type PricingPlan = {
 const suppliedCheckoutUrls = [
   'https://whop.com/checkout/plan_aebXspbqY5fMR',
   'https://whop.com/checkout/plan_FAWP5M3r4he3u',
-  'https://whop.com/checkout/plan_JBRDyCvvE29lS',
+  'https://whop.com/checkout/plan_cpIr2MLFacoNX',
   'https://whop.com/checkout/plan_qDlONxyQFdDMf',
   'https://whop.com/checkout/plan_qDlONxyQFdDMf',
   'https://whop.com/checkout/plan_DqQz98z72Us8l',
