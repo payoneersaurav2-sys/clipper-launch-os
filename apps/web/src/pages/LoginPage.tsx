@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import BrandMark from '@/components/BrandMark';
 import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>(() => searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [success, setSuccess] = useState('');
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
@@ -48,7 +50,11 @@ export default function LoginPage() {
 
     if (mode === 'signup') {
       // 1. Create the Supabase auth user
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: { captchaToken: captchaToken || undefined }
+      });
       if (signUpErr) { setErr(signUpErr.message); setLoading(false); return; }
 
       // 2. Upsert into public.users with active membership
@@ -60,7 +66,11 @@ export default function LoginPage() {
       }
 
       // 3. Auto sign-in immediately (works when email confirm is disabled)
-      const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+        options: { captchaToken: captchaToken || undefined }
+      });
       if (signInErr) {
         // Email confirmation required — tell user
         setSuccess('Account created! Check your inbox and confirm your email, then sign in.');
@@ -75,7 +85,11 @@ export default function LoginPage() {
     }
 
     // Login
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password,
+      options: { captchaToken: captchaToken || undefined }
+    });
     if (error) {
       setErr(error.message);
       setLoading(false);
@@ -146,7 +160,18 @@ export default function LoginPage() {
           />
           Remember me
         </label>
-        <Button type="submit" disabled={loading || !email || !password}
+        
+        {import.meta.env.VITE_TURNSTILE_SITE_KEY && (
+          <div className="flex justify-center mt-2 overflow-hidden">
+            <Turnstile 
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={(token) => setCaptchaToken(token)}
+              options={{ theme: 'dark' }}
+            />
+          </div>
+        )}
+
+        <Button type="submit" disabled={loading || !email || !password || (!!import.meta.env.VITE_TURNSTILE_SITE_KEY && !captchaToken)}
           className="w-full h-11 rounded-[12px] bg-primary hover:bg-primary/90 text-white font-medium text-[14px] shadow-[0_0_15px_rgba(124,58,237,0.3)] transition-all mt-1">
           {loading
             ? <Loader2 className="h-4 w-4 animate-spin" />

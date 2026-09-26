@@ -13,6 +13,7 @@
   "dependencies": {
     "@clipper/core": "*",
     "@clipper/ui": "*",
+    "@marsidev/react-turnstile": "^1.6.1",
     "@radix-ui/react-slot": "^1.0.2",
     "@react-oauth/google": "^0.13.5",
     "@supabase/supabase-js": "^2.39.7",
