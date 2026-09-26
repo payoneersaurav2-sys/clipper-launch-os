@@ -11,6 +11,7 @@ import { FAQSection, pricingFaqs } from '@/components/FAQSection';
 import { ComparisonMatrix } from '@/components/ComparisonMatrix';
 import { AgencySection } from '@/components/landing/AgencySection';
 import { PricingPreview } from '@/components/landing/PricingPreview';
+import { SocialProofStrip } from '@/components/landing/SocialProofStrip';
 
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
@@ -89,6 +90,9 @@ export default function LandingPage() {
 
         <HeroTrustStrip review={heroReview} />
       </section>
+
+      {/* Verified Social Proof */}
+      <SocialProofStrip />
 
       {/* Compact Pricing Preview */}
       <PricingPreview />
