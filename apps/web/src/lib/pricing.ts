@@ -20,16 +20,14 @@ export type PricingPlan = {
 };
 
 // This is the only checkout-URL configuration in Creator OS.
-// Creator and Agency follow the supplied order. The owner verified that Pro's
-// two Whop plans are the exception: source #6 is monthly and source #2 annual.
-// Source #5 deliberately remains unassigned because it duplicates source #4.
+// All plans follow the supplied sequential order from Whop.
 const suppliedCheckoutUrls = [
   'https://whop.com/checkout/plan_aebXspbqY5fMR',
   'https://whop.com/checkout/plan_FAWP5M3r4he3u',
+  'https://whop.com/checkout/plan_JBRDyCvvE29lS',
+  'https://whop.com/checkout/plan_qDlONxyQFdDMf',
+  'https://whop.com/checkout/plan_qDlONxyQFdDMf',
   'https://whop.com/checkout/plan_cpIr2MLFacoNX',
-  'https://whop.com/checkout/plan_qDlONxyQFdDMf',
-  'https://whop.com/checkout/plan_qDlONxyQFdDMf',
-  'https://whop.com/checkout/plan_DqQz98z72Us8l',
   'https://whop.com/checkout/plan_dPUk9DgQILIsi',
 ] as const;
 
@@ -67,17 +65,17 @@ export const pricingPlans: PricingPlan[] = [
   {
     id: 'creator', name: 'Creator', positioning: 'Build your content engine.', monthlyPrice: 29, annualPrice: 290, cta: 'Start Creating',
     features: creatorFeatures,
-    checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[0], billing: 'monthly', sourceIndex: 1 }, annual: { url: suppliedCheckoutUrls[1], billing: 'annual', sourceIndex: 2 } },
   },
   {
-    id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 490, cta: 'Go Pro', recommended: true,
+    id: 'pro', name: 'Pro', positioning: 'Run your complete creator workflow.', monthlyPrice: 49, annualPrice: 499, cta: 'Go Pro', recommended: true,
     features: proFeatures,
-    checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[1], billing: 'annual', sourceIndex: 2 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[3], billing: 'annual', sourceIndex: 4 } },
   },
   {
     id: 'agency', name: 'Agency', positioning: 'For agencies managing multiple brands, clients, and content operations.', monthlyPrice: 199, annualPrice: 1990, cta: 'Start With Agency',
     features: agencyFeatures,
-    checkout: { monthly: { url: suppliedCheckoutUrls[2], billing: 'monthly', sourceIndex: 3 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
+    checkout: { monthly: { url: suppliedCheckoutUrls[5], billing: 'monthly', sourceIndex: 6 }, annual: { url: suppliedCheckoutUrls[6], billing: 'annual', sourceIndex: 7 } },
   },
 ];
 
