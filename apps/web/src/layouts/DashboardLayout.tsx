@@ -98,9 +98,9 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
           let filteredItems = group.items.filter(item =>
             (item.name !== 'Review Moderation' && item.name !== 'Admin Metrics') || isAdmin
           );
-          if (group.label === 'System' && useAuthStore.getState().subscriptionTier === 'agency') {
+          if (group.label === 'System') {
             filteredItems = [
-              { name: 'Agency HQ', href: '/agency', icon: Shield },
+              { name: 'Agency HQ', href: '/agency', icon: Shield, badge: useAuthStore.getState().subscriptionTier !== 'agency' ? 'PRO' : undefined } as any,
               ...filteredItems
             ];
           }
@@ -129,6 +129,7 @@ function SidebarContent({ collapsed, onNavigate }: { collapsed: boolean; onNavig
                     <item.icon className={cn('h-4 w-4 shrink-0 transition-transform group-hover:scale-105', active ? 'text-primary' : 'text-[#71717A]')} />
                     {!collapsed && <span className="tracking-tight">{item.name}</span>}
                     {!collapsed && active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />}
+                    {!collapsed && (item as any).badge && <span className="ml-auto rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase">{(item as any).badge}</span>}
                   </Link>
                 );
               })}

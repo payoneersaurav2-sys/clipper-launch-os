@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Users, LogOut, Menu, X, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
+import { useAgency } from '@/hooks/useAgency';
 
 
 import Wordmark from '@/components/Wordmark';
@@ -10,7 +13,11 @@ import { ClientSwitcher } from '@/components/ClientSwitcher';
 
 export default function AgencyLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { subscriptionTier } = useAuthStore();
+  const { data: agency, isLoading } = useAgency();
+  const isAgency = subscriptionTier === 'agency' || !!agency;
   const location = useLocation();
+  if (isLoading) return null;
   
   
   
@@ -62,14 +69,14 @@ export default function AgencyLayout() {
 
         {/* Client Switcher */}
         <div className="p-4 border-b border-white/5 shrink-0">
-          <ClientSwitcher />
+          {isAgency && <ClientSwitcher />}
         </div>
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-6">
           <div className="flex flex-col gap-1">
             <span className="px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">Agency</span>
-            {navItems.map((item) => {
+            {isAgency && navItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
                 <Link
@@ -91,7 +98,7 @@ export default function AgencyLayout() {
 
           <div className="flex flex-col gap-1">
             <span className="px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mb-1">Client Workspace</span>
-            {clientItems.map((item) => {
+            {isAgency && clientItems.map((item) => {
               const isActive = location.pathname.startsWith(item.href);
               return (
                 <Link
@@ -123,8 +130,16 @@ export default function AgencyLayout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 bg-[#080808] pt-16 lg:pt-0">
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
+          {isAgency ? <Outlet /> : (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-2xl mx-auto w-full">
+              <UpgradePrompt 
+                feature="Agency HQ" 
+                requiredPlan="agency"
+                description="Upgrade to the Agency tier to unlock white-labeling, client workspaces, multi-brand AI context switching, and team management."
+              />
+            </div>
+          )}
         </main>
       </div>
 
