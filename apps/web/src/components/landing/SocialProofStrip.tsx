@@ -5,23 +5,26 @@ import { Star } from 'lucide-react';
 
 export function SocialProofStrip() {
   const { data: reviews } = useApprovedReviews();
-  const { data: stats } = usePublicStats();
+  const { data: stats, isLoading: statsLoading } = usePublicStats();
   const reduceMotion = useReducedMotion();
 
-  // Wait for data
-  if (!reviews || !stats) return null;
+  // If reviews haven't loaded yet, or stats are loading, we can show a placeholder or just wait.
+  // But if stats errors out (e.g., RPC not deployed), stats will be undefined but isLoading will be false.
+  
+  // We need at least reviews to proceed gracefully if stats fails.
+  if (!reviews) return null;
 
-  const totalUsers = stats.total_users;
+  // Fallback to reviews count if stats RPC fails (e.g. if the user hasn't deployed the migration to prod yet)
+  const totalUsers = stats?.total_users || reviews.length || 0;
   const totalReviews = reviews.length;
+  
   const averageRating = totalReviews > 0 
     ? reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews 
-    : 5; // fallback to 5 if no reviews but users exist
+    : 5; 
   
-  // Format logically.
   const displayCount = totalUsers > 10 ? '10+' : totalUsers > 4 ? '4+' : totalUsers.toString();
   const displayRating = averageRating % 1 === 0 ? averageRating.toString() + '.0' : averageRating.toFixed(1);
 
-  // If no users, don't show
   if (totalUsers === 0) return null;
 
   return (
