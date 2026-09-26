@@ -23,7 +23,7 @@ export type PricingPlan = {
 // All plans follow the supplied sequential order from Whop.
 const suppliedCheckoutUrls = [
   'https://whop.com/checkout/plan_aebXspbqY5fMR',
-  'https://whop.com/checkout/plan_FAWP5M3r4he3u',
+  'https://whop.com/checkout/plan_2eRxyfJ19G1eu',
   'https://whop.com/checkout/plan_JBRDyCvvE29lS',
   'https://whop.com/checkout/plan_qDlONxyQFdDMf',
   'https://whop.com/checkout/plan_qDlONxyQFdDMf',
