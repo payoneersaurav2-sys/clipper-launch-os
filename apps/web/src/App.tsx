@@ -37,6 +37,7 @@ const AIDisclaimerPage    = lazy(() => import('./pages/legal/AIDisclaimerPage'))
 const DMCAPage            = lazy(() => import('./pages/legal/DMCAPage'));
 const FAQPage             = lazy(() => import('./pages/FAQPage'));
 const PricingPage         = lazy(() => import('./pages/PricingPage'));
+const CheckoutCompletePage = lazy(() => import('./pages/CheckoutCompletePage'));
 const CreditStorePage     = lazy(() => import('./pages/CreditStorePage'));
 const AdminReviewsPage    = lazy(() => import('./pages/AdminReviewsPage'));
 const AdminMetricsPage    = lazy(() => import('./pages/AdminMetricsPage'));
@@ -75,6 +76,7 @@ function CreatorOSRoutes() {
             <Route path="/"          element={<LandingLayout><LandingPage /></LandingLayout>} />
             <Route path="/faq"       element={<LandingLayout><FAQPage /></LandingLayout>} />
             <Route path="/pricing"   element={<LandingLayout><PricingPage /></LandingLayout>} />
+            <Route path="/checkout/complete" element={<CheckoutCompletePage />} />
             <Route path="/terms"     element={<LandingLayout><TermsPage /></LandingLayout>} />
             <Route path="/privacy"   element={<LandingLayout><PrivacyPage /></LandingLayout>} />
             <Route path="/acceptable-use" element={<LandingLayout><AcceptableUsePage /></LandingLayout>} />
