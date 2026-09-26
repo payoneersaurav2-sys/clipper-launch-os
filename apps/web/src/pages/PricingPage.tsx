@@ -15,7 +15,7 @@ export default function PricingPage() {
   const reduceMotion = useReducedMotion();
   const { subscriptionTier } = useAuthStore();
   const { data: entitlements } = useEntitlements();
-  const { beginCheckout, user, whopId } = useCheckout();
+  const { beginCheckout, user } = useCheckout();
 
   // Resolve user tier from entitlements (preferred) or stored subscriptionTier
   const tierOrder: Record<string, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
@@ -113,7 +113,7 @@ export default function PricingPage() {
                       </div>
                     ))}
                   </div>
-                  <button type="button" onClick={() => beginCheckout(checkoutUrl)} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-[#111111] ${plan.id === 'agency' ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.4)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.6)]' : plan.recommended ? 'bg-foreground text-background hover:bg-foreground/90 dark:bg-white dark:text-black dark:hover:bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'border border-border bg-secondary text-foreground hover:border-primary/30 hover:bg-primary/10 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:hover:bg-primary/15'}`}>{!user ? 'Sign in to start' : !whopId ? 'Connect Whop to start' : plan.cta}</button>
+                  <button type="button" onClick={() => beginCheckout(checkoutUrl)} aria-label={`${plan.cta}: ${plan.name} ${billing} plan`} className={`mt-auto inline-flex h-12 w-full items-center justify-center rounded-[12px] px-5 text-[14px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:focus-visible:ring-offset-[#111111] ${plan.id === 'agency' ? 'bg-primary text-white shadow-[0_0_22px_rgba(124,58,237,0.4)] hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(124,58,237,0.6)]' : plan.recommended ? 'bg-foreground text-background hover:bg-foreground/90 dark:bg-white dark:text-black dark:hover:bg-white/90 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : 'border border-border bg-secondary text-foreground hover:border-primary/30 hover:bg-primary/10 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-white dark:hover:bg-primary/15'}`}>{!user ? 'Sign in to start' : plan.cta}</button>
                 </motion.article>
               );
             })

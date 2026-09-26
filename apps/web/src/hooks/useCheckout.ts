@@ -1,11 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { buildWhopOAuthUrl } from '@/lib/whopPkce';
 
 export function useCheckout() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const whopId = user?.user_metadata?.whop_id;
 
   const checkoutWithPassthrough = (checkoutUrl: string) => {
     if (!user?.id) return checkoutUrl;
@@ -21,18 +19,12 @@ export function useCheckout() {
 
   const beginCheckout = async (checkoutUrl: string) => {
     if (!user) { navigate('/login'); return; }
-    if (!whopId) {
-      try {
-        const whopUrl = await buildWhopOAuthUrl('link_account');
-        window.location.assign(whopUrl);
-      } catch {
-        navigate('/dashboard/credits');
-      }
-      return;
-    }
+    
+    // We no longer require Whop OAuth to start a checkout! 
+    // The passthrough parameter securely links the user to the purchase on the webhook side.
     const signedCheckoutUrl = checkoutWithPassthrough(checkoutUrl);
     window.location.assign(signedCheckoutUrl);
   };
 
-  return { beginCheckout, user, whopId };
+  return { beginCheckout, user };
 }
