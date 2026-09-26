@@ -1,16 +1,16 @@
-import { useState } from 'react';
+
 import { Link } from 'react-router-dom';
-import { Check, Link2, Sparkles } from 'lucide-react';
+import { Check, Sparkles } from 'lucide-react';
 import { CREDIT_PACKS } from '@/lib/credits';
 import { useCredits } from '@/hooks/useCredits';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { buildWhopOAuthUrl } from '@/lib/whopPkce';
+
 
 export default function CreditStorePage() {
   const { data: balance, isLoading } = useCredits();
-  const { whopId, user } = useAuthStore();
-  const [linkingWhop, setLinkingWhop] = useState(false);
+  const { user } = useAuthStore();
+  
 
   const checkoutWithPassthrough = (checkoutUrl: string) => {
     if (!user?.id) return checkoutUrl;
@@ -24,11 +24,7 @@ export default function CreditStorePage() {
     }
   };
 
-  const connectWhop = async () => {
-    setLinkingWhop(true);
-    try { window.location.assign(await buildWhopOAuthUrl('link_account')); }
-    catch { setLinkingWhop(false); }
-  };
+  
 
   return (
     <div className="mx-auto max-w-6xl space-y-8 animate-in fade-in duration-500">
@@ -49,12 +45,7 @@ export default function CreditStorePage() {
           <div className="max-w-xl"><p className="text-[11px] font-semibold uppercase tracking-[.16em] text-primary">Your next step</p><h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Unlock your full creator workflow.</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">Your free credits are designed to help you experience CreatorOS. Upgrade to Creator for a recurring monthly allowance and more room to build.</p><Link to="/dashboard/pricing" className="mt-5 inline-flex h-11 items-center justify-center rounded-[11px] bg-primary px-5 text-sm font-semibold text-white shadow-[0_0_22px_rgba(124,58,237,.25)] transition hover:bg-primary/90">View Creator plans</Link></div>
         </section>
       ) : <>
-      {!whopId && (
-        <section className="flex flex-col justify-between gap-4 rounded-2xl border border-primary/25 bg-primary/[0.05] p-5 sm:flex-row sm:items-center">
-          <div className="flex gap-3"><Link2 className="mt-0.5 h-5 w-5 shrink-0 text-primary" /><div><h2 className="text-sm font-semibold text-foreground">Connect Whop before checkout</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">This securely delivers verified purchases to this CreatorOS account.</p></div></div>
-          <Button onClick={connectWhop} disabled={linkingWhop} className="shrink-0">{linkingWhop ? 'Connectingâ€¦' : 'Connect Whop'}</Button>
-        </section>
-      )}
+      
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {CREDIT_PACKS.map((pack) => {
           const cardClass = pack.popular
@@ -71,7 +62,7 @@ export default function CreditStorePage() {
                 <li className="flex gap-2"><Check className="h-3.5 w-3.5 text-primary" />Rolls over</li>
                 <li className="flex gap-2"><Check className="h-3.5 w-3.5 text-primary" />Applied only after verified payment</li>
               </ul>
-              <Button className="mt-auto h-11 w-full" onClick={() => whopId ? window.location.assign(checkoutWithPassthrough(pack.checkoutUrl)) : connectWhop()} disabled={linkingWhop}>{whopId ? 'Buy Credits' : 'Connect Whop to Buy'}</Button>
+              <Button className="mt-auto h-11 w-full" onClick={() => window.location.assign(checkoutWithPassthrough(pack.checkoutUrl))}>Buy Credits</Button>
             </article>
           );
         })}
