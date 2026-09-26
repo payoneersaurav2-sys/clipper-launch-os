@@ -1,14 +1,18 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { ArrowRight, Layers, Users, Database, Sparkles, FolderKanban, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { FeatureReviewSnippet } from './TrustElements';
 import { useApprovedReviews } from '@/hooks/useReviews';
+import { pricingPlans } from '@/lib/pricing';
+import { useCheckout } from '@/hooks/useCheckout';
 
 export function AgencySection() {
   const reduceMotion = useReducedMotion();
   const { data: reviews } = useApprovedReviews();
   const agencyReview = reviews?.find(r => r.review_text.toLowerCase().includes('client') || r.review_text.toLowerCase().includes('agency')) || reviews?.[0];
+  
+  const agencyPlan = pricingPlans.find(p => p.id === 'agency');
+  const { beginCheckout } = useCheckout();
 
   return (
     <section id="agency-workflow" className="py-20 sm:py-28 px-4 relative z-10 bg-[#080808] border-t border-white/[0.04] border-b overflow-hidden">
@@ -31,10 +35,10 @@ export function AgencySection() {
                 For Agencies
               </div>
               <h2 className="text-[32px] sm:text-[42px] font-semibold tracking-tight text-white leading-[1.1] mb-6">
-                One system for every client.
+                Run every client from one operating system.
               </h2>
               <p className="text-zinc-400 text-[17px] leading-relaxed max-w-lg">
-                Keep each brand's knowledge, content, campaigns, and AI context organized inside one Agency workspace. Stop mixing client data in generic AI tools.
+                Keep each brand's knowledge, content, campaigns, and AI context organized inside one workspace. Stop mixing client data in generic AI tools.
               </p>
             </div>
             
@@ -59,17 +63,29 @@ export function AgencySection() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-4 pt-4">
-              <Link to="/pricing">
-                <Button size="lg" className="h-12 px-8 text-sm font-medium bg-primary text-white hover:bg-primary/90">
-                  See the Agency Plan <ArrowRight className="w-4 h-4 ml-2" />
+            <div className="flex flex-wrap items-center gap-6 pt-4">
+              {agencyPlan && (
+                <Button 
+                  size="lg" 
+                  onClick={() => beginCheckout(agencyPlan.checkout['monthly'].url)}
+                  className="h-12 px-8 text-sm font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_24px_rgba(124,58,237,0.4)] hover:shadow-[0_0_32px_rgba(124,58,237,0.6)] transition-all duration-300"
+                >
+                  Start with Agency <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
-              </Link>
+              )}
+              {agencyPlan && (
+                <div className="flex flex-col">
+                  <span className="text-white font-semibold">${agencyPlan.monthlyPrice}/month</span>
+                  {agencyPlan.annualPrice && (
+                    <span className="text-zinc-500 text-xs">or ${Math.round(agencyPlan.annualPrice / 12)}/mo billed annually</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Right Visual Workflow */}
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent rounded-2xl blur-xl" />
             <div className="relative bg-[#111111] border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
               <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
@@ -124,4 +140,3 @@ export function AgencySection() {
     </section>
   );
 }
-

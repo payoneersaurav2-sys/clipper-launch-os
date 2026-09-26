@@ -93,7 +93,6 @@ export default function LandingPage() {
       <ReviewsSection />
 
       {/* Workflow Bento Grid */}
-      <AgencySection />
       <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-background relative z-10">
         <div className="max-w-6xl mx-auto">
           <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.45 }} transition={{ duration: 0.42 }} className="text-center mb-12 sm:mb-16 lg:mb-20">
@@ -173,6 +172,8 @@ export default function LandingPage() {
       </section>
 
       <ComparisonMatrix />
+
+      <AgencySection />
       <FAQSection />
 
       <FAQSection 

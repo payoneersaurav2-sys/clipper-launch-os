@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { Check, Sparkles } from 'lucide-react';
 import { BillingInterval, annualSavings, pricingPlans, unresolvedCheckoutMapping, validatePricingConfiguration } from '@/lib/pricing';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useEntitlements } from '@/hooks/useEntitlements';
-import { buildWhopOAuthUrl } from '@/lib/whopPkce';
+import { useCheckout } from '@/hooks/useCheckout';
 import { FAQSection, pricingFaqs } from '@/components/FAQSection';
 import { ReviewsSection } from '@/components/landing/ReviewsSection';
 
@@ -14,10 +13,9 @@ const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD
 export default function PricingPage() {
   const [billing, setBilling] = useState<BillingInterval>('monthly');
   const reduceMotion = useReducedMotion();
-  const navigate = useNavigate();
-  const { user, whopId } = useAuthStore();
   const { subscriptionTier } = useAuthStore();
   const { data: entitlements } = useEntitlements();
+  const { beginCheckout, user, whopId } = useCheckout();
 
   // Resolve user tier from entitlements (preferred) or stored subscriptionTier
   const tierOrder: Record<string, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
@@ -25,33 +23,6 @@ export default function PricingPage() {
   const visiblePlans = pricingPlans.filter((plan) => tierOrder[plan.id] > (tierOrder[resolvedTier] ?? 0));
   const showNoUpgrades = resolvedTier === 'agency';
   const toRender = user ? visiblePlans : pricingPlans;
-
-  const checkoutWithPassthrough = (checkoutUrl: string) => {
-    if (!user?.id) return checkoutUrl;
-    try {
-      const nextUrl = new URL(checkoutUrl);
-      nextUrl.searchParams.set('passthrough', user.id);
-      return nextUrl.toString();
-    } catch {
-      const separator = checkoutUrl.includes('?') ? '&' : '?';
-      return `${checkoutUrl}${separator}passthrough=${encodeURIComponent(user.id)}`;
-    }
-  };
-
-  const beginCheckout = async (checkoutUrl: string) => {
-    if (!user) { navigate('/login'); return; }
-    if (!whopId) {
-      try {
-        const whopUrl = await buildWhopOAuthUrl('link_account');
-        window.location.assign(whopUrl);
-      } catch {
-        navigate('/dashboard/credits');
-      }
-      return;
-    }
-    const signedCheckoutUrl = checkoutWithPassthrough(checkoutUrl);
-    window.location.assign(signedCheckoutUrl);
-  };
 
   useEffect(() => {
     if (!import.meta.env.DEV) return;

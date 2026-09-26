@@ -17,13 +17,14 @@ export default function AgencyLayout() {
   const { data: agency, isLoading } = useAgency();
   const isAgency = subscriptionTier === 'agency' || !!agency;
   const location = useLocation();
-  if (isLoading) return null;
   
   
   
 
   // Close mobile drawer on route change
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  if (isLoading) return null;
 
   // Derived: Filter workspaces to only those belonging to the current agency
   
