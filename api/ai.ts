@@ -295,10 +295,10 @@ export default async function handler(request: Request) {
                       let clientContextStr = await resolveAgencyAIContext(supabaseUrl, supabaseAnonKey, authorization, clientId, operation) || '';
             const campaignCtx = context.taskContext?.campaign;
             if (campaignCtx && (campaignCtx.title || campaignCtx.goal)) {
-              clientContextStr += \n<campaign_context>\n;
-              if (campaignCtx.title) clientContextStr += Campaign Title: \n;
-              if (campaignCtx.goal) clientContextStr += Campaign Goal: \n;
-              clientContextStr += </campaign_context>\n;
+              clientContextStr += '\n<campaign_context>\n';
+              if (campaignCtx.title) clientContextStr += 'Campaign Title: \n';
+              if (campaignCtx.goal) clientContextStr += 'Campaign Goal: \n';
+              clientContextStr += '</campaign_context>\n';
             }
           if (clientContextStr) {
             // Inject as a separate read-only user message right before the final user prompt to prevent system prompt injection

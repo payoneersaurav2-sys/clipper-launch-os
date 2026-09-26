@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAdminReviews, useUpdateReviewAdmin } from '@/hooks/useReviews';
 import { useAdminProductFeedback } from '@/hooks/useProductFeedback';
-import { Loader2, Star, CheckCircle, XCircle, EyeOff, Star as StarOutline, Shield, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Loader2, Star, CheckCircle, XCircle, EyeOff, Star as StarOutline, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 type AdminTab = 'reviews' | 'feedback';

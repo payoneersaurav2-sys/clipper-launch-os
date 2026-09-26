@@ -1,6 +1,7 @@
+import { Navigate } from 'react-router-dom';
 import { useAdminMetrics } from '@/hooks/useAdminMetrics';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { Shield, Loader2, Users, Activity, FileText, Target, BookOpen, Briefcase, ShoppingCart } from 'lucide-react';
+import { Loader2, Users, Activity, FileText, Target, BookOpen, Briefcase, ShoppingCart } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminMetricsPage() {
