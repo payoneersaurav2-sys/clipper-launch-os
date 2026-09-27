@@ -31,12 +31,12 @@ export function OnboardingChecklist({
   const steps: Step[] = isAgency
     ? [
         { id: 'client',    title: 'Create your first client workspace', desc: 'Isolate brand contexts per client.', done: true,         Icon: Users,    href: '/agency' },
-        { id: 'knowledge', title: 'Add client brand knowledge',          desc: 'Teach Creator OS about the brand.',  done: hasKnowledge, Icon: Database,  href: '/dashboard/knowledge' },
+        { id: 'knowledge', title: 'Add client brand knowledge',          desc: 'Teach Creator OS about the brand.',  done: hasKnowledge, Icon: Database,  href: '/dashboard/knowledge-vault' },
         { id: 'ai',        title: 'Generate client-aware content',       desc: 'Try the AI with client context.',   done: hasAI,        Icon: Sparkles,  href: '/dashboard/idea-studio' },
         { id: 'campaign',  title: 'Build a campaign pipeline',           desc: 'Organise deliverables per client.',  done: hasCampaign,  Icon: Rocket,    href: '/dashboard/campaign-os' },
       ]
     : [
-        { id: 'knowledge', title: 'Set up your context',     desc: 'Add brand guidelines to the Vault.',  done: hasKnowledge, Icon: Database, href: '/dashboard/knowledge' },
+        { id: 'knowledge', title: 'Set up your context',     desc: 'Add brand guidelines to the Vault.',  done: hasKnowledge, Icon: Database, href: '/dashboard/knowledge-vault' },
         { id: 'ideas',     title: 'Generate ideas',           desc: 'Use AI to brainstorm angles.',         done: hasIdeas,     Icon: Sparkles, href: '/dashboard/idea-studio' },
         { id: 'campaign',  title: 'Start your first campaign',desc: 'Plan your content calendar.',          done: hasCampaign,  Icon: Rocket,   href: '/dashboard/campaign-os' },
       ];
