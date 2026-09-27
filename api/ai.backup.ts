@@ -156,7 +156,7 @@ function parseModelJson(content: string): unknown | null {
 async function generateFromOpenRouter(key: string, model: string, messages: ChatMessage[], temperature: number, maxTokens: number | undefined, expectedSchema: AIPromptContext['expectedJsonSchema']) {
   return fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://creator-os999.vercel.app', 'X-Title': 'Creator OS' },
+    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json', 'HTTP-Referer': 'https://creator-os.online', 'X-Title': 'Creator OS' },
     body: JSON.stringify({
       model, messages, temperature, max_tokens: maxTokens,
       response_format: expectedSchema ? { type: 'json_schema', json_schema: { name: 'creator_os_response', strict: false, schema: expectedSchema } } : undefined,

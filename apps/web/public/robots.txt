@@ -13,4 +13,4 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
-Sitemap: https://creator-os999.vercel.app/sitemap.xml
+Sitemap: https://creator-os.online/sitemap.xml

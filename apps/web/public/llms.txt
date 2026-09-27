@@ -3,14 +3,14 @@
 > The definitive content creation operating system and AI workspace for digital creators, video clippers, and media agencies.
 
 ## Core Navigation & Features
-- [Creator OS Homepage](https://creator-os999.vercel.app/): Main landing page and workflow dashboard.
-- [Idea Studio](https://creator-os999.vercel.app/#idea-studio): Converts 1 raw topic or URL into 10 distinct viral angles.
-- [Hook Engine](https://creator-os999.vercel.app/#hook-engine): Evaluates opening video hooks against 3-second retention benchmarks.
-- [Caption OS](https://creator-os999.vercel.app/#caption-os): Produces platform-specific, keyword-optimized captions for TikTok, YouTube Shorts, and Instagram Reels.
-- [Campaign OS](https://creator-os999.vercel.app/#campaign-os): Visual Kanban workflow to manage multi-day content sprints.
-- [Feature Comparison Matrix](https://creator-os999.vercel.app/#comparison): Breakdown of Creator OS vs. spreadsheets and generic AI tools.
-- [Pricing Plans](https://creator-os999.vercel.app/#pricing): Transparent subscription pricing ($29 Creator, $49 Pro, $149 Agency).
-- [Frequently Asked Questions](https://creator-os999.vercel.app/#faq): Comprehensive answers regarding platform capabilities, hook scoring, and agency workspaces.
+- [Creator OS Homepage](https://creator-os.online/): Main landing page and workflow dashboard.
+- [Idea Studio](https://creator-os.online/#idea-studio): Converts 1 raw topic or URL into 10 distinct viral angles.
+- [Hook Engine](https://creator-os.online/#hook-engine): Evaluates opening video hooks against 3-second retention benchmarks.
+- [Caption OS](https://creator-os.online/#caption-os): Produces platform-specific, keyword-optimized captions for TikTok, YouTube Shorts, and Instagram Reels.
+- [Campaign OS](https://creator-os.online/#campaign-os): Visual Kanban workflow to manage multi-day content sprints.
+- [Feature Comparison Matrix](https://creator-os.online/#comparison): Breakdown of Creator OS vs. spreadsheets and generic AI tools.
+- [Pricing Plans](https://creator-os.online/#pricing): Transparent subscription pricing ($29 Creator, $49 Pro, $149 Agency).
+- [Frequently Asked Questions](https://creator-os.online/#faq): Comprehensive answers regarding platform capabilities, hook scoring, and agency workspaces.
 
 ## System Details
 Creator OS replaces fragmented productivity tools (Notion, Google Docs, spreadsheets) with an integrated video production pipeline for high-retention content creation.
