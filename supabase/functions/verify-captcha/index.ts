@@ -40,7 +40,7 @@ serve(async (req) => {
         secret: TURNSTILE_SECRET_KEY,
         response: token,
         remoteip: req.headers.get('x-forwarded-for') ?? '',
-        hostname: hostname || 'creator-os999.vercel.app',
+        hostname: hostname || 'creator-os.online',
         action,
       }).toString(),
     });
