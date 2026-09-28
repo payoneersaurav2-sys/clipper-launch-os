@@ -3,17 +3,6 @@ import { supabase } from '@/lib/supabase';
 export const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() || '';
 export const BOT_PROTECTION_ENABLED = Boolean(TURNSTILE_SITE_KEY);
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (element: string | HTMLElement, options: Record<string, unknown>) => string;
-      remove: (widgetId: string) => void;
-      reset: (widgetId?: string) => void;
-      getResponse: (widgetId?: string) => string;
-    };
-  }
-}
-
 const TURNSTILE_SCRIPT_ID = 'creator-os-turnstile-script';
 
 export async function loadTurnstileScript(): Promise<void> {

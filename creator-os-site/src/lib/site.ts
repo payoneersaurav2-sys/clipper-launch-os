@@ -102,25 +102,37 @@ export const SAURAV_REVIEW = {
 
 export const HOME_FAQS = [
   {
-    question: 'What is Creator OS?',
-    answer:
-      'Creator OS is a unified content creation operating system designed for short-form video creators and agencies. It replaces disconnected tools by integrating an AI hook generator, SEO caption writer, clip pipeline, and campaign analytics into one dashboard.',
+    question: "Do I need video editing skills to use Creator OS?",
+    answer: "No. Creator OS is not a video editor. It is a workflow operating system that focuses on planning, ideation, hook scoring, SEO captions, campaigns, and knowledge management. You still use your own video editor (like Premiere, CapCut, or Opus Clip) to cut the actual video."
   },
   {
-    question: 'How does the AI Hook Engine improve video retention?',
-    answer:
-      'The Hook Engine scores and rewrites video hooks using loss aversion, curiosity gaps, and historical high-retention frameworks to keep viewers from swiping away during the critical first 3 seconds of TikToks and YouTube Shorts.',
+    question: "Can I use Creator OS for client work?",
+    answer: "Yes. With the Agency plan, you can set up isolated client workspaces (Brand Profiles). This ensures client-specific knowledge, context, and AI generations remain completely separated. You can also invite team members with specific roles and access permissions."
   },
   {
-    question: 'How is Creator OS different from Notion or Google Docs?',
-    answer:
-      'Unlike static document editors, Creator OS is an active workflow engine built specifically for video creators with built-in AI hook scoring, platform SEO caption engines, multi-brand workspaces, and dedicated short-form clip pipelines.',
+    question: "Can I start Creator OS for free?",
+    answer: "Yes, Creator OS has a Free plan that lets you explore the platform. You get 1 Workspace, up to 10 active campaigns, and access to core Idea & Hook tools. You can upgrade when your workflow demands it."
   },
   {
-    question: 'How much does Creator OS cost?',
-    answer:
-      'Creator OS offers three pricing tiers: the Creator Plan at $29/month, the Pro Plan at $49/month, and the Agency Plan at $149/month, with annual billing discounts available.',
+    question: "Who is Creator OS built for?",
+    answer: "Creator OS is built for short-form video creators, solopreneurs, UGC creators, and agencies who want a repeatable system for content creation instead of chaotic spreadsheets."
   },
+  {
+    question: "Does Creator OS work for agencies?",
+    answer: "Yes. Creator OS helps agencies manage multiple brands without mixing their context. Agency workspaces provide multi-client environment isolation and client-scoped AI context."
+  },
+  {
+    question: "Can Creator OS use my brand and knowledge?",
+    answer: "Yes. You can add specific brand guidelines, facts, and context into your Knowledge Vault. The AI will securely use this information as context to ensure generated ideas, hooks, and captions sound like your brand."
+  },
+  {
+    question: "What can I do with Creator OS?",
+    answer: "You can brainstorm viral angles in the Idea Studio, predict viewer retention with the Hook Engine, write platform-specific SEO captions with Caption OS, organize deliverables in the Campaign Center, and store brand facts in the Knowledge Vault."
+  },
+  {
+    question: "What happens when I upgrade my plan?",
+    answer: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through Whop."
+  }
 ]
 
 export const FAQ_PAGE = [

@@ -1,0 +1,12 @@
+{
+  "A_Authentication": "PASS",
+  "B_PricingWhop": "PASS",
+  "C_WorkspaceIsolation": "PASS",
+  "D_AgencyClientSwitching": "PASS_UI_VERIFIED_ONLY",
+  "E_BrandProfile": "PASS",
+  "F_KnowledgeVault": "PASS",
+  "G_PromptLibrary": "PASS",
+  "H_AI_Policies": "PASS",
+  "I_CampaignCreation": "PASS",
+  "J_ContentCreation": "PASS"
+}

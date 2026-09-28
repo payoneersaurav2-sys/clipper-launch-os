@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 
 export function SocialProofStrip() {
   const { data: reviews } = useApprovedReviews();
-  const { data: stats, isLoading: statsLoading } = usePublicStats();
+  const { data: stats } = usePublicStats();
   const reduceMotion = useReducedMotion();
 
   // If reviews haven't loaded yet, or stats are loading, we can show a placeholder or just wait.

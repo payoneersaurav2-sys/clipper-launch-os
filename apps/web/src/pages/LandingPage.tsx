@@ -2,12 +2,12 @@ import { ReviewsSection } from '@/components/landing/ReviewsSection';
 import { HeroTrustStrip, FeatureReviewSnippet, PricingTrustSnippet } from '@/components/landing/TrustElements';
 import { useApprovedReviews } from '@/hooks/useReviews';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3, PlayCircle } from 'lucide-react';
+import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3 } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { FAQSection, pricingFaqs } from '@/components/FAQSection';
+import { FAQSection } from '@/components/FAQSection';
 import { ComparisonMatrix } from '@/components/ComparisonMatrix';
 import { AgencySection } from '@/components/landing/AgencySection';
 import { PricingPreview } from '@/components/landing/PricingPreview';
@@ -182,22 +182,34 @@ export default function LandingPage() {
       <ComparisonMatrix />
 
       <AgencySection />
+      
       <FAQSection />
 
-      <FAQSection 
-        title="Questions before you start?" 
-        subtitle="Everything you need to know about access, billing, cancellation, and support." 
-        items={pricingFaqs} 
-        className="pb-16 sm:pb-24 px-4 bg-background relative z-10 text-foreground"
-      />
-
-      <section id="pricing" aria-label="Creator ($29), Pro ($49), and Agency ($149) Tiers" className="relative px-4 pb-20 sm:px-6 sm:pb-28">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-primary/25 bg-[radial-gradient(ellipse_70%_120%_at_50%_0%,rgba(124,58,237,.15),transparent_65%)] bg-card px-6 py-12 text-center sm:px-12 sm:py-16">
-          <PlayCircle className="mx-auto h-6 w-6 text-primary" aria-hidden="true" />
-          <h2 className="mx-auto mt-5 max-w-2xl text-[30px] font-semibold leading-[1.08] tracking-[-0.04em] sm:text-[46px]">Build the system behind your next level of content.</h2>
-          <p className="mx-auto mt-4 max-w-xl text-[15px] leading-relaxed text-muted-foreground">Start with the workflow you use today. Scale only when your short-form video editor software needs it.</p>
-          <PricingTrustSnippet review={pricingReview} />
-          <Link to="/pricing" className="mt-8 inline-flex"><Button size="lg" className="h-12 rounded-[12px] px-7 text-[14px]">Explore Creator OS <ArrowRight className="h-4 w-4" /></Button></Link>
+      <section className="relative px-4 pb-20 pt-8 sm:px-6 sm:pb-28 sm:pt-12 bg-[#080808]">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-[24px] border border-primary/20 bg-[#111111] px-6 py-14 text-center sm:px-12 sm:py-20 relative">
+          {/* Subtle glow effect behind CTA */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-primary/10 blur-[100px] pointer-events-none rounded-full" />
+          
+          <div className="relative z-10">
+            <h2 className="mx-auto max-w-2xl text-[32px] font-semibold leading-[1.08] tracking-tight text-[#FAFAFA] sm:text-[46px]">
+              Ready to build your content system?
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-[#A1A1AA]">
+              Start with the Free plan and see how Creator OS fits your workflow.
+            </p>
+            
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link to="/login?mode=signup" className="w-full sm:w-auto">
+                <Button size="lg" className="h-12 w-full rounded-[12px] px-8 text-[15px] shadow-[0_0_24px_rgba(124,58,237,0.3)] hover:shadow-[0_0_32px_rgba(124,58,237,0.5)] transition-all duration-300">
+                  Start Free <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+            
+            <div className="mt-8">
+              <PricingTrustSnippet review={pricingReview} />
+            </div>
+          </div>
         </div>
       </section>
     </div>
