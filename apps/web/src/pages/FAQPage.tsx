@@ -35,6 +35,30 @@ const faqs = [
     q: 'How can I contact support?',
     a: 'Reach us directly at sauravwhop@gmail.com. We aim to respond to all inquiries within 24–48 hours.',
   },
+  {
+    q: "Do I need video editing skills to use Creator OS?",
+    a: "No. Creator OS is not a video editor. It is a workflow operating system that focuses on planning, ideation, hook scoring, SEO captions, campaigns, and knowledge management. You still use your own video editor (like Premiere, CapCut, or Opus Clip) to cut the actual video."
+  },
+  {
+    q: "Can I use Creator OS for client work?",
+    a: "Yes. With the Agency plan, you can set up isolated client workspaces (Brand Profiles). This ensures client-specific knowledge, context, and AI generations remain completely separated. You can also invite team members with specific roles and access permissions."
+  },
+  {
+    q: "Can I start Creator OS for free?",
+    a: "Yes, Creator OS has a Free plan that lets you explore the platform. You get 1 Workspace, up to 10 active campaigns, and access to core Idea & Hook tools. You can upgrade when your workflow demands it."
+  },
+  {
+    q: "Does Creator OS work for agencies?",
+    a: "Yes. Creator OS helps agencies manage multiple brands without mixing their context. Agency workspaces provide multi-client environment isolation and client-scoped AI context."
+  },
+  {
+    q: "Can Creator OS use my brand and knowledge?",
+    a: "Yes. You can add specific brand guidelines, facts, and context into your Knowledge Vault. The AI will securely use this information as context to ensure generated ideas, hooks, and captions sound like your brand."
+  },
+  {
+    q: "What happens when I upgrade my plan?",
+    a: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through Whop."
+  }
 ];
 
 function FAQItem({ item, index }: { item: typeof faqs[0]; index: number }) {

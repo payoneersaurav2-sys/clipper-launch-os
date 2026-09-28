@@ -1,6 +1,6 @@
 const WHOP_CLIENT_ID = 'app_NsohXjOYOE0EkK';
 const WHOP_CLIENT_SECRET = process.env.WHOP_CLIENT_SECRET || 'fake_secret';
-const REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
+const REDIRECT_URI = 'https://creator-os.online/auth/callback';
 const FAKE_CODE = 'fake_code_123';
 const FAKE_VERIFIER = 'fake_verifier_1234567890123456789012345678901234567890';
 

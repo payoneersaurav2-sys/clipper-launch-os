@@ -7,7 +7,7 @@ const supabaseUrl = env.match(/VITE_SUPABASE_URL=(.*)/)[1].trim();
 const anonKey = env.match(/VITE_SUPABASE_ANON_KEY=(.*)/)[1].trim();
 
 const CLIENT_ID = 'app_NsohXjOYOE0EkK';
-const REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
+const REDIRECT_URI = 'https://creator-os.online/auth/callback';
 
 function base64UrlEncode(buffer) {
   return buffer.toString('base64')

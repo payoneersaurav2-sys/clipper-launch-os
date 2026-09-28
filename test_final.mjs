@@ -10,7 +10,7 @@ const supabaseUrl = supabaseUrlMatch ? supabaseUrlMatch[1].trim() : '';
 const anonKey = anonKeyMatch ? anonKeyMatch[1].trim() : '';
 
 const CLIENT_ID = 'app_NsohXjOYOE0EkK';
-const REDIRECT_URI = 'https://creator-os999.vercel.app/auth/callback';
+const REDIRECT_URI = 'https://creator-os.online/auth/callback';
 
 // 2. PKCE strict Base64URL encoding (RFC 7636 compliant)
 function base64UrlEncode(buffer) {
@@ -70,7 +70,7 @@ async function exchangeCode(code) {
     if (json.error && json.error.includes('invalid_grant')) {
       console.log('\n❌ DIAGNOSTIC RESULT: The API specifically rejected a perfectly formatted code + verifier pair.');
       console.log('Since this script bypasses all React bugs, there are ONLY TWO possible reasons left:');
-      console.log('1. The "Redirect URI" in your Whop Developer Dashboard does NOT perfectly match https://creator-os999.vercel.app/auth/callback');
+      console.log('1. The "Redirect URI" in your Whop Developer Dashboard does NOT perfectly match https://creator-os.online/auth/callback');
       console.log('2. This is a Sandbox app, but the Edge function is hitting the Production Whop API.');
       console.log('\n👉 YOU MUST CHECK YOUR WHOP DEVELOPER DASHBOARD. NO CODE CHANGES CAN FIX A DASHBOARD MISMATCH.');
     } else if (json.access_token) {

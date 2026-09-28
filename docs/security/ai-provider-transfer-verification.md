@@ -39,7 +39,7 @@ Vercel hosts the edge functions and static assets. No public transfer execution 
 
 ## 8. Whop
 **Status: GREEN** (Code Verified)
-Whop OAuth and redirection are verified. The canonical domain (`https://creator-os999.vercel.app/auth/callback`) is explicitly configured in `apps/web/.env` and `test_final.mjs`.
+Whop OAuth and redirection are verified. The canonical domain (`https://creator-os.online/auth/callback`) is explicitly configured in `apps/web/.env` and `test_final.mjs`.
 
 ## 9. Data Transfer Mechanisms
 **Status: GREEN** (Code Verified / Neutralized)
@@ -57,7 +57,7 @@ We must formally execute DPAs with Supabase, Vercel, OpenRouter, and Whop to fin
 
 ## 12. Production Domain
 **Status: GREEN** (Code Verified)
-Canonical domain: `https://creator-os999.vercel.app`.
+Canonical domain: `https://creator-os.online`.
 No incorrect production or leaked `localhost` origins are present in user-facing code.
 
 ## 13. Whop URLs
@@ -82,12 +82,12 @@ Vercel dashboard/live environment requires manual verification.
 
 ## 18. Whop Verification Status
 **Status: GRAY** (Not Applicable / Dashboard Required)
-Whop dashboard requires manual verification. The exact required redirect URI is `https://creator-os999.vercel.app/auth/callback`.
+Whop dashboard requires manual verification. The exact required redirect URI is `https://creator-os.online/auth/callback`.
 
 ## 19. Remaining Manual Actions
 - Rotate `OPENROUTER_API_KEY` and `WHOP_API_KEY` in Vercel/Whop dashboards as they were briefly exposed in local configuration files.
 - Sign formal DPAs with Supabase, Vercel, Whop, and OpenRouter.
-- Configure Whop Developer Dashboard to exactly match `https://creator-os999.vercel.app/auth/callback`.
+- Configure Whop Developer Dashboard to exactly match `https://creator-os.online/auth/callback`.
 
 ## 20. Launch Readiness
 The codebase configuration is production-ready. Security headers, OAuth validation, AI model allowlisting, and legal text are implemented defensively. Pending manual dashboard updates, the application is clear for launch.

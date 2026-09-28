@@ -176,4 +176,28 @@ export const FAQ_PAGE = [
     answer:
       'Reach us directly at sauravwhop@gmail.com. We aim to respond to all inquiries within 24–48 hours.',
   },
+  {
+    question: "Do I need video editing skills to use Creator OS?",
+    answer: "No. Creator OS is not a video editor. It is a workflow operating system that focuses on planning, ideation, hook scoring, SEO captions, campaigns, and knowledge management. You still use your own video editor (like Premiere, CapCut, or Opus Clip) to cut the actual video."
+  },
+  {
+    question: "Can I use Creator OS for client work?",
+    answer: "Yes. With the Agency plan, you can set up isolated client workspaces (Brand Profiles). This ensures client-specific knowledge, context, and AI generations remain completely separated. You can also invite team members with specific roles and access permissions."
+  },
+  {
+    question: "Can I start Creator OS for free?",
+    answer: "Yes, Creator OS has a Free plan that lets you explore the platform. You get 1 Workspace, up to 10 active campaigns, and access to core Idea & Hook tools. You can upgrade when your workflow demands it."
+  },
+  {
+    question: "Does Creator OS work for agencies?",
+    answer: "Yes. Creator OS helps agencies manage multiple brands without mixing their context. Agency workspaces provide multi-client environment isolation and client-scoped AI context."
+  },
+  {
+    question: "Can Creator OS use my brand and knowledge?",
+    answer: "Yes. You can add specific brand guidelines, facts, and context into your Knowledge Vault. The AI will securely use this information as context to ensure generated ideas, hooks, and captions sound like your brand."
+  },
+  {
+    question: "What happens when I upgrade my plan?",
+    answer: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through Whop."
+  }
 ]
