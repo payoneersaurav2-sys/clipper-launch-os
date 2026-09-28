@@ -1,5 +1,5 @@
 import { ReviewsSection } from '@/components/landing/ReviewsSection';
-import { HeroTrustStrip, FeatureReviewSnippet, PricingTrustSnippet } from '@/components/landing/TrustElements';
+import { HeroTrustStrip } from '@/components/landing/TrustElements';
 import { useApprovedReviews } from '@/hooks/useReviews';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, Workflow, Zap, BarChart, PenTool, Layers3 } from 'lucide-react';
@@ -12,20 +12,14 @@ import { ComparisonMatrix } from '@/components/ComparisonMatrix';
 import { AgencySection } from '@/components/landing/AgencySection';
 import { PricingPreview } from '@/components/landing/PricingPreview';
 import { SocialProofStrip } from '@/components/landing/SocialProofStrip';
+import { HookEngineDemo } from '@/components/landing/HookEngineDemo';
 
 export default function LandingPage() {
   const reduceMotion = useReducedMotion();
   const navigate = useNavigate();
 
   const { data: reviews } = useApprovedReviews();
-  const approved = reviews || [];
-  const featured = approved.find(r => r.is_featured) || approved[0];
-  const otherReviews = approved.filter(r => r.id !== featured?.id);
-
-  const heroReview = featured;
-  const ideaReview = otherReviews[0] || heroReview;
-  const campaignReview = otherReviews[1] || otherReviews[0] || heroReview;
-  const pricingReview = otherReviews[2] || otherReviews[1] || heroReview;
+  const heroReview = reviews?.find(r => r.is_featured) || reviews?.[0];
 
   useEffect(() => {
     const remembered = localStorage.getItem('creator_os_remember_me') === 'true';
@@ -97,9 +91,6 @@ export default function LandingPage() {
       {/* Compact Pricing Preview */}
       <PricingPreview />
 
-      {/* Early Social Proof */}
-      <ReviewsSection />
-
       {/* Workflow Bento Grid */}
       <section id="features" className="py-16 sm:py-20 lg:py-24 px-4 bg-background relative z-10">
         <div className="max-w-6xl mx-auto">
@@ -118,7 +109,6 @@ export default function LandingPage() {
               <Workflow className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">1. Idea Studio</h3>
               <p className="text-muted-foreground leading-relaxed max-w-md text-[15px] tracking-tight">Capture concepts and instantly generate variations with context-aware AI. Drop in a link, and watch the studio break it down into 10 viral angles.</p>
-              <FeatureReviewSnippet review={ideaReview} />
             </motion.div>
 
             <motion.div 
@@ -152,11 +142,12 @@ export default function LandingPage() {
               <BarChart className="h-8 w-8 mb-6 text-primary" strokeWidth={1.5} />
               <h3 className="text-[24px] font-semibold mb-3 tracking-tight">4. Campaign Center</h3>
               <p className="text-muted-foreground leading-relaxed max-w-md text-[15px] tracking-tight">Plan launches, track production across your entire freelance video clipper pipeline, and review automated analytics all in one beautiful kanban board. The TubeBuddy alternative 2026.</p>
-              <FeatureReviewSnippet review={campaignReview} />
             </motion.div>
           </div>
         </div>
       </section>
+
+      <HookEngineDemo />
 
       <section className="relative px-4 py-16 sm:px-6 sm:py-24 lg:py-28">
         <div className="mx-auto max-w-6xl">
@@ -183,6 +174,9 @@ export default function LandingPage() {
 
       <AgencySection />
       
+      {/* Main Review Section */}
+      <ReviewsSection />
+
       <FAQSection />
 
       <section className="relative px-4 pb-20 pt-8 sm:px-6 sm:pb-28 sm:pt-12 bg-[#080808]">
@@ -204,10 +198,6 @@ export default function LandingPage() {
                   Start Free <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-            </div>
-            
-            <div className="mt-8">
-              <PricingTrustSnippet review={pricingReview} />
             </div>
           </div>
         </div>
