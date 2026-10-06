@@ -7,7 +7,7 @@ const environment = () => (globalThis as unknown as { process?: { env?: Record<s
 const json = (body: unknown, status: number) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
 
 export default async function handler(req: Request) {
-  if (req.method !== 'POST' && req.method !== 'GET') {
+  if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405);
   }
 

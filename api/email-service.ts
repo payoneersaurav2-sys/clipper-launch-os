@@ -61,7 +61,6 @@ export async function sendOnboardingEmail(to: string, userName: string = 'Creato
 }
 
 export async function processEmailQueue(supabaseAdmin: any) {
-  // This function would be called by a cron job endpoint
   const env = environment();
   const apiKey = env.RESEND_API_KEY;
   if (!apiKey) throw new Error('Missing RESEND_API_KEY');
@@ -72,7 +71,7 @@ export async function processEmailQueue(supabaseAdmin: any) {
     .select('*')
     .eq('status', 'pending')
     .lte('scheduled_for', new Date().toISOString())
-    .limit(50);
+    .limit(10); // Process in smaller batches
     
   if (fetchErr) throw fetchErr;
   if (!queue || queue.length === 0) return { processed: 0 };
@@ -80,6 +79,20 @@ export async function processEmailQueue(supabaseAdmin: any) {
   let processed = 0;
   
   for (const job of queue) {
+    // 2. Lock / Claim the job using optimistic locking
+    const { data: claimedJob, error: claimErr } = await supabaseAdmin
+      .from('email_queue')
+      .update({ status: 'processing', updated_at: new Date().toISOString() })
+      .eq('id', job.id)
+      .eq('status', 'pending')
+      .select()
+      .single();
+
+    if (claimErr || !claimedJob) {
+      // Someone else grabbed it or it's no longer pending, skip it safely
+      continue;
+    }
+
     try {
       let sendResult;
       
@@ -95,24 +108,36 @@ export async function processEmailQueue(supabaseAdmin: any) {
         throw new Error(sendResult.error.message);
       }
       
-      // Mark as sent
+      // 3. Mark as sent
       await supabaseAdmin
         .from('email_queue')
         .update({
           status: 'sent',
           sent_at: new Date().toISOString(),
-          provider_message_id: sendResult.data?.id
+          provider_message_id: sendResult.data?.id,
+          updated_at: new Date().toISOString()
         })
         .eq('id', job.id);
         
       processed++;
     } catch (err: any) {
       console.error(`[Email Cron] Failed to send job ${job.id}:`, err);
-      // Mark as failed
+      
+      // 4. Handle Failure & Retries
+      const newRetryCount = (job.retry_count || 0) + 1;
+      const isFailed = newRetryCount >= 3;
+      
+      // Calculate backoff if not completely failed
+      const nextSchedule = new Date();
+      nextSchedule.setMinutes(nextSchedule.getMinutes() + (newRetryCount * 30)); // 30m, 60m backoff
+
       await supabaseAdmin
         .from('email_queue')
         .update({
-          status: 'failed',
+          status: isFailed ? 'failed' : 'pending',
+          retry_count: newRetryCount,
+          error_log: err.message || 'Unknown error',
+          scheduled_for: isFailed ? job.scheduled_for : nextSchedule.toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', job.id);

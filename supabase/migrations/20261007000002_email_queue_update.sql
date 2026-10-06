@@ -1,0 +1,3 @@
+ALTER TABLE public.email_queue
+ADD COLUMN IF NOT EXISTS retry_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS error_log TEXT;
