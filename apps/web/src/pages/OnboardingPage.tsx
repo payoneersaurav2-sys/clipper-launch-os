@@ -147,6 +147,29 @@ export default function OnboardingPage() {
         await createWorkspace.mutateAsync(targetName);
       }
 
+      // Enqueue onboarding sequence via Email Service
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const idempotencyKey = `onboarding_step_1_${user.id}`;
+          await fetch('/api/email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`
+            },
+            body: JSON.stringify({
+              action: 'queue_onboarding',
+              type: 'onboarding_step_1',
+              idempotencyKey
+            })
+          });
+        }
+      } catch (emailErr) {
+        // We do not want email failure to block onboarding completion
+        console.error("Failed to queue onboarding email:", emailErr);
+      }
+
       useAuthStore.setState({ onboardingComplete: true });
       navigate('/dashboard');
     } catch (err: unknown) {
