@@ -23,7 +23,7 @@ export default async function handler(req: Request) {
   }
 
   const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL;
-  const supabaseServiceRole = env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseServiceRole = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY;
 
   if (!supabaseUrl || !supabaseServiceRole) {
     console.error('[Cron] Missing Supabase environment variables');
