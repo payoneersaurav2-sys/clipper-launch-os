@@ -100,6 +100,15 @@ export async function processEmailQueue(supabaseAdmin: any) {
         sendResult = await sendWelcomeEmail(job.email);
       } else if (job.email_type === 'onboarding_step_1') {
         sendResult = await sendOnboardingEmail(job.email);
+      } else if (job.email_type === 'test_email') {
+        const env = environment();
+        const resend = new Resend(env.RESEND_API_KEY);
+        sendResult = await resend.emails.send({
+          from: env.EMAIL_FROM || 'Creator OS <hello@creator-os.online>',
+          to: job.email,
+          subject: 'Creator OS Email System Test',
+          html: `<p>Hi Saurav,</p><p>This is a controlled test email from the Creator OS email system.</p><p>It confirms that the server-side Resend integration is working correctly.</p><br/><p>— Creator OS</p>`,
+        });
       } else {
         throw new Error(`Unknown email_type: ${job.email_type}`);
       }
