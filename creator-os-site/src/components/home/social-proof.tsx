@@ -105,7 +105,7 @@ export function SocialProofStrip() {
     return null
   }
 
-  const displayCount = totalUsers! > 10 ? '10+' : totalUsers! > 4 ? '4+' : totalUsers!.toString()
+  const displayCount = new Intl.NumberFormat('en-US').format(totalUsers!);
   const displayRating = averageRating % 1 === 0 ? averageRating.toString() + '.0' : averageRating.toFixed(1)
 
   return (
