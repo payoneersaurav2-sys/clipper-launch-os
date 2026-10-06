@@ -22,7 +22,7 @@ export function SocialProofStrip() {
     ? reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews 
     : 5; 
   
-  const displayCount = new Intl.NumberFormat('en-US').format(totalUsers);
+  const displayCount = new Intl.NumberFormat('en-US').format(totalUsers) + '+';
   const displayRating = averageRating % 1 === 0 ? averageRating.toString() + '.0' : averageRating.toFixed(1);
 
   if (totalUsers === 0) return null;
