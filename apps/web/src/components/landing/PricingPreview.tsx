@@ -135,19 +135,25 @@ export function PricingPreview() {
                     <p className="text-sm text-[#A1A1AA] h-10">{plan.positioning}</p>
                   </div>
 
-                  <div className="mb-8 flex items-baseline gap-1">
-                    <span className="text-[38px] font-semibold tracking-tight text-white leading-none">
-                      {plan.monthlyPrice === 0 ? '$0' : money.format(plan.monthlyPrice)}
-                    </span>
-                    {plan.monthlyPrice > 0 && <span className="text-sm text-[#A1A1AA] font-medium">/mo</span>}
-                  </div>
-                  {plan.id !== 'free' && (
-                    <div className="mb-8 mt-[-16px]">
-                      <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
-                        3-Day Free Trial
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-2 mb-1">
+                      <span className={`text-[38px] font-semibold tracking-tight leading-none ${plan.monthlyPrice === 0 ? 'text-white' : 'text-[#22C55E]'}`}>
+                        $0
                       </span>
+                      {plan.monthlyPrice > 0 && (
+                        <span className="text-[18px] font-medium text-[#A1A1AA] line-through decoration-[#A1A1AA]/50">
+                          {money.format(plan.monthlyPrice)}
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="text-[13px] leading-relaxed text-[#A1A1AA]">
+                      {plan.monthlyPrice === 0 ? (
+                        <span>Free forever. No credit card required.</span>
+                      ) : (
+                        <span>for 3 days, {money.format(plan.monthlyPrice)}/mo after</span>
+                      )}
+                    </div>
+                  </div>
 
                   <ul className="space-y-4 mb-8 flex-1">
                     {plan.benefits.map(benefit => (

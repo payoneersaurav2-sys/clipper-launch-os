@@ -204,18 +204,23 @@ export default function PricingPage() {
                   <p className="mt-2 min-h-[48px] text-[15px] leading-relaxed tracking-tight text-muted-foreground dark:text-[#A1A1AA]">{plan.positioning}</p>
                 </div>
                 <div className="mt-8 border-y border-border py-5 dark:border-white/[0.07]">
-                  <div className="flex items-end gap-2">
-                    <span className="text-[45px] font-semibold leading-none tracking-[-0.06em] dark:text-[#FAFAFA]">{isFree ? '$0' : money.format(displayedPrice)}</span>
-                    {!isFree && <span className="mb-1 text-[14px] text-muted-foreground dark:text-[#A1A1AA]">/{isAnnual ? 'year' : 'month'}</span>}
+                  <div className="flex items-baseline gap-2 mb-1">
+                    <span className={`text-[45px] font-semibold leading-none tracking-[-0.06em] ${isFree ? 'dark:text-[#FAFAFA]' : 'text-[#16A34A] dark:text-[#22C55E]'}`}>
+                      $0
+                    </span>
+                    {!isFree && (
+                      <span className="text-[22px] font-medium text-muted-foreground line-through decoration-muted-foreground/40">
+                        {money.format(displayedPrice)}
+                      </span>
+                    )}
                   </div>
-                  {!isFree && <div className="mt-2 inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">3-Day Free Trial</div>}
-                  <div className="mt-3 min-h-[40px] text-[12px] leading-5 text-muted-foreground">
+                  <div className="mt-3 min-h-[50px] text-[13px] leading-relaxed text-muted-foreground dark:text-[#A1A1AA]">
                     {isFree ? (
                       <span>Free forever. No credit card required.</span>
                     ) : isAnnual ? (
-                      <><span>Billed annually.</span><br /><span className="font-medium text-primary">Save {money.format(savings.amount)}/year</span></>
+                      <><span>for 3 days, {money.format(displayedPrice)}/year after</span><br /><span className="mt-1 block">Billed annually. ({money.format(plan.monthlyPrice * 12)} if paid monthly, you pay {money.format(plan.annualPrice)}/year)</span></>
                     ) : (
-                      <><span>Billed monthly.</span><br /><span>Pay annually to save {money.format(savings.amount)}/year.</span></>
+                      <><span>for 3 days, {money.format(displayedPrice)}/mo after</span><br /><span className="mt-1 block">Billed monthly. Pay annually to save {money.format(savings.amount)}/year.</span></>
                     )}
                   </div>
                 </div>
