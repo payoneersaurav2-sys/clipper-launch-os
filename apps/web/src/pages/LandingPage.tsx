@@ -82,6 +82,16 @@ export default function LandingPage() {
           </Link>
         </motion.div>
 
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4, ease: "easeOut" }}
+          className="mt-6 mb-4 flex items-center justify-center gap-2 text-[14px] font-medium text-muted-foreground"
+        >
+          <Sparkles className="w-4 h-4 text-primary" />
+          <span>3-day free trial on all paid plans</span>
+        </motion.div>
+
         <HeroTrustStrip review={heroReview} />
       </section>
 

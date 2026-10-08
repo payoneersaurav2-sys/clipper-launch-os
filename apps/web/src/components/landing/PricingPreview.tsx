@@ -27,7 +27,7 @@ const previewPlans = [
     name: 'Creator',
     positioning: 'Build consistently',
     monthlyPrice: pricingPlans.find(p => p.id === 'creator')?.monthlyPrice || 29,
-    cta: 'Upgrade to Creator',
+    cta: 'Start 3-Day Free Trial',
     checkout: pricingPlans.find(p => p.id === 'creator')?.checkout,
     benefits: [
       '3 Workspaces',
@@ -41,7 +41,7 @@ const previewPlans = [
     name: 'Pro',
     positioning: 'Run your content operation',
     monthlyPrice: pricingPlans.find(p => p.id === 'pro')?.monthlyPrice || 49,
-    cta: 'Upgrade to Pro',
+    cta: 'Start 3-Day Free Trial',
     recommended: true,
     checkout: pricingPlans.find(p => p.id === 'pro')?.checkout,
     benefits: [
@@ -56,7 +56,7 @@ const previewPlans = [
     name: 'Agency',
     positioning: 'Manage multiple brands and teams',
     monthlyPrice: pricingPlans.find(p => p.id === 'agency')?.monthlyPrice || 199,
-    cta: 'Upgrade to Agency',
+    cta: 'Start 3-Day Free Trial',
     checkout: pricingPlans.find(p => p.id === 'agency')?.checkout,
     benefits: [
       'Unlimited Knowledge / Prompts',
@@ -141,6 +141,13 @@ export function PricingPreview() {
                     </span>
                     {plan.monthlyPrice > 0 && <span className="text-sm text-[#A1A1AA] font-medium">/mo</span>}
                   </div>
+                  {plan.id !== 'free' && (
+                    <div className="mb-8 mt-[-16px]">
+                      <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
+                        3-Day Free Trial
+                      </span>
+                    </div>
+                  )}
 
                   <ul className="space-y-4 mb-8 flex-1">
                     {plan.benefits.map(benefit => (
@@ -180,3 +187,4 @@ export function PricingPreview() {
     </section>
   );
 }
+

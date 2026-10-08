@@ -26,7 +26,7 @@ const uiPlans = [
       { group: 'AI & CREATION', items: ['Core Idea & Hook Tools', 'No batch AI generation'] },
     ],
   },
-  ...pricingPlans.map(p => ({ ...p, id: p.id as PlanTier }))
+  ...pricingPlans.map(p => ({ ...p, id: p.id as PlanTier, cta: 'Start 3-Day Free Trial' }))
 ];
 
 const COMPARISON_CATEGORIES = [
@@ -208,6 +208,7 @@ export default function PricingPage() {
                     <span className="text-[45px] font-semibold leading-none tracking-[-0.06em] dark:text-[#FAFAFA]">{isFree ? '$0' : money.format(displayedPrice)}</span>
                     {!isFree && <span className="mb-1 text-[14px] text-muted-foreground dark:text-[#A1A1AA]">/{isAnnual ? 'year' : 'month'}</span>}
                   </div>
+                  {!isFree && <div className="mt-2 inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">3-Day Free Trial</div>}
                   <div className="mt-3 min-h-[40px] text-[12px] leading-5 text-muted-foreground">
                     {isFree ? (
                       <span>Free forever. No credit card required.</span>
@@ -348,3 +349,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+
