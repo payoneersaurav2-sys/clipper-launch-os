@@ -18,9 +18,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Footer */}
-      <div className="relative flex items-center justify-center gap-6 pb-6 px-4">
+      <div className="relative flex flex-wrap items-center justify-center gap-5 sm:gap-6 pb-6 px-4">
         <Link to="/terms" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
           Terms
+        </Link>
+        <Link to="/privacy" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+          Privacy
+        </Link>
+        <Link to="/refund-policy" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+          Refund Policy
         </Link>
         <a href="mailto:sauravwhop@gmail.com" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
           Contact

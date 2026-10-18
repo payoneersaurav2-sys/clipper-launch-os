@@ -18,15 +18,15 @@ export default function ExpiredPage() {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">License Inactive</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Subscription Inactive</h1>
           <p className="text-muted-foreground text-sm">
-            Your Whop membership has expired or was revoked. To restore access to your workspaces, please renew your subscription.
+            Your subscription has expired or is inactive. To restore access to your workspaces and AI tools, please renew your plan.
           </p>
         </div>
         
         <div className="pt-4 space-y-3">
             <Button onClick={() => navigate('/pricing')} className="w-full h-12 bg-primary hover:bg-primary/90 text-white font-medium border-0">
-                View plans on Whop
+                View Subscription Plans
             </Button>
             
             <Button onClick={() => signOut()} variant="ghost" className="w-full">

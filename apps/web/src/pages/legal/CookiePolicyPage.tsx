@@ -41,7 +41,7 @@ export default function CookiePolicyPage() {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">1. Strictly Necessary Storage</h2>
           <p>
-            Creator OS utilizes local storage and session storage to maintain application functionality. This includes your Supabase authentication session, `creator-os-appearance` (UI theme preference), Zustand application state caches (`creator-os-memory`, `creator-os-history`), and `creator_os_whop_oauth` (secure PKCE validation state for Whop login). These are strictly necessary to provide the service.
+            Creator OS utilizes local storage and session storage to maintain application functionality. This includes your Supabase authentication session, `creator-os-appearance` (UI theme preference), Zustand application state caches (`creator-os-memory`, `creator-os-history`), and secure authentication validation tokens. These are strictly necessary to provide the service.
           </p>
         </section>
 

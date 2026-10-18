@@ -16,7 +16,7 @@ const RELEASES = [
       { type: 'feature', text: 'Settings — profile, workspace, notifications, security' },
       { type: 'feature', text: 'Command Palette (⌘K) with global search and navigation' },
       { type: 'feature', text: 'Onboarding wizard — niche, platform, goals, workspace setup' },
-      { type: 'feature', text: 'Whop OAuth + Supabase email authentication' },
+      { type: 'feature', text: 'Secure OAuth + Supabase authentication' },
       { type: 'feature', text: 'Export system — JSON, CSV, Markdown' },
       { type: 'feature', text: 'Interactive product tour with localStorage persistence' },
       { type: 'feature', text: 'Feedback widget — bug reports, feature requests' },

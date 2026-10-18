@@ -83,6 +83,7 @@ function CreatorOSRoutes() {
             <Route path="/privacy"   element={<LandingLayout><PrivacyPage /></LandingLayout>} />
             <Route path="/acceptable-use" element={<LandingLayout><AcceptableUsePage /></LandingLayout>} />
             <Route path="/refund-policy"  element={<LandingLayout><RefundPolicyPage /></LandingLayout>} />
+            <Route path="/refund"         element={<Navigate to="/refund-policy" replace />} />
             <Route path="/cookies"        element={<LandingLayout><CookiePolicyPage /></LandingLayout>} />
             <Route path="/ai-disclaimer"  element={<LandingLayout><AIDisclaimerPage /></LandingLayout>} />
             <Route path="/dmca"           element={<LandingLayout><DMCAPage /></LandingLayout>} />

@@ -74,7 +74,7 @@ export default function CheckoutCompletePage() {
                 <AlertCircle className="w-8 h-8 text-red-500" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground mb-3">
-                We're still waiting on Whop
+                We're still confirming your subscription
               </h1>
               <p className="text-muted-foreground text-[15px] leading-relaxed mb-8">
                 Your payment might still be processing, or there was a delay in receiving the confirmation. Your account will automatically upgrade once the payment clears.
@@ -97,7 +97,7 @@ export default function CheckoutCompletePage() {
                 Finalizing your access...
               </h1>
               <p className="text-muted-foreground text-[15px] leading-relaxed mb-8">
-                Please wait while we verify your subscription with Whop. This usually takes just a few seconds.
+                Please wait while we verify your subscription confirmation. This usually takes just a few seconds.
               </p>
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
             </>

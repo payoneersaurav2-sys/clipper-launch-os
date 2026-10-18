@@ -6,13 +6,17 @@ import Wordmark from '@/components/Wordmark';
 import { Menu, X, ChevronDown } from 'lucide-react';
 import { AppearanceSwitcher } from '@/components/AppearanceSwitcher';
 
-const footerNav = [
+const productNav = [
   { label: 'Features', href: '/#features' },
   { label: 'For Agencies', href: '/for-agencies' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'FAQ', href: '/faq' },
-  { label: 'Terms', href: '/terms' },
-  { label: 'Contact', href: 'mailto:sauravwhop@gmail.com' },
+];
+
+const legalNav = [
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Refund Policy', href: '/refund-policy' },
 ];
 
 const FEATURE_GROUPS = [
@@ -296,32 +300,42 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
       <footer className="border-t border-white/[0.06] bg-[#080808]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 lg:pt-16 pb-10 lg:pb-12">
           {/* Top Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 lg:gap-12 pb-10 border-b border-white/[0.06]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 lg:gap-10 pb-10 border-b border-white/[0.06]">
             {/* Brand Column */}
-            <div className="sm:col-span-2 md:col-span-1">
+            <div>
               <Wordmark size="md" as="div" />
               <p className="mt-3 text-[14px] text-[#71717A] leading-relaxed tracking-tight max-w-[260px]">
                 Operating System for Modern Creators.
               </p>
             </div>
 
-            {/* Navigation */}
+            {/* Product */}
             <div>
               <p className="text-[12px] font-medium text-muted-foreground tracking-widest uppercase mb-5">
-                Navigation
+                Product
               </p>
               <ul className="space-y-3">
-                {footerNav.map((item) => (
+                {productNav.map((item) => (
                   <li key={item.label}>
-                    {item.href.startsWith('mailto') ? (
-                      <a href={item.href} className="text-[14px] text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors tracking-tight">
-                        {item.label}
-                      </a>
-                    ) : (
-                      <Link to={item.href} className="text-[14px] text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors tracking-tight">
-                        {item.label}
-                      </Link>
-                    )}
+                    <Link to={item.href} className="text-[14px] text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors tracking-tight">
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <p className="text-[12px] font-medium text-muted-foreground tracking-widest uppercase mb-5">
+                Legal
+              </p>
+              <ul className="space-y-3">
+                {legalNav.map((item) => (
+                  <li key={item.label}>
+                    <Link to={item.href} className="text-[14px] text-[#A1A1AA] hover:text-[#FAFAFA] transition-colors tracking-tight">
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -335,17 +349,28 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <a href="mailto:sauravwhop@gmail.com" className="text-[14px] text-[#A1A1AA] hover:text-primary transition-colors tracking-tight break-all">
                 sauravwhop@gmail.com
               </a>
+              <p className="mt-2 text-[12px] text-[#71717A] leading-relaxed">
+                Support, inquiries, and billing questions.
+              </p>
             </div>
           </div>
 
           {/* Bottom Row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8">
             <p className="text-[13px] text-[#71717A] tracking-tight text-center sm:text-left">
-              Ac 2026 Creator OS. All rights reserved.
+              © 2026 Creator OS. All rights reserved.
             </p>
-            <Link to="/terms" className="text-[13px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
-              Terms & Conditions
-            </Link>
+            <div className="flex flex-wrap items-center justify-center gap-5 sm:gap-6">
+              <Link to="/terms" className="text-[13px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+                Terms of Service
+              </Link>
+              <Link to="/privacy" className="text-[13px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+                Privacy Policy
+              </Link>
+              <Link to="/refund-policy" className="text-[13px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+                Refund Policy
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

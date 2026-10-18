@@ -46,7 +46,7 @@ const defaultFaqs: FAQItem[] = [
   },
   {
     question: "What happens when I upgrade my plan?",
-    answer: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through Whop."
+    answer: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through our authorized payment service provider."
   }
 ];
 
@@ -61,19 +61,19 @@ export const pricingFaqs: FAQItem[] = [
   },
   {
     question: "Is Creator OS a subscription?",
-    answer: "Yes. We offer both monthly and annual subscription plans. Payments and subscription processing are handled through Whop, our third-party payment and subscription provider."
+    answer: "Yes. We offer both monthly and annual subscription plans. Payments and subscription processing are handled through our authorized payment service provider."
   },
   {
     question: "Can I cancel?",
-    answer: "Yes, you may cancel your Creator OS subscription at any time by logging into your Whop dashboard. Cancellations take effect at the end of your current billing cycle, and you will retain access until that cycle concludes."
+    answer: "Yes, you may cancel your Creator OS subscription at any time through your account settings or billing portal. Cancellations take effect at the end of your current billing cycle, and you will retain access until that cycle concludes."
   },
   {
     question: "How do refunds work?",
-    answer: <>Subscriptions are generally non-refundable since you receive immediate access to digital tools and AI generations. Refund eligibility is strictly governed by our <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>.</>
+    answer: <>Subscriptions provide immediate digital access and are generally non-refundable once activated. Refund requests and eligibility are governed by our <Link to="/refund-policy" className="text-primary hover:underline">Refund Policy</Link>.</>
   },
   {
     question: "Is there a free trial?",
-    answer: "We currently do not offer a free trial. You can start with our monthly plan to test the workflow."
+    answer: "Yes, we offer a 3-day free trial on all paid plans (Creator, Pro, and Agency) so you can test the full workflow before committing. You can also start with our Free tier to explore core tools."
   },
   {
     question: "What happens after I cancel?",
@@ -81,11 +81,11 @@ export const pricingFaqs: FAQItem[] = [
   },
   {
     question: "What happens if my payment fails?",
-    answer: "If your payment fails, Whop will handle the billing attempt. Access may be paused until a successful payment is processed."
+    answer: "If your payment fails, our payment service provider will notify you and retry the payment. Access may be temporarily paused until a successful payment is processed."
   },
   {
     question: "How does billing work?",
-    answer: "Payments and subscription processing are handled through Whop, our third-party payment and subscription provider."
+    answer: "Payments and recurring subscriptions are handled securely through our authorized payment service provider using industry-standard encryption."
   },
   {
     question: "How do I get help?",

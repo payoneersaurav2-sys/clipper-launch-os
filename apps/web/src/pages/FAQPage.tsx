@@ -57,7 +57,7 @@ const faqs = [
   },
   {
     q: "What happens when I upgrade my plan?",
-    a: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through Whop."
+    a: "When you upgrade, your account immediately unlocks higher AI generation limits, more workspaces, and advanced features like the Knowledge Vault or Agency client isolation. Billing and subscriptions are securely handled through our authorized payment service provider."
   }
 ];
 

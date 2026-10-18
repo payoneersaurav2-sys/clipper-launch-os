@@ -45,10 +45,10 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">1. Information We Collect (Categories & Sources)</h2>
           <ul className="list-disc pl-5 mt-2 space-y-2">
-            <li><strong>Account Data:</strong> Email address, name, and profile avatars collected during registration directly or via OAuth.</li>
+            <li><strong>Account Data:</strong> Email address, name, and profile details collected during registration or login.</li>
             <li><strong>Creator & AI Data:</strong> Source materials uploaded to the Knowledge Vault, text prompts, generated campaign ideas, and AI memory context provided by you.</li>
-            <li><strong>Technical & Security Data:</strong> IP addresses, browser user-agent data, and security telemetry collected automatically.</li>
-            <li><strong>Billing Metadata:</strong> Subscription status and identifiers provided by Whop. We do NOT collect or receive raw payment card details.</li>
+            <li><strong>Technical & Operational Data:</strong> IP addresses, browser user-agent data, and security telemetry collected automatically.</li>
+            <li><strong>Billing & Subscription Metadata:</strong> Subscription status, plan tier, and transaction identifiers provided by our authorized third-party payment service provider. We do NOT collect, process, or store raw payment card numbers.</li>
           </ul>
         </section>
 
@@ -56,24 +56,24 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold text-white mb-3">2. Purposes & Lawful Bases</h2>
           <p>We process your data for the following purposes:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Service Delivery (Contract):</strong> To authenticate you, host your Knowledge Vault, and route prompts to AI models.</li>
-            <li><strong>Security (Legitimate Interest):</strong> To prevent fraud, abuse, and enforce our Acceptable Use Policy.</li>
-            <li><strong>Billing (Contract):</strong> To synchronize subscription entitlements with Whop.</li>
-            <li><strong>Marketing & Analytics (Consent where required):</strong> To track conversions via marketing pixels. (Non-essential pixels load via our application; where required by law, we request consent prior to loading these scripts).</li>
+            <li><strong>Service Delivery (Contract):</strong> To authenticate your account, maintain your workspaces, host your Knowledge Vault, and route prompts to AI models.</li>
+            <li><strong>Security & Reliability (Legitimate Interest):</strong> To prevent fraud, abuse, and enforce our Acceptable Use Policy.</li>
+            <li><strong>Billing & Entitlements (Contract):</strong> To verify payment status and synchronize subscription entitlements with our payment service provider.</li>
+            <li><strong>Transactional Communications:</strong> To deliver essential account notices, verification emails, and onboarding guides via our transactional email provider.</li>
           </ul>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">3. How We Share Information (Subprocessors)</h2>
-          <p>We transmit necessary data to the following subprocessors:</p>
+          <p>We transmit necessary data to the following service providers and subprocessors:</p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
-            <li><strong>Supabase:</strong> For core database, authentication, and file storage.</li>
+            <li><strong>Supabase:</strong> For core database, authentication, and secure file storage.</li>
             <li><strong>OpenRouter & AI Models:</strong> We route your AI prompts and Knowledge Vault context to third-party models to generate outputs. (We do not control the retention logs or training ingestion mechanisms of third-party underlying model providers).</li>
-            <li><strong>Whop:</strong> For subscription billing and analytics.</li>
-            <li><strong>Vercel:</strong> For edge function hosting and routing.</li>
-            <li><strong>Marketing Pixels:</strong> Meta and X tracking pixels are integrated to measure conversion performance.</li>
+            <li><strong>Payment Service Provider:</strong> Authorized third-party payment processors securely manage payment transactions, checkout, and subscription billing state.</li>
+            <li><strong>Vercel:</strong> For edge function hosting, API routing, and web delivery.</li>
+            <li><strong>Resend:</strong> For delivery of transactional account and onboarding emails.</li>
           </ul>
-          <p className="mt-2 text-sm text-[#A1A1AA]">We utilize third-party subprocessors located in the United States. By using our Service, you acknowledge that your data may be transferred to and processed in the US, subject to applicable law.</p>
+          <p className="mt-2 text-sm text-[#A1A1AA]">We utilize third-party subprocessors located in the United States and internationally. By using our Service, you acknowledge that your data may be transferred to and processed in these jurisdictions, subject to applicable law.</p>
         </section>
 
         <section>

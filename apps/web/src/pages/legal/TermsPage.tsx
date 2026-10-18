@@ -59,16 +59,16 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="text-xl font-semibold text-white mb-3">4. Whop Payment Boundary & Subscriptions</h2>
+          <h2 className="text-xl font-semibold text-white mb-3">4. Payment Processing & Subscriptions</h2>
           <p>
-            All checkout, payment processing, subscription management, and billing operations are securely handled by our third-party payment and subscription provider, Whop. By subscribing to a paid plan, you agree to Whop's applicable terms and policies. Creator OS does not collect, process, or store raw payment card data. Your access to Creator OS features is tied directly to the subscription entitlements reported to us by Whop.
+            All checkout, payment processing, subscription management, and recurring billing operations are securely handled by our authorized third-party payment service provider. By subscribing to a paid plan, you agree to the billing terms and conditions disclosed at checkout and those of our payment processor. Creator OS does not collect, process, or store raw payment card data. Your access to paid Creator OS features and tier entitlements is provisioned based on verified subscription status reported by our payment service provider. Subscriptions renew automatically on a recurring basis (monthly or annually, as selected) unless cancelled prior to the renewal date.
           </p>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">5. Cancellation & Refunds</h2>
           <p>
-            You may cancel your subscription at any time through your Whop dashboard. Cancellation will take effect at the end of your current billing cycle. Refunds and cancellation rights are governed by our Refund Policy and any mandatory rights and remedies available to you under applicable law. Nothing in these Terms limits or excludes any consumer right that cannot lawfully be limited or excluded.
+            You may cancel your subscription at any time through your account settings or the billing portal provided by our payment service provider. Cancellation will take effect at the conclusion of your current billing period, and you will maintain access to your subscribed features until that cycle ends. Refunds and cancellation rights are governed by our <a href="/refund-policy" className="text-primary hover:underline">Refund Policy</a> and any mandatory consumer protection rights available to you under applicable law. Nothing in these Terms limits or excludes any statutory consumer rights that cannot lawfully be waived.
           </p>
         </section>
 
