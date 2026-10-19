@@ -1,0 +1,16 @@
+# Development and QA artifacts — never deployed to Vercel
+qa/
+qa-test/
+dev/
+
+# Local scratch and documentation
+docs/
+scratch/
+supabase/
+
+# Local environment examples (not secrets, but not needed in deploy)
+.env.*.example
+
+# Editor directories
+.vscode/
+.idea/
