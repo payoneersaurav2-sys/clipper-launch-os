@@ -209,6 +209,29 @@ async function handleSubscriptionUpsert(
   if (error) throw error;
 
   console.log(`[paddle-webhook] User ${userId} → tier=${tier} status=${membershipStatus}`);
+
+  // When the membership is active or trialing and we resolved a mapped tier, grant
+  // subscription credits according to the plan limits.
+  if (['active', 'trialing'].includes(membershipStatus) && tier) {
+    try {
+      const billingEnd =
+        (sub.currentBillingPeriod as any)?.endsAt ||
+        (sub.current_billing_period as any)?.ends_at ||
+        sub.nextBilledAt ||
+        sub.next_billed_at ||
+        null;
+
+      await supabase.rpc('grant_creator_os_subscription_credits', {
+        p_user_id: userId,
+        p_tier: tier,
+        p_membership_id: paddleSubscriptionId || null,
+        p_period_end: billingEnd,
+      });
+      console.log(`[paddle-webhook] Granted subscription credits for user ${userId} (tier=${tier})`);
+    } catch (creditErr) {
+      console.error('[paddle-webhook] Failed to grant subscription credits:', creditErr);
+    }
+  }
 }
 
 async function handleSubscriptionCanceled(
