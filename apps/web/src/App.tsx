@@ -1,6 +1,7 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { initializePaddle } from './lib/paddle';
 
 // Eager
 import LandingLayout   from './layouts/LandingLayout';
@@ -68,6 +69,9 @@ function PageLoader() {
 }
 
 function CreatorOSRoutes() {
+  // Initialize Paddle.js once on first render. No-op if VITE_PADDLE_CLIENT_TOKEN is not set.
+  useEffect(() => { initializePaddle(); }, []);
+
   return (
     <ErrorBoundary>
       <BrowserRouter>

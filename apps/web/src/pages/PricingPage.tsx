@@ -139,7 +139,8 @@ export default function PricingPage() {
       return;
     }
     if (checkoutObj) {
-      beginCheckout(checkoutObj[billing].url);
+      const slot = checkoutObj[billing];
+      beginCheckout(slot.url, slot.paddlePriceId);
     }
   };
 

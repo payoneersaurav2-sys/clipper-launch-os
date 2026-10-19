@@ -1,6 +1,15 @@
 {
   "outputDirectory": "apps/web/dist",
+  "functions": {
+    "api/webhook/paddle.ts": {
+      "runtime": "edge"
+    }
+  },
   "rewrites": [
+    {
+      "source": "/api/webhook/paddle",
+      "destination": "/api/webhook/paddle"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

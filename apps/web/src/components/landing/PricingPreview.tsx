@@ -84,7 +84,8 @@ export function PricingPreview() {
     }
     if (checkoutObj) {
       // Default to monthly for the preview
-      beginCheckout(checkoutObj['monthly'].url);
+      const slot = checkoutObj['monthly'];
+      beginCheckout(slot.url, slot.paddlePriceId);
     }
   };
 

@@ -23,6 +23,7 @@
   },
   "packageManager": "npm@10.8.1",
   "dependencies": {
+    "@paddle/paddle-node-sdk": "^3.10.0",
     "@supabase/server": "^1.4.1",
     "js-yaml": "^4.3.2",
     "nanoid": "^3.3.19",
