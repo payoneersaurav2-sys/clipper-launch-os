@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Shield, Users, Layers, Zap, Folder, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCheckout } from '@/hooks/useCheckout';
+import { pricingPlans } from '@/lib/pricing';
 
 
 const features = [
@@ -39,6 +41,10 @@ const features = [
 ];
 
 export default function ForAgenciesPage() {
+  const navigate = useNavigate();
+  const { beginCheckout, user } = useCheckout();
+  const agencyPlan = pricingPlans.find(p => p.id === 'agency');
+
   useEffect(() => {
     document.title = 'For Agencies | Creator OS';
   }, []);
@@ -121,11 +127,18 @@ export default function ForAgenciesPage() {
           <div className="max-w-3xl mx-auto text-center relative z-10">
             <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-6">Ready to upgrade your workflow?</h2>
             <p className="text-zinc-400 mb-10 text-lg">Join the agencies already scaling their content production with Creator OS.</p>
-            <Link to="/pricing">
-              <Button className="h-12 px-8 rounded-xl bg-primary text-white hover:bg-primary/90 shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all text-base font-medium">
-                Get Started with Agency
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => {
+                if (agencyPlan && user) {
+                  beginCheckout(agencyPlan.checkout['monthly'].url, agencyPlan.checkout['monthly'].paddlePriceId);
+                } else {
+                  navigate('/pricing');
+                }
+              }}
+              className="h-12 px-8 rounded-xl bg-primary text-white hover:bg-primary/90 shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all text-base font-medium"
+            >
+              Get Started with Agency
+            </Button>
           </div>
         </section>
       </div>
