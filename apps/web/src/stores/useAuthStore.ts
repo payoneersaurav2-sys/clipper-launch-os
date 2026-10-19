@@ -37,11 +37,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user }),
   setSession: (session) => set({ session, user: session?.user ?? null, isLoading: false }),
   syncSession: async (session) => {
-    let status = null;
-    let tier = null;
+    let status = 'inactive';
+    let tier = 'free';
     let whopId = null;
     let avatarUrl = null;
-    let onboarded = null;
+    let onboarded: boolean | null = true;
     let requiresLegalAcceptance = false;
     let isAdmin = false;
 
@@ -59,13 +59,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const data = userRes.data;
       if (data) {
         const expired = Boolean(data.membership_expires_at && new Date(data.membership_expires_at).getTime() <= Date.now());
-        const storedTier = data.subscription_tier ?? 'free';
-        status = expired ? 'inactive' : (data.membership_status ?? 'inactive');
+        const storedTier = data.subscription_tier || 'free';
+        status = expired ? 'inactive' : (data.membership_status || 'inactive');
         tier = expired ? 'free' : storedTier;
         whopId = data.whop_id;
         avatarUrl = data.avatar_url;
-        onboarded = data.onboarding_complete;
+        onboarded = data.onboarding_complete ?? true;
         isAdmin = Boolean(data.is_admin);
+      } else {
+        // Auto-create missing public.users record as free tier
+        supabase.from('users').upsert({
+          id: session.user.id,
+          subscription_tier: 'free',
+          membership_status: 'inactive',
+          onboarding_complete: true,
+          full_name: session.user.email?.split('@')[0] ?? 'Creator',
+        }).then(() => {});
       }
       if (legalRes.data) {
         requiresLegalAcceptance = Boolean(legalRes.data.requires_acceptance);
