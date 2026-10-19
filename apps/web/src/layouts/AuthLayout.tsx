@@ -28,7 +28,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Link to="/refund-policy" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
           Refund Policy
         </Link>
-        <a href="mailto:sauravwhop@gmail.com" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
+        <a href="mailto:support@creator-os.online" className="text-[12px] text-[#71717A] hover:text-[#A1A1AA] transition-colors tracking-tight">
           Contact
         </a>
       </div>

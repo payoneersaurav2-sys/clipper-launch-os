@@ -100,8 +100,7 @@ export default function OnboardingPage() {
     setSaveError(null);
     try {
       // Step 1: Guarantee the public.users row exists before anything else.
-      // This prevents the FK violation for users who came through Whop OAuth
-      // or any path that didn't explicitly insert into public.users.
+            // or any path that didn't explicitly insert into public.users.
       const { error: upsertErr } = await supabase.from('users').upsert({
         id: user.id,
         full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Creator',

@@ -89,7 +89,7 @@ export const pricingFaqs: FAQItem[] = [
   },
   {
     question: "How do I get help?",
-    answer: "For assistance with your account, billing, technical, or product questions, you can email our support team at sauravwhop@gmail.com."
+    answer: "For assistance with your account, billing, technical, or product questions, you can email our support team at support@creator-os.online."
   }
 ];
 

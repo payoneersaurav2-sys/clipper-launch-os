@@ -2,13 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { WHOP_REDIRECT_URI, getStoredWhopTransaction } from '@/lib/whopPkce';
 import { Loader2 } from 'lucide-react';
 import BrandMark from '@/components/BrandMark';
 import { trackEvent } from '@/lib/analytics';
 
 // Module-level flag — survives React Strict Mode's double-mount/unmount cycle.
-// Reset on every full page navigation (new module load).
 let exchangeInProgress = false;
 
 export default function AuthCallback() {
@@ -19,9 +17,7 @@ export default function AuthCallback() {
   const didRun = useRef(false);
 
   useEffect(() => {
-    // useRef guard: prevents double-fire within the same mount instance
     if (didRun.current) return;
-    // Module-level guard: prevents double-fire across Strict Mode remounts
     if (exchangeInProgress) return;
 
     didRun.current = true;
@@ -35,176 +31,71 @@ export default function AuthCallback() {
     }
 
     const code = searchParams.get('code');
-    // If no code and no Whop transaction, it might be a Supabase implicit flow where
-    // the supabase-js client already stripped the #access_token from the URL.
-    if (!code && !getStoredWhopTransaction(searchParams)) {
-      (async () => {
-        try {
-          setStatus('Verifying session...');
-          // Check if Supabase successfully established the session in the background
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-          
-          if (sessionError || !session) {
-            exchangeInProgress = false;
-            navigate(`/login?error=Authentication+failed+or+was+cancelled.`);
-            return;
-          }
-          
-          const profileData = {
-            id: session.user.id,
-            full_name: session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? session.user.email?.split('@')[0] ?? 'Creator',
-            avatar_url: session.user.user_metadata?.avatar_url ?? null,
-          };
-
-          const { data: existingProfile, error: lookupError } = await supabase
-            .from('users')
-            .select('onboarding_complete')
-            .eq('id', session.user.id)
-            .maybeSingle();
-          if (lookupError) throw lookupError;
-
-          let profile;
-          if (!existingProfile) {
-            const { data: insertedProfile, error: insertError } = await supabase
-              .from('users')
-              .insert(profileData)
-              .select('onboarding_complete')
-              .single();
-            if (insertError) throw insertError;
-            profile = insertedProfile;
-            trackEvent('signup_completed');
-          } else {
-            const { data: updatedProfile, error: updateError } = await supabase
-              .from('users')
-              .update({
-                full_name: profileData.full_name,
-                avatar_url: profileData.avatar_url,
-              })
-              .eq('id', session.user.id)
-              .select('onboarding_complete')
-              .single();
-            if (updateError) throw updateError;
-            profile = updatedProfile;
-          }
-
-          await syncSession(session);
-          navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
-        } catch (err: unknown) {
-          exchangeInProgress = false;
-          navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
-        }
-      })();
-      return;
-    }
-
-    // Detect Supabase social OAuth (Google PKCE flow) — no Whop state stored means it's a social redirect
-    const transaction = getStoredWhopTransaction(searchParams);
-    if (!transaction) {
-      (async () => {
-        try {
-          if (!code) {
-            throw new Error('Authentication failed because no OAuth code was returned.');
-          }
-          setStatus('Connecting your account...');
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error || !data.user || !data.session) throw error ?? new Error('No session was created.');
-          const profileData = {
-            id: data.user.id,
-            full_name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? data.user.email?.split('@')[0] ?? 'Creator',
-            avatar_url: data.user.user_metadata?.avatar_url ?? null,
-          };
-
-          const { data: existingProfile, error: lookupError } = await supabase
-            .from('users')
-            .select('onboarding_complete')
-            .eq('id', data.user.id)
-            .maybeSingle();
-          if (lookupError) throw lookupError;
-
-          let profile;
-          if (!existingProfile) {
-            const { data: insertedProfile, error: insertError } = await supabase
-              .from('users')
-              .insert(profileData)
-              .select('onboarding_complete')
-              .single();
-            if (insertError) throw insertError;
-            profile = insertedProfile;
-            trackEvent('signup_completed');
-          } else {
-            const { data: updatedProfile, error: updateError } = await supabase
-              .from('users')
-              .update({
-                full_name: profileData.full_name,
-                avatar_url: profileData.avatar_url,
-              })
-              .eq('id', data.user.id)
-              .select('onboarding_complete')
-              .single();
-            if (updateError) throw updateError;
-            profile = updatedProfile;
-          }
-
-          await syncSession(data.session);
-          navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
-        } catch (err: unknown) {
-          exchangeInProgress = false;
-          navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
-        }
-      })();
-      return;
-    }
-
-    if (!transaction.intent) {
-      exchangeInProgress = false;
-      navigate('/login?error=Your+Whop+sign-in+session+expired.+Please+try+again.');
-      return;
-    }
 
     (async () => {
       try {
-        if (transaction.intent === 'link_account') {
-          setStatus('Securely linking your Whop account...');
-          const { data, error } = await supabase.functions.invoke('whop-link-account', {
-            body: { code, redirect_uri: WHOP_REDIRECT_URI, code_verifier: transaction.codeVerifier },
-          });
-          if (error) throw new Error(error.message);
-          if (data?.error) throw new Error(data.error);
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) await syncSession(session);
-          navigate('/dashboard/credits?linked=whop');
-          return;
-        }
+        setStatus('Verifying session...');
+        let sessionToSync = null;
 
-        const { data, error } = await supabase.functions.invoke('whop-auth', {
-          body: {
-            code,
-            redirect_uri: WHOP_REDIRECT_URI,
-            code_verifier: transaction.codeVerifier,
-          },
-        });
-
-        if (error) throw new Error(error.message);
-        if (data?.error) throw new Error(data.error);
-
-        if (data?.access_token) {
-          setStatus('Authenticated! Loading your OS...');
-          const setSessionPayload: { access_token: string; refresh_token: string } = {
-            access_token: data.access_token,
-            refresh_token: data.refresh_token ?? '',
-          };
-          const { data: authData, error: authError } = await supabase.auth.setSession(setSessionPayload);
-          if (authError) throw authError;
-          if (!authData?.session) throw new Error('Supabase did not create a session.');
-          await syncSession(authData.session);
-          navigate('/dashboard');
+        if (code) {
+          // Exchange code for Supabase session (Google OAuth PKCE flow)
+          setStatus('Connecting your account...');
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error || !data.session) throw error ?? new Error('No session was created.');
+          sessionToSync = data.session;
         } else {
-          throw new Error('No access token in response');
+          // Check for existing session established by client (implicit flow)
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError || !session) {
+            throw new Error('Authentication failed or was cancelled.');
+          }
+          sessionToSync = session;
         }
-      } catch (err: any) {
-        console.error('[AUTH] Exchange failed:', err.message);
+
+        const user = sessionToSync.user;
+        const profileData = {
+          id: user.id,
+          full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Creator',
+          avatar_url: user.user_metadata?.avatar_url ?? null,
+        };
+
+        const { data: existingProfile, error: lookupError } = await supabase
+          .from('users')
+          .select('onboarding_complete')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (lookupError) throw lookupError;
+
+        let profile;
+        if (!existingProfile) {
+          const { data: insertedProfile, error: insertError } = await supabase
+            .from('users')
+            .insert(profileData)
+            .select('onboarding_complete')
+            .single();
+          if (insertError) throw insertError;
+          profile = insertedProfile;
+          trackEvent('signup_completed');
+        } else {
+          const { data: updatedProfile, error: updateError } = await supabase
+            .from('users')
+            .update({
+              full_name: profileData.full_name,
+              avatar_url: profileData.avatar_url,
+            })
+            .eq('id', user.id)
+            .select('onboarding_complete')
+            .single();
+          if (updateError) throw updateError;
+          profile = updatedProfile;
+        }
+
+        await syncSession(sessionToSync);
+        navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
+      } catch (err: unknown) {
         exchangeInProgress = false;
-        navigate(`/login?error=${encodeURIComponent(err.message || 'Authentication failed')}`);
+        navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
       }
     })();
   }, [navigate, searchParams, syncSession]);
@@ -226,4 +117,3 @@ export default function AuthCallback() {
     </div>
   );
 }
-

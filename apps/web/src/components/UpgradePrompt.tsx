@@ -25,8 +25,7 @@ export function UpgradePrompt({
 
   const resolvedRequiredPlan = requiredPlan ?? 'creator';
   const plan = pricingPlans.find((entry) => entry.id === resolvedRequiredPlan);
-  const checkoutUrl = plan?.checkout.monthly.url;
-  const paddlePriceId = plan?.checkout.monthly.paddlePriceId;
+    const paddlePriceId = plan?.checkout.monthly.paddlePriceId;
 
   // If the user already has the required plan or better, hide prompt
   const tierOrder: Record<PlanTier, number> = { free: 0, creator: 1, pro: 2, agency: 3 };
@@ -38,11 +37,7 @@ export function UpgradePrompt({
   }
 
   const handleUpgrade = () => {
-    if (checkoutUrl) {
-      beginCheckout(checkoutUrl, paddlePriceId, { planId: resolvedRequiredPlan, billing: 'monthly' });
-    } else {
-      window.location.assign('/dashboard/pricing');
-    }
+    beginCheckout(undefined, paddlePriceId, { planId: resolvedRequiredPlan, billing: 'monthly' });
   };
 
   return (
@@ -60,7 +55,7 @@ export function UpgradePrompt({
           </p>
         </div>
       </div>
-      {checkoutUrl && (
+      {plan && (
         <Button
           type="button"
           size="sm"

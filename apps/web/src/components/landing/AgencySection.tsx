@@ -67,7 +67,7 @@ export function AgencySection() {
               {agencyPlan && (
                 <Button 
                   size="lg" 
-                  onClick={() => beginCheckout(agencyPlan.checkout['monthly'].url, agencyPlan.checkout['monthly'].paddlePriceId)}
+                  onClick={() => beginCheckout(undefined, agencyPlan.checkout['monthly'].paddlePriceId, { planId: 'agency', billing: 'monthly' })}
                   className="h-12 px-8 text-sm font-medium bg-primary text-white hover:bg-primary/90 shadow-[0_0_24px_rgba(124,58,237,0.4)] hover:shadow-[0_0_32px_rgba(124,58,237,0.6)] transition-all duration-300"
                 >
                   Start with Agency <ArrowRight className="w-4 h-4 ml-2" />

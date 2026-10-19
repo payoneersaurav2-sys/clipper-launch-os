@@ -79,7 +79,7 @@ export default function RefundPolicyPage() {
             Because Creator OS provides immediate access to digital workflows, cloud workspace allocations, and AI generation resources upon payment, subscriptions are generally non-refundable once activated, except where provided under this policy or required by applicable law.
           </p>
           <p className="mt-2">
-            If you experience an issue or believe you qualify for a refund review, please contact our support team at <a href="mailto:sauravwhop@gmail.com" className="text-primary hover:underline">sauravwhop@gmail.com</a>.
+            If you experience an issue or believe you qualify for a refund review, please contact our support team at <a href="mailto:support@creator-os.online" className="text-primary hover:underline">support@creator-os.online</a>.
           </p>
           <p className="mt-2">
             To assist us in evaluating your request, please provide:
@@ -98,7 +98,7 @@ export default function RefundPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">6. Suspected Duplicate or Erroneous Charges</h2>
           <p>
-            If you suspect you have been billed in error or experienced an accidental duplicate charge, please contact us immediately at <a href="mailto:sauravwhop@gmail.com" className="text-primary hover:underline">sauravwhop@gmail.com</a> with your transaction details. If a billing error or duplicate payment is verified, we will issue a prompt correction or refund to your original payment method.
+            If you suspect you have been billed in error or experienced an accidental duplicate charge, please contact us immediately at <a href="mailto:support@creator-os.online" className="text-primary hover:underline">support@creator-os.online</a> with your transaction details. If a billing error or duplicate payment is verified, we will issue a prompt correction or refund to your original payment method.
           </p>
         </section>
 
@@ -112,7 +112,7 @@ export default function RefundPolicyPage() {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">8. Contact Us</h2>
           <p>
-            For any inquiries regarding billing, subscription cancellation, or refund reviews, please reach out to our support team at <a href="mailto:sauravwhop@gmail.com" className="text-primary hover:underline">sauravwhop@gmail.com</a>.
+            For any inquiries regarding billing, subscription cancellation, or refund reviews, please reach out to our support team at <a href="mailto:support@creator-os.online" className="text-primary hover:underline">support@creator-os.online</a>.
           </p>
         </section>
       </div>

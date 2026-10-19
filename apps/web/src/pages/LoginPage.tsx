@@ -5,7 +5,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import BrandMark from '@/components/BrandMark';
-import { WhopOAuthButton } from '@/components/auth/WhopOAuthButton';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { Turnstile } from '@marsidev/react-turnstile';
 
@@ -13,11 +12,6 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const errorMsg = searchParams.get('error');
-
-  React.useEffect(() => {
-    const token = searchParams.get('token');
-    if (token) navigate(`/auth/iframe?token=${token}`);
-  }, [searchParams, navigate]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -186,23 +180,6 @@ export default function LoginPage() {
         <span className="text-[12px] text-[#71717A]">or</span>
         <div className="flex-1 h-px bg-white/[0.06]" />
       </div>
-
-      {/* Whop OAuth (Only for returning users) */}
-      {mode === 'login' && (
-        <WhopOAuthButton
-          onClick={async () => {
-            try {
-              persistRememberPreference(rememberMe);
-              const { buildWhopOAuthUrl } = await import('@/lib/whopPkce');
-              const url = await buildWhopOAuthUrl();
-              window.location.assign(url);
-            } catch {
-              setErr('We could not start Whop sign-in. Please try again.');
-            }
-          }}
-          loading={false}
-        />
-      )}
 
       {googleConfigured ? <GoogleSignInButton rememberMe={rememberMe} onError={setErr} /> : (
         <p className="text-center text-xs text-[#71717A]">Google sign-in is being configured.</p>

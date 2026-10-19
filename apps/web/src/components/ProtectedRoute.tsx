@@ -18,7 +18,7 @@ export default function ProtectedRoute() {
   }
 
   // Allow access if:
-  // 1. Whop membership is active, OR
+  // 1. Subscription membership is active, OR
   // 2. User created account directly (membership_status = 'active' set on signup)
   const hasAccess = subscriptionTier === 'free' || ['active', 'trialing', 'past_due', 'completed'].includes(membershipStatus ?? '');
 
@@ -26,8 +26,7 @@ export default function ProtectedRoute() {
     return <Navigate to="/expired" replace />;
   }
 
-  // Whop-authenticated users are marked onboarding-complete by the verified
-  // server-side iframe flow. Web users retain the normal onboarding flow.
+  // Active users retain the normal onboarding flow.
   if (onboardingComplete !== true) {
     return <Navigate to="/onboarding" replace />;
   }

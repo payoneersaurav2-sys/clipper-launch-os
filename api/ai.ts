@@ -281,7 +281,7 @@ export default async function handler(request: Request) {
           ? 'Your Creator OS account is not eligible to use AI generation.'
           : code === 'CREDIT_OPERATION_UNAVAILABLE'
             ? 'This AI operation is not available until its credit cost is configured.'
-          : 'Your Creator OS plan could not be resolved. Please sign in through Whop again.';
+          : 'Your Creator OS plan could not be resolved. Please sign in again to verify your subscription.';
       return json({ error: message, code }, 403);
     }
     creditReservationId = reservation.reservationId;

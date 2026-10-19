@@ -346,8 +346,8 @@ export default function LandingLayout({ children }: { children: React.ReactNode 
               <p className="text-[12px] font-medium text-muted-foreground tracking-widest uppercase mb-5">
                 Contact
               </p>
-              <a href="mailto:sauravwhop@gmail.com" className="text-[14px] text-[#A1A1AA] hover:text-primary transition-colors tracking-tight break-all">
-                sauravwhop@gmail.com
+              <a href="mailto:support@creator-os.online" className="text-[14px] text-[#A1A1AA] hover:text-primary transition-colors tracking-tight break-all">
+                support@creator-os.online
               </a>
               <p className="mt-2 text-[12px] text-[#71717A] leading-relaxed">
                 Support, inquiries, and billing questions.

@@ -57,7 +57,7 @@ export const useWorkspaces = () => {
     },
   });
 
-  // Whop iframe users intentionally bypass the web onboarding screens. Ensure
+  // Ensure
   // that path still has a real workspace for all persisted CreatorOS data.
   const ensuredForUserId = useRef<string | null>(null);
   useEffect(() => {

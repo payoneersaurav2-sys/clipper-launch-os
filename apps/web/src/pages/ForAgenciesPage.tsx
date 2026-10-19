@@ -130,7 +130,7 @@ export default function ForAgenciesPage() {
             <Button 
               onClick={() => {
                 if (agencyPlan && user) {
-                  beginCheckout(agencyPlan.checkout['monthly'].url, agencyPlan.checkout['monthly'].paddlePriceId, { planId: 'agency', billing: 'monthly' });
+                  beginCheckout(undefined, agencyPlan.checkout['monthly'].paddlePriceId, { planId: 'agency', billing: 'monthly' });
                 } else {
                   navigate('/pricing');
                 }

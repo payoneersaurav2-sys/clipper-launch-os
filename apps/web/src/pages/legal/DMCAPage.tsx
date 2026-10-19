@@ -46,7 +46,7 @@ export default function DMCAPage() {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">Filing a Notice</h2>
           <p>
-            Please provide a written notice to our copyright contact at <a href="mailto:sauravwhop@gmail.com" className="text-primary hover:underline">sauravwhop@gmail.com</a> containing:
+            Please provide a written notice to our copyright contact at <a href="mailto:support@creator-os.online" className="text-primary hover:underline">support@creator-os.online</a> containing:
           </p>
           <ul className="list-disc pl-5 mt-2 space-y-1">
             <li>A description of the copyrighted work you claim has been infringed.</li>

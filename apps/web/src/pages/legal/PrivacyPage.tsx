@@ -127,7 +127,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-white mb-3">9. Contact Us</h2>
           <p>
-            For privacy inquiries, to exercise your rights, or to lodge a complaint, please contact us at <a href="mailto:sauravwhop@gmail.com" className="text-primary hover:underline">sauravwhop@gmail.com</a>.
+            For privacy inquiries, to exercise your rights, or to lodge a complaint, please contact us at <a href="mailto:support@creator-os.online" className="text-primary hover:underline">support@creator-os.online</a>.
           </p>
         </section>
       </div>

@@ -33,7 +33,7 @@ const faqs = [
   },
   {
     q: 'How can I contact support?',
-    a: 'Reach us directly at sauravwhop@gmail.com. We aim to respond to all inquiries within 24–48 hours.',
+    a: 'Reach us directly at support@creator-os.online. We aim to respond to all inquiries within 24–48 hours.',
   },
   {
     q: "Do I need video editing skills to use Creator OS?",
@@ -127,7 +127,7 @@ export default function FAQPage() {
           </h1>
           <p className="text-[17px] text-[#A1A1AA] max-w-xl mx-auto tracking-tight leading-relaxed">
             Everything you need to know about Creator OS. Can't find the answer?{' '}
-            <a href="mailto:sauravwhop@gmail.com" className="text-[#FAFAFA] hover:text-primary transition-colors">
+            <a href="mailto:support@creator-os.online" className="text-[#FAFAFA] hover:text-primary transition-colors">
               Email us.
             </a>
           </p>
@@ -155,10 +155,10 @@ export default function FAQPage() {
           <p className="text-[15px] text-[#71717A] tracking-tight">
             Still have questions?{' '}
             <a
-              href="mailto:sauravwhop@gmail.com"
+              href="mailto:support@creator-os.online"
               className="text-[#FAFAFA] hover:text-primary transition-colors font-medium"
             >
-              sauravwhop@gmail.com
+              support@creator-os.online
             </a>
           </p>
         </motion.div>

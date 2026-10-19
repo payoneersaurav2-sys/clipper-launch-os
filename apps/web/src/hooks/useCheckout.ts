@@ -8,20 +8,8 @@ export function useCheckout() {
   const { user } = useAuthStore();
   const openCheckout = useCheckoutStore((s) => s.openCheckout);
 
-  const checkoutWithPassthrough = (checkoutUrl: string) => {
-    if (!user?.id) return checkoutUrl;
-    try {
-      const nextUrl = new URL(checkoutUrl);
-      nextUrl.searchParams.set('passthrough', user.id);
-      return nextUrl.toString();
-    } catch {
-      const separator = checkoutUrl.includes('?') ? '&' : '?';
-      return `${checkoutUrl}${separator}passthrough=${encodeURIComponent(user.id)}`;
-    }
-  };
-
   const beginCheckout = async (
-    checkoutUrl: string,
+    checkoutUrl?: string,
     paddlePriceId?: string,
     options?: { planId?: 'creator' | 'pro' | 'agency'; billing?: BillingInterval }
   ) => {
@@ -30,34 +18,24 @@ export function useCheckout() {
       return;
     }
 
-    // ── Paddle Branded Checkout ───────────────────────────────────────────────
-    // If a Paddle price ID or plan is specified, open the native Creator OS
-    // checkout modal container where the user inserts card details.
-    if (paddlePriceId || options?.planId) {
-      let planId = options?.planId;
-      let billing = options?.billing;
+    let planId = options?.planId;
+    let billing = options?.billing;
 
-      if (!planId && paddlePriceId) {
-        const found = findPlanByPriceId(paddlePriceId);
-        if (found) {
-          planId = found.plan.id;
-          billing = found.billing;
-        }
+    if (!planId && paddlePriceId) {
+      const found = findPlanByPriceId(paddlePriceId);
+      if (found) {
+        planId = found.plan.id;
+        billing = found.billing;
       }
-
-      openCheckout({
-        planId: planId ?? 'pro',
-        billing: billing ?? 'annual',
-        paddlePriceId,
-        checkoutUrl,
-      });
-      return;
     }
 
-    // ── Whop URL fallback ─────────────────────────────────────────────────────
-    // Preserves the existing fallback checkout flow if Paddle is not configured.
-    const signedCheckoutUrl = checkoutWithPassthrough(checkoutUrl);
-    window.location.assign(signedCheckoutUrl);
+    // Opens the native Creator OS Paddle checkout modal container
+    openCheckout({
+      planId: planId ?? 'pro',
+      billing: billing ?? 'annual',
+      paddlePriceId,
+      checkoutUrl: checkoutUrl || '',
+    });
   };
 
   return { beginCheckout, user };

@@ -38,7 +38,7 @@ export interface InitializePaddleOptions {
 export async function initializePaddle(options?: InitializePaddleOptions): Promise<Paddle | undefined> {
   const token = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
   if (!token) {
-    // Paddle not yet configured — checkout will fall back to Whop URLs.
+    // Paddle not yet configured.
     return undefined;
   }
 

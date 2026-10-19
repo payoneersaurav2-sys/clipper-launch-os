@@ -78,7 +78,7 @@ function getSupabaseAdmin() {
 
 /**
  * Maps a Paddle subscription status to the Creator OS membership_status vocabulary.
- * Mirrors the Whop webhook handler's logic so entitlement checks stay consistent.
+ * Normalizes Paddle subscription status to Creator OS membership_status.
  */
 function toMembershipStatus(paddleStatus: string): string {
   switch (paddleStatus) {

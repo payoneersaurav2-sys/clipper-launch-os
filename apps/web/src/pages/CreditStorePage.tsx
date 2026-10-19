@@ -4,26 +4,11 @@ import { Check, Sparkles } from 'lucide-react';
 import { CREDIT_PACKS } from '@/lib/credits';
 import { useCredits } from '@/hooks/useCredits';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/stores/useAuthStore';
 
 
 export default function CreditStorePage() {
   const { data: balance, isLoading } = useCredits();
-  const { user } = useAuthStore();
   
-
-  const checkoutWithPassthrough = (checkoutUrl: string) => {
-    if (!user?.id) return checkoutUrl;
-    try {
-      const nextUrl = new URL(checkoutUrl);
-      nextUrl.searchParams.set('passthrough', user.id);
-      return nextUrl.toString();
-    } catch {
-      const separator = checkoutUrl.includes('?') ? '&' : '?';
-      return `${checkoutUrl}${separator}passthrough=${encodeURIComponent(user.id)}`;
-    }
-  };
-
   
 
   return (
@@ -62,7 +47,7 @@ export default function CreditStorePage() {
                 <li className="flex gap-2"><Check className="h-3.5 w-3.5 text-primary" />Rolls over</li>
                 <li className="flex gap-2"><Check className="h-3.5 w-3.5 text-primary" />Applied only after verified payment</li>
               </ul>
-              <Button className="mt-auto h-11 w-full" onClick={() => window.location.assign(checkoutWithPassthrough(pack.checkoutUrl))}>Buy Credits</Button>
+              <Button className="mt-auto h-11 w-full" onClick={() => window.location.assign('/dashboard/pricing')}>Buy Credits</Button>
             </article>
           );
         })}

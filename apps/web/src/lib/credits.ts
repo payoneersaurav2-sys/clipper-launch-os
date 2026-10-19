@@ -37,11 +37,11 @@ export type CreditPack = {
 
 // The only credit-pack checkout configuration in Creator OS.
 export const CREDIT_PACKS: readonly CreditPack[] = [
-  { id: 'starter', credits: 1_000, price: 9, checkoutUrl: 'https://whop.com/checkout/plan_pHajojZffyDxv' },
-  { id: 'growth', credits: 5_000, price: 29, checkoutUrl: 'https://whop.com/checkout/plan_5IB8JVbpg8rik', popular: true },
-  { id: 'scale', credits: 15_000, price: 69, checkoutUrl: 'https://whop.com/checkout/plan_3SbRI3CB8aiur' },
-  { id: 'studio', credits: 50_000, price: 149, checkoutUrl: 'https://whop.com/checkout/plan_cpIr2MLFacoNX' },
-  { id: 'enterprise', credits: 150_000, price: 299, checkoutUrl: 'https://whop.com/checkout/plan_2eRxyfJ19G1eu' },
+  { id: 'starter', credits: 1_000, price: 9, checkoutUrl: '/dashboard/pricing' },
+  { id: 'growth', credits: 5_000, price: 29, checkoutUrl: '/dashboard/pricing', popular: true },
+  { id: 'scale', credits: 15_000, price: 69, checkoutUrl: '/dashboard/pricing' },
+  { id: 'studio', credits: 50_000, price: 149, checkoutUrl: '/dashboard/pricing' },
+  { id: 'enterprise', credits: 150_000, price: 299, checkoutUrl: '/dashboard/pricing' },
 ] as const;
 
 export function getCreditCost(operation: CreditOperation) {

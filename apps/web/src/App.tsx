@@ -16,7 +16,6 @@ const AuthLayout         = lazy(() => import('./layouts/AuthLayout'));
 const ProtectedRoute     = lazy(() => import('./components/ProtectedRoute'));
 const LoginPage          = lazy(() => import('./pages/LoginPage'));
 const AuthCallback       = lazy(() => import('./pages/AuthCallback'));
-const AuthIframe         = lazy(() => import('./pages/AuthIframe'));
 const ExpiredPage        = lazy(() => import('./pages/ExpiredPage'));
 const DashboardHome      = lazy(() => import('./pages/DashboardHome'));
 const CampaignOSPage     = lazy(() => import('./pages/CampaignOSPage'));
@@ -108,9 +107,8 @@ function CreatorOSRoutes() {
             <Route path="/login"         element={<AuthLayout><LoginPage /></AuthLayout>} />
             <Route path="/signup"        element={<SignupPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/auth/iframe"   element={<AuthIframe />} />
-            {/* Whop Experience View: configure this as /experiences/[experienceId] in Whop. */}
-            <Route path="/experiences/:experienceId/*" element={<AuthIframe />} />
+            <Route path="/auth/iframe"   element={<Navigate to="/login" replace />} />
+            <Route path="/experiences/:experienceId/*" element={<Navigate to="/login" replace />} />
             <Route path="/expired"       element={<ExpiredPage />} />
             <Route path="/onboarding"    element={<OnboardingPage />} />
             <Route path="/legal-acceptance" element={<LegalAcceptancePage />} />
