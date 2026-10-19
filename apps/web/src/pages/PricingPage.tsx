@@ -140,7 +140,7 @@ export default function PricingPage() {
     }
     if (checkoutObj) {
       const slot = checkoutObj[billing];
-      beginCheckout(slot.url, slot.paddlePriceId);
+      beginCheckout(slot.url, slot.paddlePriceId, { planId: planId as any, billing });
     }
   };
 

@@ -1,10 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { getPaddle } from '@/lib/paddle';
+import { useCheckoutStore } from '@/stores/useCheckoutStore';
+import { findPlanByPriceId, type BillingInterval } from '@/lib/pricing';
 
 export function useCheckout() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const openCheckout = useCheckoutStore((s) => s.openCheckout);
 
   const checkoutWithPassthrough = (checkoutUrl: string) => {
     if (!user?.id) return checkoutUrl;
@@ -18,35 +20,42 @@ export function useCheckout() {
     }
   };
 
-  const beginCheckout = async (checkoutUrl: string, paddlePriceId?: string) => {
-    if (!user) { navigate('/login'); return; }
+  const beginCheckout = async (
+    checkoutUrl: string,
+    paddlePriceId?: string,
+    options?: { planId?: 'creator' | 'pro' | 'agency'; billing?: BillingInterval }
+  ) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
 
-    // ── Paddle overlay checkout ───────────────────────────────────────────────
-    // If a Paddle price ID is configured AND the Paddle singleton is ready,
-    // open the Paddle overlay. userId is passed as customData so the webhook
-    // handler can link the subscription to the correct user.
-    if (paddlePriceId) {
-      const paddle = getPaddle();
-      if (paddle) {
-        console.log('[Paddle Checkout] Opening checkout for price:', paddlePriceId, 'userId:', user.id, 'email:', user.email);
-        paddle.Checkout.open({
-          items: [{ priceId: paddlePriceId, quantity: 1 }],
-          customData: { userId: user.id },
-          customer: user.email ? { email: user.email } : undefined,
-          settings: {
-            displayMode: 'overlay',
-            theme: 'dark',
-            locale: 'en',
-            successUrl: `${window.location.origin}/dashboard`,
-          },
-        });
-        return;
+    // ── Paddle Branded Checkout ───────────────────────────────────────────────
+    // If a Paddle price ID or plan is specified, open the native Creator OS
+    // checkout modal container where the user inserts card details.
+    if (paddlePriceId || options?.planId) {
+      let planId = options?.planId;
+      let billing = options?.billing;
+
+      if (!planId && paddlePriceId) {
+        const found = findPlanByPriceId(paddlePriceId);
+        if (found) {
+          planId = found.plan.id;
+          billing = found.billing;
+        }
       }
-      // Paddle not initialized (token missing / not yet configured) — fall through to Whop URL.
+
+      openCheckout({
+        planId: planId ?? 'pro',
+        billing: billing ?? 'annual',
+        paddlePriceId,
+        checkoutUrl,
+      });
+      return;
     }
 
     // ── Whop URL fallback ─────────────────────────────────────────────────────
-    // Preserves the existing production checkout flow for all Whop-configured plans.
+    // Preserves the existing fallback checkout flow if Paddle is not configured.
     const signedCheckoutUrl = checkoutWithPassthrough(checkoutUrl);
     window.location.assign(signedCheckoutUrl);
   };

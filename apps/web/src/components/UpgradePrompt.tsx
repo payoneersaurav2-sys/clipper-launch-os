@@ -39,7 +39,7 @@ export function UpgradePrompt({
 
   const handleUpgrade = () => {
     if (checkoutUrl) {
-      beginCheckout(checkoutUrl, paddlePriceId);
+      beginCheckout(checkoutUrl, paddlePriceId, { planId: resolvedRequiredPlan, billing: 'monthly' });
     } else {
       window.location.assign('/dashboard/pricing');
     }

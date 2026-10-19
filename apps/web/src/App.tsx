@@ -2,13 +2,14 @@ import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initializePaddle } from './lib/paddle';
+import { PaddleCheckoutModal } from './components/checkout/PaddleCheckoutModal';
 
 // Eager
 import LandingLayout   from './layouts/LandingLayout';
 import LandingPage     from './pages/LandingPage';
 import { NotFoundPage, ServerErrorPage } from './pages/ErrorPages';
 
-// Lazy — all heavy pages
+// Lazy â€” all heavy pages
 const DashboardLayout    = lazy(() => import('./layouts/DashboardLayout'));
 const AuthLayout         = lazy(() => import('./layouts/AuthLayout'));
 const ProtectedRoute     = lazy(() => import('./components/ProtectedRoute'));
@@ -39,6 +40,7 @@ const DMCAPage            = lazy(() => import('./pages/legal/DMCAPage'));
 const FAQPage             = lazy(() => import('./pages/FAQPage'));
 const ForAgenciesPage     = lazy(() => import('./pages/ForAgenciesPage'));
 const PricingPage         = lazy(() => import('./pages/PricingPage'));
+const CheckoutPage        = lazy(() => import('./pages/CheckoutPage'));
 const CheckoutCompletePage = lazy(() => import('./pages/CheckoutCompletePage'));
 const CreditStorePage     = lazy(() => import('./pages/CreditStorePage'));
 const AdminReviewsPage    = lazy(() => import('./pages/AdminReviewsPage'));
@@ -75,6 +77,7 @@ function CreatorOSRoutes() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        <PaddleCheckoutModal />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public */}
@@ -82,6 +85,7 @@ function CreatorOSRoutes() {
             <Route path="/faq"       element={<LandingLayout><FAQPage /></LandingLayout>} />
               <Route path="/for-agencies" element={<LandingLayout><ForAgenciesPage /></LandingLayout>} />
             <Route path="/pricing"   element={<LandingLayout><PricingPage /></LandingLayout>} />
+            <Route path="/checkout"  element={<CheckoutPage />} />
             <Route path="/checkout/complete" element={<CheckoutCompletePage />} />
             <Route path="/terms"     element={<LandingLayout><TermsPage /></LandingLayout>} />
             <Route path="/privacy"   element={<LandingLayout><PrivacyPage /></LandingLayout>} />

@@ -129,6 +129,23 @@ export function validatePricingConfiguration() {
   return warnings;
 }
 
+export function getPlan(planId: 'creator' | 'pro' | 'agency' | string): PricingPlan | undefined {
+  return pricingPlans.find((p) => p.id === planId);
+}
+
+export function findPlanByPriceId(priceId: string): { plan: PricingPlan; billing: BillingInterval } | undefined {
+  for (const plan of pricingPlans) {
+    if (plan.checkout.monthly.paddlePriceId === priceId) {
+      return { plan, billing: 'monthly' };
+    }
+    if (plan.checkout.annual.paddlePriceId === priceId) {
+      return { plan, billing: 'annual' };
+    }
+  }
+  return undefined;
+}
+
+
 
 
 

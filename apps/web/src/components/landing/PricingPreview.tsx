@@ -85,7 +85,7 @@ export function PricingPreview() {
     if (checkoutObj) {
       // Default to monthly for the preview
       const slot = checkoutObj['monthly'];
-      beginCheckout(slot.url, slot.paddlePriceId);
+      beginCheckout(slot.url, slot.paddlePriceId, { planId: planId as any, billing: 'monthly' });
     }
   };
 
