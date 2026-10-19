@@ -17,17 +17,21 @@ import { createClient } from '@supabase/supabase-js';
 
 export const config = { runtime: 'edge' };
 
+const environment = () => (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function getPaddleEnv(): Environment {
-  return (process.env.PADDLE_ENV ?? 'sandbox') === 'production'
+  const env = environment();
+  return (env.PADDLE_ENV ?? 'sandbox') === 'production'
     ? Environment.Production
     : Environment.Sandbox;
 }
 
 function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const env = environment();
+  const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
@@ -52,16 +56,17 @@ function toMembershipStatus(paddleStatus: string): string {
  * Replace placeholder values with real IDs from your Paddle dashboard.
  */
 function tierFromPriceId(priceId: string): string | null {
+  const env = environment();
   const PRICE_TIER_MAP: Record<string, string> = {
     // ── Creator ────────────────────────────────────────────────────────
-    [process.env.PADDLE_PRICE_CREATOR_MONTHLY ?? 'REPLACE_creator_monthly']: 'creator',
-    [process.env.PADDLE_PRICE_CREATOR_ANNUAL  ?? 'REPLACE_creator_annual']:  'creator',
+    [env.PADDLE_PRICE_CREATOR_MONTHLY ?? 'REPLACE_creator_monthly']: 'creator',
+    [env.PADDLE_PRICE_CREATOR_ANNUAL  ?? 'REPLACE_creator_annual']:  'creator',
     // ── Pro ────────────────────────────────────────────────────────────
-    [process.env.PADDLE_PRICE_PRO_MONTHLY ?? 'REPLACE_pro_monthly']: 'pro',
-    [process.env.PADDLE_PRICE_PRO_ANNUAL  ?? 'REPLACE_pro_annual']:  'pro',
+    [env.PADDLE_PRICE_PRO_MONTHLY ?? 'REPLACE_pro_monthly']: 'pro',
+    [env.PADDLE_PRICE_PRO_ANNUAL  ?? 'REPLACE_pro_annual']:  'pro',
     // ── Agency ─────────────────────────────────────────────────────────
-    [process.env.PADDLE_PRICE_AGENCY_MONTHLY ?? 'REPLACE_agency_monthly']: 'agency',
-    [process.env.PADDLE_PRICE_AGENCY_ANNUAL  ?? 'REPLACE_agency_annual']:  'agency',
+    [env.PADDLE_PRICE_AGENCY_MONTHLY ?? 'REPLACE_agency_monthly']: 'agency',
+    [env.PADDLE_PRICE_AGENCY_ANNUAL  ?? 'REPLACE_agency_annual']:  'agency',
   };
   return PRICE_TIER_MAP[priceId] ?? null;
 }
@@ -73,8 +78,9 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response('Method Not Allowed', { status: 405 });
   }
 
-  const secret = process.env.PADDLE_NOTIFICATION_WEBHOOK_SECRET;
-  const apiKey = process.env.PADDLE_API_KEY;
+  const env = environment();
+  const secret = env.PADDLE_NOTIFICATION_WEBHOOK_SECRET;
+  const apiKey = env.PADDLE_API_KEY;
   if (!secret || !apiKey) {
     console.error('[paddle-webhook] Missing PADDLE_NOTIFICATION_WEBHOOK_SECRET or PADDLE_API_KEY');
     return new Response('Server misconfiguration', { status: 500 });
@@ -89,9 +95,9 @@ export default async function handler(req: Request): Promise<Response> {
 
   // ── 1. Signature verification ──────────────────────────────────────────────
   const paddle = new Paddle(apiKey, { environment: getPaddleEnv() });
-  let event: ReturnType<typeof paddle.webhooks.unmarshal>;
+  let event: any;
   try {
-    event = paddle.webhooks.unmarshal(rawBody, secret, signature);
+    event = await paddle.webhooks.unmarshal(rawBody, secret, signature);
   } catch (err) {
     console.error('[paddle-webhook] Signature verification failed:', err);
     return new Response('Invalid signature', { status: 400 });
@@ -101,8 +107,10 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response('Invalid event payload', { status: 400 });
   }
 
-  const eventId   = event.notificationId ?? (event as Record<string, unknown>).eventId as string ?? '';
-  const eventType = event.eventType as string;
+  const eventId   = (event as any).eventId ?? (event as any).notificationId ?? (event as any).id ?? '';
+  const eventType = ((event as any).eventType ?? (event as any).event_type) as string;
+
+  console.log(`[paddle-webhook] Processing verified event: ${eventType} (id: ${eventId})`);
 
   const supabase = getSupabaseAdmin();
 
@@ -125,12 +133,15 @@ export default async function handler(req: Request): Promise<Response> {
     if (
       eventType === EventName.SubscriptionCreated ||
       eventType === EventName.SubscriptionUpdated ||
-      eventType === EventName.SubscriptionActivated
+      eventType === EventName.SubscriptionActivated ||
+      eventType === 'subscription.created' ||
+      eventType === 'subscription.updated' ||
+      eventType === 'subscription.activated'
     ) {
       await handleSubscriptionUpsert(event, supabase);
-    } else if (eventType === EventName.SubscriptionCanceled) {
+    } else if (eventType === EventName.SubscriptionCanceled || eventType === 'subscription.canceled') {
       await handleSubscriptionCanceled(event, supabase);
-    } else if (eventType === EventName.SubscriptionPaused) {
+    } else if (eventType === EventName.SubscriptionPaused || eventType === 'subscription.paused') {
       await handleSubscriptionPaused(event, supabase);
     }
     // Other event types (transaction.*) are logged but not acted on yet.
@@ -152,17 +163,17 @@ async function handleSubscriptionUpsert(
   const sub = (event as { data?: Record<string, unknown> }).data;
   if (!sub) throw new Error('No subscription data in event');
 
-  const paddleCustomerId    = sub.customerId    as string | undefined;
-  const paddleSubscriptionId = sub.id           as string | undefined;
-  const status              = sub.status        as string | undefined;
-  const customData          = sub.customData    as Record<string, unknown> | undefined;
-  const items               = sub.items         as Array<{ price?: { id?: string } }> | undefined;
-  const scheduledChange     = sub.scheduledChange as { action?: string; effectiveAt?: string } | null | undefined;
+  const paddleCustomerId    = (sub.customerId || sub.customer_id) as string | undefined;
+  const paddleSubscriptionId = (sub.id || sub.subscription_id)   as string | undefined;
+  const status              = sub.status                         as string | undefined;
+  const customData          = (sub.customData || sub.custom_data) as Record<string, unknown> | undefined;
+  const items               = sub.items                          as Array<{ price?: { id?: string } }> | undefined;
+  const scheduledChange     = (sub.scheduledChange || sub.scheduled_change) as { action?: string; effectiveAt?: string; effective_at?: string } | null | undefined;
 
   // Resolve userId from customData (passed at checkout time).
-  const userId = customData?.userId as string | undefined;
+  const userId = (customData?.userId || customData?.user_id) as string | undefined;
   if (!userId) {
-    console.warn('[paddle-webhook] No userId in customData — cannot link subscription to user');
+    console.warn('[paddle-webhook] No userId in customData — cannot link subscription to user', customData);
     return;
   }
 
@@ -177,9 +188,10 @@ async function handleSubscriptionUpsert(
   const membershipStatus = toMembershipStatus(status ?? '');
 
   // For scheduled cancellations, keep the user active until the period ends.
+  const effAt = scheduledChange?.effectiveAt || scheduledChange?.effective_at;
   const expiresAt =
-    scheduledChange?.action === 'cancel' && scheduledChange.effectiveAt
-      ? scheduledChange.effectiveAt
+    scheduledChange?.action === 'cancel' && effAt
+      ? effAt
       : null;
 
   const { error } = await supabase

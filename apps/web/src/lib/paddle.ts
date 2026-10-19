@@ -30,6 +30,12 @@ export async function initializePaddle(): Promise<void> {
   paddleInstance = await _initializePaddle({
     token,
     environment: env === 'production' ? 'production' : 'sandbox',
+    eventCallback: (event) => {
+      console.log('[Paddle Event]', event);
+      if ((event as any)?.type === 'checkout.warning' || (event as any)?.name === 'checkout.error' || (event as any)?.type === 'checkout.error') {
+        console.error('[Paddle Error/Warning Detail]', event);
+      }
+    },
     checkout: {
       settings: {
         displayMode: 'overlay',

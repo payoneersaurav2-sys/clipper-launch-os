@@ -28,9 +28,17 @@ export function useCheckout() {
     if (paddlePriceId) {
       const paddle = getPaddle();
       if (paddle) {
+        console.log('[Paddle Checkout] Opening checkout for price:', paddlePriceId, 'userId:', user.id, 'email:', user.email);
         paddle.Checkout.open({
           items: [{ priceId: paddlePriceId, quantity: 1 }],
           customData: { userId: user.id },
+          customer: user.email ? { email: user.email } : undefined,
+          settings: {
+            displayMode: 'overlay',
+            theme: 'dark',
+            locale: 'en',
+            successUrl: `${window.location.origin}/dashboard`,
+          },
         });
         return;
       }
