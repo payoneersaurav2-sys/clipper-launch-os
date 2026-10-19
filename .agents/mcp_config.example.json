@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "paddle-sandbox": {
+      "command": "npx",
+      "args": ["-y", "@paddle/paddle-mcp"],
+      "env": {
+        "PADDLE_API_KEY": "pdl_sdbx_REPLACE_ME",
+        "PADDLE_ENVIRONMENT": "sandbox",
+        "PADDLE_MCP_TOOLS": "all"
+      }
+    },
+    "paddle-live": {
+      "command": "npx",
+      "args": ["-y", "@paddle/paddle-mcp"],
+      "env": {
+        "PADDLE_API_KEY": "pdl_live_REPLACE_ME",
+        "PADDLE_ENVIRONMENT": "production",
+        "PADDLE_MCP_TOOLS": "all"
+      }
+    }
+  }
+}

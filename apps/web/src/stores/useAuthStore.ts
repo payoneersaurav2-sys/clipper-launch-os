@@ -10,6 +10,8 @@ interface AuthState {
   session: Session | null;
   membershipStatus: string | null;
   subscriptionTier: string | null;
+  /** Paddle customer ID (ctm_…) — used for Paddle Retain's pwCustomer. */
+  paddleCustomerId: string | null;
   whopId: string | null;
   avatarUrl: string | null;
   onboardingComplete: boolean | null;
@@ -28,6 +30,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   membershipStatus: null,
   subscriptionTier: null,
+  paddleCustomerId: null,
   whopId: null,
   avatarUrl: null,
   onboardingComplete: null,
@@ -41,6 +44,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     let tier = 'free';
     let whopId = null;
     let avatarUrl = null;
+    let paddleCustomerId: string | null = null;
     let onboarded: boolean | null = true;
     let requiresLegalAcceptance = false;
     let isAdmin = false;
@@ -50,7 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const [userRes, legalRes] = await Promise.all([
         supabase
           .from('users')
-          .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url, is_admin')
+          .select('membership_status, subscription_tier, membership_expires_at, onboarding_complete, whop_id, avatar_url, is_admin, paddle_customer_id')
           .eq('id', session.user.id)
           .maybeSingle(),
         supabase.rpc('check_legal_status')
@@ -64,6 +68,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         tier = expired ? 'free' : storedTier;
         whopId = data.whop_id;
         avatarUrl = data.avatar_url;
+        paddleCustomerId = data.paddle_customer_id || null;
         onboarded = data.onboarding_complete ?? true;
         isAdmin = Boolean(data.is_admin);
       } else {
@@ -86,6 +91,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: session?.user ?? null,
       membershipStatus: status,
       subscriptionTier: tier,
+      paddleCustomerId,
       whopId,
       avatarUrl,
       onboardingComplete: onboarded,
@@ -101,7 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
     sessionStorage.removeItem('creator_os_remember_me');
     await supabase.auth.signOut();
-    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, whopId: null, avatarUrl: null, onboardingComplete: null, requiresLegalAcceptance: null, isAdmin: false });
+    set({ user: null, session: null, membershipStatus: null, subscriptionTier: null, paddleCustomerId: null, whopId: null, avatarUrl: null, onboardingComplete: null, requiresLegalAcceptance: null, isAdmin: false });
   },
   initialize: async () => {
     const { data: { session } } = await supabase.auth.getSession();

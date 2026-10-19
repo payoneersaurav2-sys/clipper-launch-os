@@ -29,10 +29,13 @@ export function subscribePaddleEvents(listener: PaddleEventListener): () => void
   };
 }
 
-export async function initializePaddle(): Promise<Paddle | undefined> {
-  if (paddleInstance) return paddleInstance;
-  if (initPromise) return initPromise;
+export interface InitializePaddleOptions {
+  pwCustomer?: {
+    id: string;
+  };
+}
 
+export async function initializePaddle(options?: InitializePaddleOptions): Promise<Paddle | undefined> {
   const token = import.meta.env.VITE_PADDLE_CLIENT_TOKEN as string | undefined;
   if (!token) {
     // Paddle not yet configured — checkout will fall back to Whop URLs.
@@ -41,9 +44,26 @@ export async function initializePaddle(): Promise<Paddle | undefined> {
 
   const env = (import.meta.env.VITE_PADDLE_ENV as string | undefined) ?? 'sandbox';
 
+  if (paddleInstance) {
+    if (options?.pwCustomer?.id) {
+      try {
+        paddleInstance.Initialize({
+          token,
+          pwCustomer: { id: options.pwCustomer.id },
+        });
+      } catch (e) {
+        console.warn('[Paddle] Error attaching pwCustomer for Paddle Retain:', e);
+      }
+    }
+    return paddleInstance;
+  }
+
+  if (initPromise) return initPromise;
+
   initPromise = _initializePaddle({
     token,
     environment: env === 'production' ? 'production' : 'sandbox',
+    pwCustomer: options?.pwCustomer?.id ? { id: options.pwCustomer.id } : undefined,
     eventCallback: (event) => {
       console.log('[Paddle Event]', event);
       eventListeners.forEach((listener) => {

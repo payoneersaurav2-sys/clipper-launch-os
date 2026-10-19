@@ -18,3 +18,6 @@ yarn-error.log*
 .env*
 
 supabase/.temp/
+
+# MCP server configs (contain API keys — never commit)
+.agents/mcp_config.json

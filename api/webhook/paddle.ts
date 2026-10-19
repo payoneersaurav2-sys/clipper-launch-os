@@ -21,6 +21,46 @@ const environment = () => (globalThis as unknown as { process?: { env?: Record<s
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
+// ─── live ip allowlist ────────────────────────────────────────────────────────
+let cachedAllowedCidrs: { cidrs: string[]; expiresAt: number } | null = null;
+
+async function getPaddleAllowedCidrs(): Promise<string[]> {
+  const now = Date.now();
+  if (cachedAllowedCidrs && cachedAllowedCidrs.expiresAt > now) {
+    return cachedAllowedCidrs.cidrs;
+  }
+  try {
+    const res = await fetch('https://api.paddle.com/ips', {
+      headers: { 'User-Agent': 'CreatorOS-Webhook/1.0' },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const cidrs: string[] = data?.data?.ipv4_cidrs || [];
+      if (cidrs.length > 0) {
+        cachedAllowedCidrs = { cidrs, expiresAt: now + 24 * 60 * 60 * 1000 };
+        return cidrs;
+      }
+    }
+  } catch (err) {
+    console.error('[paddle-webhook] Failed to fetch live Paddle IPs:', err);
+  }
+  return cachedAllowedCidrs?.cidrs || [];
+}
+
+function ipMatchesCidr(ip: string, cidr: string): boolean {
+  const [range, bitsStr] = cidr.split('/');
+  const bits = bitsStr ? parseInt(bitsStr, 10) : 32;
+  if (bits === 32) return ip === range;
+  const ipParts = ip.split('.').map((p) => parseInt(p, 10));
+  const rangeParts = range.split('.').map((p) => parseInt(p, 10));
+  if (ipParts.length !== 4 || rangeParts.length !== 4) return false;
+  const ipNum = ((ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]) >>> 0;
+  const rangeNum = ((rangeParts[0] << 24) | (rangeParts[1] << 16) | (rangeParts[2] << 8) | rangeParts[3]) >>> 0;
+  const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
+  return (ipNum & mask) === (rangeNum & mask);
+}
+
+
 function getPaddleEnv(): Environment {
   const env = environment();
   return (env.PADDLE_ENV ?? 'sandbox') === 'production'
@@ -90,6 +130,26 @@ export default async function handler(req: Request): Promise<Response> {
   if (!signature) {
     return new Response('Missing paddle-signature header', { status: 400 });
   }
+
+  // ── 0. Live IP allowlist verification ─────────────────────────────────────
+  // Enforced in production only (sandbox / dev tunnels bypass). Fetches dynamic live IPs from https://api.paddle.com/ips
+  if (getPaddleEnv() === Environment.Production) {
+    const forwarded = req.headers.get('x-forwarded-for');
+    const realIp = req.headers.get('x-real-ip');
+    const clientIp = (forwarded ? forwarded.split(',')[0] : realIp)?.trim();
+
+    if (clientIp) {
+      const allowedCidrs = await getPaddleAllowedCidrs();
+      if (allowedCidrs.length > 0) {
+        const isAllowed = allowedCidrs.some((cidr) => ipMatchesCidr(clientIp, cidr));
+        if (!isAllowed) {
+          console.warn('[paddle-webhook] Unauthorized delivery attempt from source IP: ' + clientIp);
+          return new Response('Forbidden: IP not allowlisted', { status: 403 });
+        }
+      }
+    }
+  }
+
 
   const rawBody = await req.text();
 

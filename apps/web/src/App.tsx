@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { initializePaddle } from './lib/paddle';
 import { PaddleCheckoutModal } from './components/checkout/PaddleCheckoutModal';
+import { useAuthStore } from './stores/useAuthStore';
 
 // Eager
 import LandingLayout   from './layouts/LandingLayout';
@@ -71,8 +72,12 @@ function PageLoader() {
 }
 
 function CreatorOSRoutes() {
-  // Initialize Paddle.js once on first render. No-op if VITE_PADDLE_CLIENT_TOKEN is not set.
-  useEffect(() => { initializePaddle(); }, []);
+  const paddleCustomerId = useAuthStore((s) => s.paddleCustomerId);
+
+  // Initialize Paddle.js once on first render. Attaches pwCustomer for Paddle Retain when customer ID is resolved.
+  useEffect(() => {
+    initializePaddle(paddleCustomerId ? { pwCustomer: { id: paddleCustomerId } } : undefined);
+  }, [paddleCustomerId]);
 
   return (
     <ErrorBoundary>
