@@ -14,21 +14,36 @@ export const useWorkspaces = () => {
 
     const { data, error } = await supabase
       .from('workspaces')
-      .select('*')
+      .select('id, name, owner_id, agency_id, niche, platform')
       .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
 
     if (error) throw error;
-    
+
+    let workspaces = data ?? [];
+    let selectedWorkspace = workspaces.find(workspace => workspace.id === activeWorkspace?.id);
+    if (!selectedWorkspace && activeWorkspace?.id) {
+      const { data: persistedWorkspace, error: persistedWorkspaceError } = await supabase
+        .from('workspaces')
+        .select('id, name, owner_id, agency_id, niche, platform')
+        .eq('id', activeWorkspace.id)
+        .is('deleted_at', null)
+        .maybeSingle();
+      if (persistedWorkspaceError) throw persistedWorkspaceError;
+      selectedWorkspace = persistedWorkspace ?? undefined;
+      if (selectedWorkspace) workspaces = [...workspaces, selectedWorkspace];
+    }
+
     // Persisted Zustand state can outlive the authenticated user. Keep the
     // selected workspace only when it is in this user's RLS-filtered result.
-    const nextActiveWorkspace = data.find(workspace => workspace.id === activeWorkspace?.id) ?? data[0] ?? null;
+    const nextActiveWorkspace = selectedWorkspace ?? workspaces[0] ?? null;
     if (nextActiveWorkspace?.id !== activeWorkspace?.id || (!nextActiveWorkspace && activeWorkspace)) {
       setActiveWorkspace(nextActiveWorkspace);
     }
-    setWorkspaces(data);
+    setWorkspaces(workspaces);
     
-    return data;
+    return workspaces;
   };
 
   const query = useQuery({
@@ -45,7 +60,7 @@ export const useWorkspaces = () => {
       const { data, error } = await supabase
         .from('workspaces')
         .insert([{ name, owner_id: user?.id, agency_id }])
-        .select()
+        .select('id, name, owner_id, agency_id, niche, platform')
         .single();
       
       if (error) throw error;

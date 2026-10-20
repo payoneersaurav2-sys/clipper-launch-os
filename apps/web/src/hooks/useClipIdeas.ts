@@ -71,3 +71,25 @@ export const useClipIdeas = () => {
 
   return { ...query, createIdea, updateIdeaStatus };
 };
+
+export const useDashboardClipIdeas = () => {
+  const { activeWorkspace } = useWorkspaceStore();
+  const workspaceId = activeWorkspace?.id;
+
+  return useQuery({
+    queryKey: ['dashboard-clip-ideas', workspaceId],
+    queryFn: async (): Promise<Array<Pick<ClipIdea, 'id' | 'title' | 'status'>>> => {
+      const { data, error } = await supabase
+        .from('clip_ideas')
+        .select('id, title, status')
+        .eq('workspace_id', workspaceId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(4);
+
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!workspaceId,
+  });
+};

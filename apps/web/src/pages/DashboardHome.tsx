@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useCampaigns } from '@/hooks/useCampaigns';
-import { useClipIdeas } from '@/hooks/useClipIdeas';
-import { useWorkspaceKnowledge } from '@/hooks/useWorkflowResources';
+import { useDashboardCampaigns } from '@/hooks/useCampaigns';
+import { useDashboardClipIdeas } from '@/hooks/useClipIdeas';
+import { useWorkspaceKnowledgeExists } from '@/hooks/useWorkflowResources';
 import { useHistoryStore } from '@/stores/useHistoryStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
@@ -53,9 +53,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function DashboardHome() {
-  const { data: campaigns } = useCampaigns();
-  const { data: ideas }     = useClipIdeas();
-  const { data: knowledge } = useWorkspaceKnowledge();
+  const { data: activeCampaigns } = useDashboardCampaigns();
+  const { data: recentIdeas } = useDashboardClipIdeas();
+  const { data: hasKnowledge } = useWorkspaceKnowledgeExists();
   const recentGens          = useHistoryStore(s => s.getRecent(4));
   const genCount            = useHistoryStore(s => s.records.length);
   const { subscriptionTier } = useAuthStore();
@@ -66,8 +66,6 @@ export default function DashboardHome() {
     () => localStorage.getItem('hide_onboarding') !== 'true'
   );
 
-  const activeCampaigns = campaigns?.filter(c => !['completed','archived'].includes(c.status)).slice(0, 3);
-  const recentIdeas     = ideas?.slice(0, 4);
   const completedCount  = completed.length;
   const missionPct      = Math.round((completedCount / MISSIONS.length) * 100);
 
@@ -96,7 +94,7 @@ export default function DashboardHome() {
       {showOnboarding && isNewUser && (
         <OnboardingChecklist
           hasIdeas={Boolean(recentIdeas?.length)}
-          hasKnowledge={Boolean(knowledge?.length)}
+          hasKnowledge={Boolean(hasKnowledge)}
           hasAI={genCount > 0}
           hasCampaign={Boolean(activeCampaigns?.length)}
           onDismiss={handleDismissOnboarding}
@@ -291,5 +289,4 @@ export default function DashboardHome() {
     </div>
   );
 }
-
 

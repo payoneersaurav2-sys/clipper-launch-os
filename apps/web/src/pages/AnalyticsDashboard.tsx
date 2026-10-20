@@ -133,9 +133,9 @@ export default function AnalyticsDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-        <StatCard icon={Eye}      label="Total Views"       value={stats?.totalViews ?? 0} />
-        <StatCard icon={TrendingUp} label="Total Likes"     value={stats?.totalLikes ?? 0} />
-        <StatCard icon={DollarSign} label="Total Revenue"   value={parseFloat((stats?.totalRevenue ?? 0).toFixed(2))} prefix="$" />
+        <StatCard icon={Eye}      label="Views (last 30 days)"       value={stats?.totalViews ?? 0} />
+        <StatCard icon={TrendingUp} label="Likes (last 30 days)"     value={stats?.totalLikes ?? 0} />
+        <StatCard icon={DollarSign} label="Revenue (last 30 days)"   value={parseFloat((stats?.totalRevenue ?? 0).toFixed(2))} prefix="$" />
       </div>
 
       {/* AI usage section */}

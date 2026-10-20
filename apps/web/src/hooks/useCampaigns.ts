@@ -151,6 +151,28 @@ export function useCampaigns() {
   return { ...query, createCampaign, updateCampaign, deleteCampaign, duplicateCampaign };
 }
 
+export function useDashboardCampaigns() {
+  const { activeWorkspace } = useWorkspaceStore();
+  const wsId = activeWorkspace?.id;
+
+  return useQuery({
+    queryKey: ['dashboard-campaigns', wsId],
+    queryFn: async (): Promise<Array<Pick<Campaign, 'id' | 'title' | 'status' | 'completion_pct'>>> => {
+      const { data, error } = await supabase
+        .from('campaigns')
+        .select('id, title, status, completion_pct')
+        .eq('workspace_id', wsId)
+        .is('deleted_at', null)
+        .in('status', ['researching', 'planning', 'recording', 'editing', 'posting', 'growing'])
+        .order('created_at', { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!wsId,
+  });
+}
+
 export function useCampaign(campaignId?: string) {
   const { activeWorkspace } = useWorkspaceStore();
   const wsId = activeWorkspace?.id;
@@ -261,22 +283,74 @@ export function useAnalyticsStats() {
   const wsId = activeWorkspace?.id;
 
   return useQuery({
-    queryKey: ['analytics-stats', wsId],
+    queryKey: ['analytics-stats', wsId, '30-days'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('analytics')
-        .select('views, likes, shares, earnings, recorded_at, campaign_id')
-        .order('recorded_at', { ascending: true });
-      if (error) throw error;
-      const rows = data ?? [];
-      const totalViews    = rows.reduce((a, r) => a + (r.views ?? 0), 0);
-      const totalRevenue  = rows.reduce((a, r) => a + (r.earnings ?? 0), 0);
-      const totalLikes    = rows.reduce((a, r) => a + (r.likes ?? 0), 0);
-      const totalShares   = rows.reduce((a, r) => a + (r.shares ?? 0), 0);
-      return { totalViews, totalRevenue, totalLikes, totalShares, rows };
+      if (!wsId) throw new Error('No active workspace');
+
+      const endDate = new Date();
+      const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const endDateIso = endDate.toISOString();
+      const campaignPageSize = 1000;
+      let campaignOffset = 0;
+      let hasMoreCampaigns = true;
+      const campaignIds: string[] = [];
+      while (hasMoreCampaigns) {
+        const { data: campaigns, error: campaignsError } = await supabase
+          .from('campaigns')
+          .select('id')
+          .eq('workspace_id', wsId)
+          .is('deleted_at', null)
+          .order('id', { ascending: true })
+          .range(campaignOffset, campaignOffset + campaignPageSize - 1);
+        if (campaignsError) throw campaignsError;
+
+        const rows = campaigns ?? [];
+        campaignIds.push(...rows.map(campaign => campaign.id));
+        hasMoreCampaigns = rows.length === campaignPageSize;
+        campaignOffset += campaignPageSize;
+      }
+
+      if (campaignIds.length === 0) {
+        return { totalViews: 0, totalRevenue: 0, totalLikes: 0, totalShares: 0 };
+      }
+
+      const campaignBatchSize = 100;
+      const pageSize = 1000;
+      let totalViews = 0;
+      let totalRevenue = 0;
+      let totalLikes = 0;
+      let totalShares = 0;
+
+      for (let campaignIndex = 0; campaignIndex < campaignIds.length; campaignIndex += campaignBatchSize) {
+        const campaignBatch = campaignIds.slice(campaignIndex, campaignIndex + campaignBatchSize);
+        let offset = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from('analytics')
+            .select('id, views, likes, shares, earnings')
+            .in('campaign_id', campaignBatch)
+            .gte('recorded_at', startDate)
+            .lte('recorded_at', endDateIso)
+            .order('recorded_at', { ascending: true })
+            .order('id', { ascending: true })
+            .range(offset, offset + pageSize - 1);
+          if (error) throw error;
+
+          const rows = data ?? [];
+          totalViews += rows.reduce((sum, row) => sum + (row.views ?? 0), 0);
+          totalRevenue += rows.reduce((sum, row) => sum + (row.earnings ?? 0), 0);
+          totalLikes += rows.reduce((sum, row) => sum + (row.likes ?? 0), 0);
+          totalShares += rows.reduce((sum, row) => sum + (row.shares ?? 0), 0);
+
+          hasMore = rows.length === pageSize;
+          offset += pageSize;
+        }
+      }
+
+      return { totalViews, totalRevenue, totalLikes, totalShares };
     },
     enabled: !!wsId,
   });
 }
-
-

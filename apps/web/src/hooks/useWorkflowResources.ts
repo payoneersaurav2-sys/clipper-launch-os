@@ -44,3 +44,24 @@ export function useWorkspaceKnowledge() {
     },
   });
 }
+
+export function useWorkspaceKnowledgeExists() {
+  const { activeWorkspace } = useWorkspaceStore();
+  const workspaceId = activeWorkspace?.id;
+
+  return useQuery({
+    queryKey: ['workspace-knowledge-exists', workspaceId],
+    enabled: Boolean(workspaceId),
+    queryFn: async (): Promise<boolean> => {
+      if (!workspaceId) throw new Error('No active workspace');
+      const { data, error } = await supabase
+        .from('knowledge_items')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .is('deleted_at', null)
+        .limit(1);
+      if (error) throw error;
+      return Boolean(data?.length);
+    },
+  });
+}
