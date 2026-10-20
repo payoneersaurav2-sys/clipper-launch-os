@@ -195,7 +195,7 @@ test('failed subscription updates stay retryable until processing succeeds', asy
     const userId = '40112e30-af17-494a-99ac-b2ff36c17ad3';
     const completedEvents = new Set<string>();
     const userUpdates: Record<string, unknown>[] = [];
-    let failNextProfileUpdate = true;
+    let failNextCreditGrant = true;
     let ledgerInsertCount = 0;
 
     globalThis.fetch = async (input, init) => {
@@ -224,16 +224,16 @@ test('failed subscription updates stay retryable until processing succeeds', asy
       }
       if (url.pathname.endsWith('/users') && method === 'PATCH') {
         userUpdates.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
-        if (failNextProfileUpdate) {
-          failNextProfileUpdate = false;
+        return new Response(null, { status: 204 });
+      }
+      if (url.pathname.endsWith('/rpc/grant_creator_os_subscription_credits') && method === 'POST') {
+        if (failNextCreditGrant) {
+          failNextCreditGrant = false;
           return new Response(JSON.stringify({ code: 'XX000', message: 'Temporary database error' }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
           });
         }
-        return new Response(null, { status: 204 });
-      }
-      if (url.pathname.endsWith('/rpc/grant_creator_os_subscription_credits') && method === 'POST') {
         return new Response('null', { status: 200 });
       }
 
@@ -285,10 +285,13 @@ test('failed subscription updates stay retryable until processing succeeds', asy
   });
 });
 
-test('verified webhook cannot use client-controlled custom data to change another users entitlements', async () => {
+test('unknown Paddle prices are not acknowledged as processed subscription events', async () => {
   await withWebhookEnvironment(async () => {
     const originalFetch = globalThis.fetch;
+    const userId = '40112e30-af17-494a-99ac-b2ff36c17ad3';
     const userUpdates: Record<string, unknown>[] = [];
+    let ledgerInsertCount = 0;
+
     globalThis.fetch = async (input, init) => {
       const url = new URL(String(input));
       const method = init?.method ?? 'GET';
@@ -296,6 +299,72 @@ test('verified webhook cannot use client-controlled custom data to change anothe
         return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       if (url.pathname.endsWith('/paddle_webhook_events') && method === 'POST') {
+        ledgerInsertCount += 1;
+        return new Response(null, { status: 201 });
+      }
+      if (url.pathname.endsWith('/users') && method === 'GET') {
+        if (url.searchParams.has('id')) {
+          return new Response(JSON.stringify({ id: userId, paddle_customer_id: null }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (url.pathname.endsWith('/users') && method === 'PATCH') {
+        userUpdates.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
+        return new Response(null, { status: 204 });
+      }
+      throw new Error(`Unexpected Supabase request: ${method} ${url.pathname}`);
+    };
+
+    const bindingSecret = await getPaddleUserBindingSecret();
+    assert.ok(bindingSecret);
+    const userBinding = await signPaddleUserBinding(userId, bindingSecret);
+    const body = JSON.stringify({
+      event_id: 'evt_test_unknown_price',
+      notification_id: 'ntf_test_unknown_price',
+      event_type: 'subscription.created',
+      occurred_at: '2026-10-21T00:00:00Z',
+      data: {
+        id: 'sub_test_unknown_price',
+        customer_id: 'ctm_test_unknown_price',
+        status: 'active',
+        custom_data: { userId, userBinding },
+        items: [{ price: { id: 'pri_not_configured' } }],
+        billing_cycle: { interval: 'month', frequency: 1 },
+      },
+    });
+
+    try {
+      const response = await handler(new Request('https://local.test/api/webhook/paddle', {
+        method: 'POST',
+        headers: { 'paddle-signature': paddleSignature(body, 'pdl_ntfset_test_secret_with_at_least_32_chars') },
+        body,
+      }));
+
+      assert.equal(response.status, 500);
+      assert.equal(userUpdates.length, 0);
+      assert.equal(ledgerInsertCount, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+});
+
+test('unbound subscription events stay retryable without changing user entitlements', async () => {
+  await withWebhookEnvironment(async () => {
+    const originalFetch = globalThis.fetch;
+    const userUpdates: Record<string, unknown>[] = [];
+    let ledgerInsertCount = 0;
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(String(input));
+      const method = init?.method ?? 'GET';
+      if (url.pathname.endsWith('/paddle_webhook_events') && method === 'GET') {
+        return new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
+      }
+      if (url.pathname.endsWith('/paddle_webhook_events') && method === 'POST') {
+        ledgerInsertCount += 1;
         return new Response(null, { status: 201 });
       }
       if (url.pathname.endsWith('/users') && method === 'GET') {
@@ -331,8 +400,9 @@ test('verified webhook cannot use client-controlled custom data to change anothe
         body,
       }));
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 500);
       assert.equal(userUpdates.length, 0);
+      assert.equal(ledgerInsertCount, 0);
     } finally {
       globalThis.fetch = originalFetch;
     }

@@ -22,6 +22,20 @@ const money = new Intl.NumberFormat('en-US', {
 /** How long to wait for `checkout.loaded` before surfacing a helpful error. */
 const PADDLE_LOAD_TIMEOUT_MS = 12_000;
 
+async function fetchPaddleCustomData(accessToken?: string): Promise<Record<string, string>> {
+  if (!accessToken) throw new Error('Sign in again before starting checkout.');
+
+  const response = await fetch('/api/paddle-user-binding', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const payload = await response.json() as { customData?: Record<string, string>; error?: string };
+  if (!response.ok || !payload.customData) {
+    throw new Error(payload.error || 'Could not verify the account for checkout.');
+  }
+  return payload.customData;
+}
+
 export function PaddleCheckoutModal() {
   const navigate = useNavigate();
   const {
@@ -34,7 +48,7 @@ export function PaddleCheckoutModal() {
     setPlanId,
   } = useCheckoutStore();
 
-  const { user, subscriptionTier, membershipStatus } = useAuthStore();
+  const { user, session, subscriptionTier, membershipStatus } = useAuthStore();
   const { data: entitlements } = useEntitlements();
 
   const [isLoadingPaddle, setIsLoadingPaddle] = useState(true);
@@ -68,6 +82,7 @@ export function PaddleCheckoutModal() {
   const currentActiveTier = entitlements?.tier ?? (subscriptionTier as PlanTier) ?? 'free';
   const isAlreadyOnThisPlan =
     currentActiveTier === planId &&
+    entitlements?.status === 'active' &&
     (membershipStatus === 'active' || membershipStatus === 'trialing');
 
   // Plan limits for the benefit list
@@ -115,7 +130,7 @@ export function PaddleCheckoutModal() {
         setIsSuccess(true);
         setTimeout(() => {
           closeCheckout();
-          navigate('/checkout/complete');
+          navigate(`/checkout/complete?plan=${encodeURIComponent(planId)}`);
         }, 1200);
       } else if (event.name === 'checkout.closed') {
         closeCheckout();
@@ -154,9 +169,12 @@ export function PaddleCheckoutModal() {
           return;
         }
 
+        const customData = await fetchPaddleCustomData(session?.access_token);
+        if (!isMounted) return;
+
         paddle.Checkout.open({
           items: [{ priceId, quantity: 1 }],
-          customData: user?.id ? { userId: user.id } : undefined,
+          customData,
           customer: user?.email ? { email: user.email } : undefined,
           settings: {
             displayMode: 'inline',
@@ -167,7 +185,7 @@ export function PaddleCheckoutModal() {
             frameTarget: 'paddle-checkout-frame',
             frameInitialHeight: 460,
             frameStyle: 'width: 100%; min-height: 460px; background-color: transparent; border: none;',
-            successUrl: `${window.location.origin}/checkout/complete`,
+            successUrl: `${window.location.origin}/checkout/complete?plan=${encodeURIComponent(planId)}`,
           },
         });
 
@@ -205,7 +223,7 @@ export function PaddleCheckoutModal() {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, planId, billing, customPriceId, isAlreadyOnThisPlan]);
+  }, [isOpen, planId, billing, customPriceId, isAlreadyOnThisPlan, session?.access_token]);
 
   const handleCopyTestCard = () => {
     navigator.clipboard.writeText('4242424242424242');
@@ -213,7 +231,7 @@ export function PaddleCheckoutModal() {
     setTimeout(() => setCopiedCard(false), 2200);
   };
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setCheckoutError(null);
     setIsLoadingPaddle(true);
     setIsPaddleLoaded(false);
@@ -222,26 +240,33 @@ export function PaddleCheckoutModal() {
     if (paddle) {
       const priceId = customPriceId || currentPlan.checkout[billing].paddlePriceId;
       if (priceId) {
-        paddle.Checkout.open({
-          items: [{ priceId, quantity: 1 }],
-          customData: user?.id ? { userId: user.id } : undefined,
-          customer: user?.email ? { email: user.email } : undefined,
-          settings: {
-            displayMode: 'inline',
-            variant: 'one-page',
-            theme: 'dark',
-            locale: 'en',
-            frameTarget: 'paddle-checkout-frame',
-            frameInitialHeight: 460,
-            frameStyle: 'width: 100%; min-height: 460px; background-color: transparent; border: none;',
-            successUrl: `${window.location.origin}/checkout/complete`,
-          },
-        });
-        loadTimeoutRef.current = setTimeout(() => {
-          if (isPaddleLoaded) return;
-          setCheckoutError('Checkout timed out. Please try again or contact support.');
+        try {
+          const customData = await fetchPaddleCustomData(session?.access_token);
+          paddle.Checkout.open({
+            items: [{ priceId, quantity: 1 }],
+            customData,
+            customer: user?.email ? { email: user.email } : undefined,
+            settings: {
+              displayMode: 'inline',
+              variant: 'one-page',
+              theme: 'dark',
+              locale: 'en',
+              allowLogout: false,
+              frameTarget: 'paddle-checkout-frame',
+              frameInitialHeight: 460,
+              frameStyle: 'width: 100%; min-height: 460px; background-color: transparent; border: none;',
+              successUrl: `${window.location.origin}/checkout/complete?plan=${encodeURIComponent(planId)}`,
+            },
+          });
+          loadTimeoutRef.current = setTimeout(() => {
+            if (isPaddleLoaded) return;
+            setCheckoutError('Checkout timed out. Please try again or contact support.');
+            setIsLoadingPaddle(false);
+          }, PADDLE_LOAD_TIMEOUT_MS);
+        } catch (error) {
+          setCheckoutError(error instanceof Error ? error.message : 'Could not verify the account for checkout.');
           setIsLoadingPaddle(false);
-        }, PADDLE_LOAD_TIMEOUT_MS);
+        }
       }
     }
   };

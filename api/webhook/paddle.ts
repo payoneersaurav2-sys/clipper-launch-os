@@ -317,16 +317,14 @@ async function handleSubscriptionUpsert(
     customData,
   );
   if (!userId) {
-    console.warn('[paddle-webhook] Subscription identity could not be securely linked; no entitlement changes applied');
-    return;
+    throw new Error('Subscription identity could not be securely linked');
   }
 
   // Resolve tier from price.
   const priceId = items?.[0]?.price?.id;
   const tier    = priceId ? tierFromPriceId(priceId) : null;
   if (!tier) {
-    console.warn(`[paddle-webhook] Unknown priceId ${priceId} — cannot map to tier`);
-    return;
+    throw new Error(`Unknown Paddle price ID ${priceId ?? '(missing)'}; cannot map subscription to a plan`);
   }
 
   const membershipStatus = toMembershipStatus(status ?? '');
@@ -358,24 +356,21 @@ async function handleSubscriptionUpsert(
   // When the membership is active or trialing and we resolved a mapped tier, grant
   // subscription credits according to the plan limits.
   if (['active', 'trialing'].includes(membershipStatus) && tier) {
-    try {
-      const billingEnd =
-        (sub.currentBillingPeriod as any)?.endsAt ||
-        (sub.current_billing_period as any)?.ends_at ||
-        sub.nextBilledAt ||
-        sub.next_billed_at ||
-        null;
+    const billingEnd =
+      (sub.currentBillingPeriod as any)?.endsAt ||
+      (sub.current_billing_period as any)?.ends_at ||
+      sub.nextBilledAt ||
+      sub.next_billed_at ||
+      null;
 
-      await supabase.rpc('grant_creator_os_subscription_credits', {
-        p_user_id: userId,
-        p_tier: tier,
-        p_membership_id: paddleSubscriptionId || null,
-        p_period_end: billingEnd,
-      });
-      console.log(`[paddle-webhook] Granted subscription credits for user ${userId} (tier=${tier})`);
-    } catch (creditErr) {
-      console.error('[paddle-webhook] Failed to grant subscription credits:', creditErr);
-    }
+    const { error: creditError } = await supabase.rpc('grant_creator_os_subscription_credits', {
+      p_user_id: userId,
+      p_tier: tier,
+      p_membership_id: paddleSubscriptionId,
+      p_period_end: billingEnd,
+    });
+    if (creditError) throw creditError;
+    console.log(`[paddle-webhook] Granted subscription credits for user ${userId} (tier=${tier})`);
   }
 }
 
