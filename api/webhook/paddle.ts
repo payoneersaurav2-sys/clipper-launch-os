@@ -174,28 +174,35 @@ function tierFromPriceId(priceId: string): string | null {
 
 // ─── handler ──────────────────────────────────────────────────────────────────
 
+function webhookResponse(body: string, status: number): Response {
+  return new Response(body, {
+    status,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return webhookResponse('Method Not Allowed', 405);
   }
 
   const env = environment();
   const configValidation = validatePaddleServerConfig(env);
   if (!configValidation.ok) {
     console.error('[paddle-webhook] Invalid Paddle configuration:', configValidation.errors.join(' '));
-    return new Response('Server misconfiguration', { status: 500 });
+    return webhookResponse('Server misconfiguration', 500);
   }
 
   const secret = env.PADDLE_NOTIFICATION_WEBHOOK_SECRET;
   const apiKey = env.PADDLE_API_KEY;
   if (!secret || !apiKey) {
     console.error('[paddle-webhook] Missing PADDLE_NOTIFICATION_WEBHOOK_SECRET or PADDLE_API_KEY');
-    return new Response('Server misconfiguration', { status: 500 });
+    return webhookResponse('Server misconfiguration', 500);
   }
 
   const signature = req.headers.get('paddle-signature');
   if (!signature) {
-    return new Response('Missing paddle-signature header', { status: 400 });
+    return webhookResponse('Missing paddle-signature header', 400);
   }
 
   // ── 0. Live IP allowlist verification ─────────────────────────────────────
@@ -211,27 +218,33 @@ export default async function handler(req: Request): Promise<Response> {
         const isAllowed = allowedCidrs.some((cidr) => ipMatchesCidr(clientIp, cidr));
         if (!isAllowed) {
           console.warn('[paddle-webhook] Unauthorized delivery attempt from source IP: ' + clientIp);
-          return new Response('Forbidden: IP not allowlisted', { status: 403 });
+          return webhookResponse('Forbidden: IP not allowlisted', 403);
         }
       }
     }
   }
 
 
-  const rawBody = await req.text();
+  let rawBody: string;
+  try {
+    rawBody = await req.text();
+  } catch (err) {
+    console.error('[paddle-webhook] Failed to read request body:', err);
+    return webhookResponse('Invalid request body', 400);
+  }
 
   // ── 1. Signature verification ──────────────────────────────────────────────
-  const paddle = new Paddle(apiKey, { environment: getPaddleEnv() });
   let event: any;
   try {
+    const paddle = new Paddle(apiKey, { environment: getPaddleEnv() });
     event = await paddle.webhooks.unmarshal(rawBody, secret, signature);
   } catch (err) {
     console.error('[paddle-webhook] Signature verification failed:', err);
-    return new Response('Invalid signature', { status: 400 });
+    return webhookResponse('Invalid signature', 400);
   }
 
   if (!event) {
-    return new Response('Invalid event payload', { status: 400 });
+    return webhookResponse('Invalid event payload', 400);
   }
 
   const eventId   = (event as any).eventId ?? (event as any).notificationId ?? (event as any).id ?? '';
@@ -239,23 +252,38 @@ export default async function handler(req: Request): Promise<Response> {
 
   console.log(`[paddle-webhook] Processing verified event: ${eventType} (id: ${eventId})`);
 
-  const supabase = getSupabaseAdmin();
+  let supabase: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    supabase = getSupabaseAdmin();
+  } catch (err) {
+    console.error('[paddle-webhook] Failed to initialize Supabase:', err);
+    return webhookResponse('Server misconfiguration', 500);
+  }
 
   // ── 2. Idempotency check ───────────────────────────────────────────────────
-  const { data: existing, error: lookupError } = await supabase
-    .from('paddle_webhook_events')
-    .select('id')
-    .eq('id', eventId)
-    .maybeSingle();
+  let existing: { id: string } | null;
+  let lookupError: { message: string } | null;
+  try {
+    const result = await supabase
+      .from('paddle_webhook_events')
+      .select('id')
+      .eq('id', eventId)
+      .maybeSingle();
+    existing = result.data;
+    lookupError = result.error;
+  } catch (err) {
+    console.error('[paddle-webhook] Failed to check event idempotency:', err);
+    return webhookResponse('Unable to verify event idempotency', 500);
+  }
 
   if (lookupError) {
     console.error('[paddle-webhook] Failed to check event idempotency:', lookupError);
-    return new Response('Unable to verify event idempotency', { status: 500 });
+    return webhookResponse('Unable to verify event idempotency', 500);
   }
 
   if (existing) {
     console.log(`[paddle-webhook] Duplicate event ${eventId} — skipping`);
-    return new Response('OK (duplicate)', { status: 200 });
+    return webhookResponse('OK (duplicate)', 200);
   }
 
   // ── 3. Route event ─────────────────────────────────────────────────────────
@@ -286,10 +314,10 @@ export default async function handler(req: Request): Promise<Response> {
     if (ledgerError && ledgerError.code !== '23505') throw ledgerError;
   } catch (err) {
     console.error(`[paddle-webhook] Error processing ${eventType}:`, err);
-    return new Response('Internal processing error', { status: 500 });
+    return webhookResponse('Internal processing error', 500);
   }
 
-  return new Response('OK', { status: 200 });
+  return webhookResponse('OK', 200);
 }
 
 // ─── event handlers ───────────────────────────────────────────────────────────

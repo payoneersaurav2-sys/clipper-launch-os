@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   ArrowRight,
@@ -65,6 +66,44 @@ function ReviewCard() {
 }
 
 function HookEngineDemo() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [isVideoRequested, setIsVideoRequested] = useState(false)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(true)
+
+  useEffect(() => {
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const updateMotionPreference = () => setPrefersReducedMotion(motionPreference.matches)
+    updateMotionPreference()
+    motionPreference.addEventListener('change', updateMotionPreference)
+    return () => motionPreference.removeEventListener('change', updateMotionPreference)
+  }, [])
+
+  useEffect(() => {
+    if (prefersReducedMotion || isVideoRequested) return
+
+    const container = containerRef.current
+    if (!container) return
+    if (!('IntersectionObserver' in window)) {
+      setIsVideoRequested(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVideoRequested(true)
+        observer.disconnect()
+      }
+    }, { rootMargin: '320px' })
+
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [isVideoRequested, prefersReducedMotion])
+
+  useEffect(() => {
+    if (prefersReducedMotion) videoRef.current?.pause()
+  }, [prefersReducedMotion])
+
   return (
     <section id="hook-engine-demo" className="relative overflow-hidden bg-[#030303] px-4 py-20 sm:px-6 sm:py-28 lg:py-32 border-y border-white/[0.04]">
       <div className="pointer-events-none absolute left-1/2 top-1/4 -z-10 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[600px] rounded-full bg-primary/10 blur-[100px]" />
@@ -95,20 +134,42 @@ function HookEngineDemo() {
 
           <div className="relative">
             <div className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#0A0A0A] shadow-2xl aspect-video w-full group">
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-white/[0.02] to-transparent">
-                <Play className="h-12 w-12 text-white/20 mb-4" />
-                <p className="text-white/40 text-sm font-medium">Hook Engine Demo Recording</p>
+              <div ref={containerRef} className="absolute inset-0">
+                {isVideoRequested ? (
+                  <video
+                    ref={videoRef}
+                    src="/demo/hook-engine-demo.mp4"
+                    poster="/demo/hook-engine-demo-poster-v1.svg"
+                    className="absolute inset-0 z-10 h-full w-full object-cover"
+                    autoPlay={!prefersReducedMotion}
+                    controls
+                    muted
+                    loop={!prefersReducedMotion}
+                    playsInline
+                    preload={prefersReducedMotion ? 'none' : 'auto'}
+                    aria-label="Hook Engine analyzing and rewriting a hook"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoRequested(true)}
+                    className="absolute inset-0 z-10 flex items-end justify-start p-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                    aria-label="Load the Hook Engine demo video"
+                  >
+                    <img
+                      src="/demo/hook-engine-demo-poster-v1.svg"
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover"
+                      width={1280}
+                      height={720}
+                    />
+                    <span className="relative rounded-full border border-white/15 bg-black/70 px-4 py-2 text-sm font-medium text-white">
+                      <Play aria-hidden="true" className="mr-2 inline h-4 w-4" />
+                      Load demo
+                    </span>
+                  </button>
+                )}
               </div>
-
-              <video 
-                src="/demo/hook-engine-demo.mp4" 
-                className="absolute inset-0 w-full h-full object-cover z-10"
-                autoPlay 
-                muted 
-                loop 
-                playsInline
-                aria-label="Hook Engine analyzing and rewriting a hook"
-              />
               
               <div className="absolute inset-0 rounded-[24px] ring-1 ring-inset ring-white/10 pointer-events-none z-20" />
             </div>
@@ -158,8 +219,6 @@ const COMPARISON = [
     genericWarn: true,
   },
 ]
-
-import { useState } from 'react'
 
 function FAQItem({ faq, isOpen, onClick }: { faq: typeof HOME_FAQS[0], isOpen: boolean, onClick: () => void }) {
   return (

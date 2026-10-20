@@ -11,6 +11,7 @@ const envKeys = [
   'PADDLE_CUSTOM_DATA_SECRET',
   'PADDLE_PRICE_CREATOR_MONTHLY',
   'SUPABASE_URL',
+  'VITE_SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
 ] as const;
 
@@ -62,10 +63,68 @@ test('Paddle webhook rejects invalid signatures before contacting Supabase', asy
       }));
 
       assert.equal(response.status, 400);
+      assert.equal(response.headers.get('Cache-Control'), 'no-store');
       assert.equal(fetchCount, 0);
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+});
+
+test('Paddle webhook responses are not cacheable on method, configuration, and signature errors', async () => {
+  await withWebhookEnvironment(async () => {
+    const wrongMethod = await handler(new Request('https://local.test/api/webhook/paddle', {
+      method: 'GET',
+    }));
+    assert.equal(wrongMethod.status, 405);
+    assert.equal(wrongMethod.headers.get('Cache-Control'), 'no-store');
+
+    const missingSignature = await handler(new Request('https://local.test/api/webhook/paddle', {
+      method: 'POST',
+    }));
+    assert.equal(missingSignature.status, 400);
+    assert.equal(missingSignature.headers.get('Cache-Control'), 'no-store');
+
+    delete process.env.PADDLE_API_KEY;
+    const badConfiguration = await handler(new Request('https://local.test/api/webhook/paddle', {
+      method: 'POST',
+    }));
+    assert.equal(badConfiguration.status, 500);
+    assert.equal(badConfiguration.headers.get('Cache-Control'), 'no-store');
+  });
+});
+
+test('Paddle webhook returns a no-store error when Supabase server configuration is missing', async () => {
+  await withWebhookEnvironment(async () => {
+    delete process.env.SUPABASE_URL;
+    delete process.env.VITE_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    const body = JSON.stringify({
+      event_id: 'evt_missing_supabase_config',
+      event_type: 'subscription.created',
+      occurred_at: '2026-10-21T00:00:00Z',
+      data: {
+        id: 'sub_missing_supabase_config',
+        customer_id: 'ctm_missing_supabase_config',
+        status: 'active',
+        custom_data: {},
+        items: [{ price: { id: 'pri_creator_test' } }],
+        billing_cycle: { interval: 'month', frequency: 1 },
+        current_billing_period: {
+          starts_at: '2026-10-21T00:00:00Z',
+          ends_at: '2099-01-01T00:00:00Z',
+        },
+      },
+    });
+    const response = await handler(new Request('https://local.test/api/webhook/paddle', {
+      method: 'POST',
+      headers: { 'paddle-signature': paddleSignature(body, process.env.PADDLE_NOTIFICATION_WEBHOOK_SECRET!) },
+      body,
+    }));
+
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store');
   });
 });
 
@@ -178,6 +237,7 @@ test('verified Paddle subscription events require signed account binding and rec
       }));
 
       assert.equal(response.status, 200);
+      assert.equal(response.headers.get('Cache-Control'), 'no-store');
       assert.equal(userUpdates.length, 1);
       assert.equal(userUpdates[0].billing_provider, 'paddle');
       assert.equal(userUpdates[0].paddle_subscription_id, 'sub_test_verified');
@@ -265,6 +325,7 @@ test('failed subscription updates stay retryable until processing succeeds', asy
       }));
 
       assert.equal(firstResponse.status, 500);
+      assert.equal(firstResponse.headers.get('Cache-Control'), 'no-store');
       assert.equal(completedEvents.has(eventId), false);
       assert.equal(ledgerInsertCount, 0);
 
@@ -275,6 +336,7 @@ test('failed subscription updates stay retryable until processing succeeds', asy
       }));
 
       assert.equal(retryResponse.status, 200);
+      assert.equal(retryResponse.headers.get('Cache-Control'), 'no-store');
       assert.equal(userUpdates.length, 2);
       assert.equal(userUpdates[1].membership_status, 'trialing');
       assert.equal(completedEvents.has(eventId), true);

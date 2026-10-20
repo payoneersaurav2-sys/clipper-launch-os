@@ -4,21 +4,21 @@ export const SITE_DESCRIPTION =
   'More than just a Trello alternative for video production. Score viral hooks, automate TikTok captions, and manage short-form campaigns from a single dashboard.'
 
 export const WORDMARK_URL =
-  'https://creator-os.online/brand/creator-os-wordmark-optimized.webp'
+  'https://www.creator-os.online/brand/creator-os-wordmark-optimized.webp'
 
 export const CONTACT_EMAIL = 'sauravwhop@gmail.com'
-export const PRODUCT_URL = 'https://creator-os.online'
+export const PRODUCT_URL = 'https://www.creator-os.online'
 export const APP_URL = 'https://whop.com/forgeos/exp_sZcNr5kIjUQW9e/app/'
-export const SIGN_IN_URL = 'https://creator-os.online/login'
-export const START_URL = 'https://creator-os.online/login?mode=signup'
+export const SIGN_IN_URL = 'https://www.creator-os.online/login'
+export const START_URL = 'https://www.creator-os.online/login?mode=signup'
 
 // External Vercel site page links — all navigation redirects here
-export const PRICING_URL = 'https://creator-os.online/pricing'
-export const FAQ_URL = 'https://creator-os.online/faq'
-export const FEATURES_URL = 'https://creator-os.online/#features'
-export const FOR_AGENCIES_URL = 'https://creator-os.online/for-agencies'
-export const CHANGELOG_URL = 'https://creator-os.online/changelog'
-export const TERMS_URL = 'https://creator-os.online/terms'
+export const PRICING_URL = 'https://www.creator-os.online/pricing'
+export const FAQ_URL = 'https://www.creator-os.online/faq'
+export const FEATURES_URL = 'https://www.creator-os.online/#features'
+export const FOR_AGENCIES_URL = 'https://www.creator-os.online/for-agencies'
+export const CHANGELOG_URL = 'https://www.creator-os.online/changelog'
+export const TERMS_URL = 'https://www.creator-os.online/terms'
 
 export const PLANS = [
   {

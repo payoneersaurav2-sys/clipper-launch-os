@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" fill="none">
+  <defs>
+    <linearGradient id="background" x1="116" y1="40" x2="1132" y2="732" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#171225"/>
+      <stop offset=".52" stop-color="#0A0A0A"/>
+      <stop offset="1" stop-color="#101827"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(0 464 -616 0 1004 92)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="432" y1="188" x2="838" y2="568" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1B1B24"/>
+      <stop offset="1" stop-color="#101014"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#background)" d="M0 0h1280v720H0z"/>
+  <path fill="url(#glow)" d="M0 0h1280v720H0z"/>
+  <circle cx="1004" cy="126" r="252" stroke="#A78BFA" stroke-opacity=".12"/>
+  <circle cx="1004" cy="126" r="180" stroke="#A78BFA" stroke-opacity=".1"/>
+  <rect x="170" y="108" width="940" height="504" rx="28" fill="#080808" fill-opacity=".82" stroke="#fff" stroke-opacity=".1"/>
+  <text x="222" y="166" fill="#A78BFA" font-family="Arial,sans-serif" font-size="17" font-weight="700" letter-spacing="3">CREATOR OS / HOOK ENGINE</text>
+  <rect x="222" y="197" width="836" height="1" fill="#fff" fill-opacity=".1"/>
+  <rect x="222" y="230" width="490" height="316" rx="18" fill="url(#card)" stroke="#fff" stroke-opacity=".08"/>
+  <text x="254" y="277" fill="#A1A1AA" font-family="Arial,sans-serif" font-size="15" font-weight="600" letter-spacing="1.5">YOUR OPENING HOOK</text>
+  <text x="254" y="328" fill="#FAFAFA" font-family="Arial,sans-serif" font-size="25" font-weight="600">Most creators lose viewers</text>
+  <text x="254" y="363" fill="#FAFAFA" font-family="Arial,sans-serif" font-size="25" font-weight="600">before the video even starts.</text>
+  <rect x="254" y="395" width="408" height="1" fill="#fff" fill-opacity=".1"/>
+  <text x="254" y="433" fill="#A1A1AA" font-family="Arial,sans-serif" font-size="14">CLARITY</text>
+  <rect x="254" y="450" width="294" height="7" rx="3.5" fill="#27232F"/>
+  <rect x="254" y="450" width="236" height="7" rx="3.5" fill="#7C3AED"/>
+  <text x="254" y="493" fill="#A1A1AA" font-family="Arial,sans-serif" font-size="14">RETENTION POTENTIAL</text>
+  <rect x="254" y="510" width="294" height="7" rx="3.5" fill="#27232F"/>
+  <rect x="254" y="510" width="258" height="7" rx="3.5" fill="#A78BFA"/>
+  <rect x="742" y="230" width="316" height="316" rx="18" fill="#111014" stroke="#7C3AED" stroke-opacity=".35"/>
+  <circle cx="900" cy="309" r="35" fill="#7C3AED" fill-opacity=".18"/>
+  <path d="m895 293 26 16-26 16v-32Z" fill="#C4B5FD"/>
+  <text x="774" y="384" fill="#A78BFA" font-family="Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="1.5">STRONGER VERSION</text>
+  <text x="774" y="422" fill="#FAFAFA" font-family="Arial,sans-serif" font-size="19" font-weight="600">Keep viewers watching</text>
+  <text x="774" y="450" fill="#FAFAFA" font-family="Arial,sans-serif" font-size="19" font-weight="600">with a sharper first line.</text>
+  <rect x="774" y="478" width="148" height="36" rx="18" fill="#7C3AED" fill-opacity=".2"/>
+  <text x="793" y="501" fill="#C4B5FD" font-family="Arial,sans-serif" font-size="13" font-weight="600">AI REFINEMENT</text>
+</svg>
