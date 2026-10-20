@@ -7,11 +7,13 @@ import { supabase } from '@/lib/supabase';
 import BrandMark from '@/components/BrandMark';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { getPostAuthDestination } from '@/lib/auth-redirect';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const errorMsg = searchParams.get('error');
+  const postAuthDestination = getPostAuthDestination(searchParams.get('returnTo'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,7 +76,7 @@ export default function LoginPage() {
       }
       persistRememberPreference(rememberMe);
       setLoading(false);
-      navigate('/dashboard');
+      navigate(postAuthDestination, { replace: true });
       return;
     }
 
@@ -91,7 +93,7 @@ export default function LoginPage() {
     }
     persistRememberPreference(rememberMe);
     setLoading(false);
-    navigate('/dashboard');
+    navigate(postAuthDestination, { replace: true });
   };
 
 

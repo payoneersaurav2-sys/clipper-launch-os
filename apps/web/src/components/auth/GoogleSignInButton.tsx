@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Loader2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import { getPostAuthDestination } from '@/lib/auth-redirect';
 
 type GoogleSignInButtonProps = { onError: (message: string) => void; rememberMe?: boolean };
 
 /** Custom-branded Google sign-in button using Supabase OAuth redirect. */
 export function GoogleSignInButton({ onError, rememberMe = false }: GoogleSignInButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [searchParams] = useSearchParams();
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -19,7 +22,7 @@ export function GoogleSignInButton({ onError, rememberMe = false }: GoogleSignIn
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?returnTo=${encodeURIComponent(getPostAuthDestination(searchParams.get('returnTo')))}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

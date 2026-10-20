@@ -7,17 +7,78 @@
  *   PADDLE_API_KEY                    – sandbox: "pdl_sdbx_..."  |  live: "pdl_live_..."
  *   PADDLE_NOTIFICATION_WEBHOOK_SECRET – from Paddle dashboard > Notifications > destination secret
  *   SUPABASE_URL                      – your Supabase project URL
- *   SUPABASE_SERVICE_ROLE_KEY         – service-role key (server-only, never expose to browser)
+ *   SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY – server-only Supabase admin key
  *
  * Paddle docs: https://developer.paddle.com/webhooks/overview
  */
 
 import { Paddle, Environment, EventName } from '@paddle/paddle-node-sdk';
 import { createClient } from '@supabase/supabase-js';
+import { getPaddleUserBindingSecret, verifyPaddleUserBinding } from '../paddle-user-binding';
 
 export const config = { runtime: 'edge' };
 
 const environment = () => (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env ?? {};
+
+export function validatePaddleServerConfig(
+  env: Record<string, string | undefined> = environment(),
+): { ok: boolean; errors: string[] } {
+  const errors: string[] = [];
+  const mode = (env.PADDLE_ENV ?? 'sandbox').toLowerCase();
+  const apiKey = env.PADDLE_API_KEY ?? '';
+  const secret = env.PADDLE_NOTIFICATION_WEBHOOK_SECRET ?? '';
+
+  if (!['sandbox', 'production'].includes(mode)) {
+    errors.push('PADDLE_ENV must be "sandbox" or "production".');
+  }
+
+  if (!apiKey) {
+    errors.push('PADDLE_API_KEY is required.');
+  } else if (!/^pdl_(sdbx|live)_/.test(apiKey)) {
+    errors.push('PADDLE_API_KEY must use a Paddle sandbox or live key prefix.');
+  } else if (mode === 'sandbox' && apiKey.startsWith('pdl_live_')) {
+    errors.push('Sandbox mode cannot use a live Paddle API key.');
+  } else if (mode === 'production' && apiKey.startsWith('pdl_sdbx_')) {
+    errors.push('Production mode cannot use a sandbox Paddle API key.');
+  }
+
+  if (!secret) {
+    errors.push('PADDLE_NOTIFICATION_WEBHOOK_SECRET is required.');
+  }
+
+  const bindingSecret = env.PADDLE_CUSTOM_DATA_SECRET;
+  if (bindingSecret && bindingSecret.length < 32) {
+    errors.push('PADDLE_CUSTOM_DATA_SECRET must be at least 32 characters.');
+  } else if (!bindingSecret && secret.length < 32) {
+    errors.push('PADDLE_NOTIFICATION_WEBHOOK_SECRET must be at least 32 characters when PADDLE_CUSTOM_DATA_SECRET is not set.');
+  }
+
+  const pricePairs = [
+    ['PADDLE_PRICE_CREATOR_MONTHLY', 'VITE_PADDLE_PRICE_CREATOR_MONTHLY'],
+    ['PADDLE_PRICE_CREATOR_ANNUAL', 'VITE_PADDLE_PRICE_CREATOR_ANNUAL'],
+    ['PADDLE_PRICE_PRO_MONTHLY', 'VITE_PADDLE_PRICE_PRO_MONTHLY'],
+    ['PADDLE_PRICE_PRO_ANNUAL', 'VITE_PADDLE_PRICE_PRO_ANNUAL'],
+    ['PADDLE_PRICE_AGENCY_MONTHLY', 'VITE_PADDLE_PRICE_AGENCY_MONTHLY'],
+    ['PADDLE_PRICE_AGENCY_ANNUAL', 'VITE_PADDLE_PRICE_AGENCY_ANNUAL'],
+  ] as const;
+
+  for (const [serverKey, clientKey] of pricePairs) {
+    const serverValue = env[serverKey];
+    const clientValue = env[clientKey];
+
+    if (serverValue && !serverValue.startsWith('pri_')) {
+      errors.push(`${serverKey} must be a Paddle price ID starting with "pri_".`);
+    }
+    if (clientValue && !clientValue.startsWith('pri_')) {
+      errors.push(`${clientKey} must be a Paddle price ID starting with "pri_".`);
+    }
+    if (serverValue && clientValue && serverValue !== clientValue) {
+      errors.push(`${serverKey} and ${clientKey} must match to avoid sandbox/live mismatches.`);
+    }
+  }
+
+  return { ok: errors.length === 0, errors };
+}
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,15 +125,15 @@ function ipMatchesCidr(ip: string, cidr: string): boolean {
 function getPaddleEnv(): Environment {
   const env = environment();
   return (env.PADDLE_ENV ?? 'sandbox') === 'production'
-    ? Environment.Production
-    : Environment.Sandbox;
+    ? Environment.production
+    : Environment.sandbox;
 }
 
 function getSupabaseAdmin() {
   const env = environment();
   const url = env.SUPABASE_URL || env.VITE_SUPABASE_URL;
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+  const key = env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SECRET_KEY;
+  if (!url || !key) throw new Error('Missing SUPABASE_URL or Supabase server-side admin key');
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 
@@ -119,6 +180,12 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   const env = environment();
+  const configValidation = validatePaddleServerConfig(env);
+  if (!configValidation.ok) {
+    console.error('[paddle-webhook] Invalid Paddle configuration:', configValidation.errors.join(' '));
+    return new Response('Server misconfiguration', { status: 500 });
+  }
+
   const secret = env.PADDLE_NOTIFICATION_WEBHOOK_SECRET;
   const apiKey = env.PADDLE_API_KEY;
   if (!secret || !apiKey) {
@@ -133,7 +200,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   // ── 0. Live IP allowlist verification ─────────────────────────────────────
   // Enforced in production only (sandbox / dev tunnels bypass). Fetches dynamic live IPs from https://api.paddle.com/ips
-  if (getPaddleEnv() === Environment.Production) {
+  if (getPaddleEnv() === Environment.production) {
     const forwarded = req.headers.get('x-forwarded-for');
     const realIp = req.headers.get('x-real-ip');
     const clientIp = (forwarded ? forwarded.split(',')[0] : realIp)?.trim();
@@ -175,18 +242,21 @@ export default async function handler(req: Request): Promise<Response> {
   const supabase = getSupabaseAdmin();
 
   // ── 2. Idempotency check ───────────────────────────────────────────────────
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from('paddle_webhook_events')
     .select('id')
     .eq('id', eventId)
     .maybeSingle();
 
+  if (lookupError) {
+    console.error('[paddle-webhook] Failed to check event idempotency:', lookupError);
+    return new Response('Unable to verify event idempotency', { status: 500 });
+  }
+
   if (existing) {
     console.log(`[paddle-webhook] Duplicate event ${eventId} — skipping`);
     return new Response('OK (duplicate)', { status: 200 });
   }
-
-  await supabase.from('paddle_webhook_events').insert({ id: eventId, event_type: eventType });
 
   // ── 3. Route event ─────────────────────────────────────────────────────────
   try {
@@ -196,7 +266,10 @@ export default async function handler(req: Request): Promise<Response> {
       eventType === EventName.SubscriptionActivated ||
       eventType === 'subscription.created' ||
       eventType === 'subscription.updated' ||
-      eventType === 'subscription.activated'
+      eventType === 'subscription.activated' ||
+      eventType === 'subscription.trialing' ||
+      eventType === 'subscription.past_due' ||
+      eventType === 'subscription.resumed'
     ) {
       await handleSubscriptionUpsert(event, supabase);
     } else if (eventType === EventName.SubscriptionCanceled || eventType === 'subscription.canceled') {
@@ -205,9 +278,14 @@ export default async function handler(req: Request): Promise<Response> {
       await handleSubscriptionPaused(event, supabase);
     }
     // Other event types (transaction.*) are logged but not acted on yet.
+    // Record completion only after processing, so transient failures remain retryable.
+    const { error: ledgerError } = await supabase
+      .from('paddle_webhook_events')
+      .insert({ id: eventId, event_type: eventType });
+
+    if (ledgerError && ledgerError.code !== '23505') throw ledgerError;
   } catch (err) {
     console.error(`[paddle-webhook] Error processing ${eventType}:`, err);
-    // Return 500 so Paddle retries with backoff.
     return new Response('Internal processing error', { status: 500 });
   }
 
@@ -230,10 +308,16 @@ async function handleSubscriptionUpsert(
   const items               = sub.items                          as Array<{ price?: { id?: string } }> | undefined;
   const scheduledChange     = (sub.scheduledChange || sub.scheduled_change) as { action?: string; effectiveAt?: string; effective_at?: string } | null | undefined;
 
-  // Resolve userId from customData (passed at checkout time).
-  const userId = (customData?.userId || customData?.user_id) as string | undefined;
+  if (!paddleCustomerId || !paddleSubscriptionId) throw new Error('Missing Paddle customer or subscription ID');
+
+  const userId = await resolvePaddleUserId(
+    supabase,
+    paddleCustomerId,
+    paddleSubscriptionId,
+    customData,
+  );
   if (!userId) {
-    console.warn('[paddle-webhook] No userId in customData — cannot link subscription to user', customData);
+    console.warn('[paddle-webhook] Subscription identity could not be securely linked; no entitlement changes applied');
     return;
   }
 
@@ -257,11 +341,12 @@ async function handleSubscriptionUpsert(
   const { error } = await supabase
     .from('users')
     .update({
+      billing_provider:       'paddle',
       membership_status:       membershipStatus,
       subscription_tier:       tier,
       paddle_customer_id:      paddleCustomerId,
       paddle_subscription_id:  paddleSubscriptionId,
-      ...(expiresAt ? { membership_expires_at: expiresAt } : {}),
+      membership_expires_at:  expiresAt,
       entitlement_updated_at:  new Date().toISOString(),
     })
     .eq('id', userId);
@@ -299,17 +384,21 @@ async function handleSubscriptionCanceled(
   supabase: ReturnType<typeof getSupabaseAdmin>,
 ): Promise<void> {
   const sub       = (event as { data?: Record<string, unknown> }).data;
-  const customData = sub?.customData as Record<string, unknown> | undefined;
-  const userId    = customData?.userId as string | undefined;
+  const paddleSubscriptionId = (sub?.id || sub?.subscription_id) as string | undefined;
+  if (!paddleSubscriptionId) throw new Error('Missing Paddle subscription identity in cancellation event');
+  const userId = await findMappedPaddleUserId(supabase, paddleSubscriptionId);
   if (!userId) return;
 
   const { error } = await supabase
     .from('users')
     .update({
+      billing_provider:      'paddle',
       membership_status:      'inactive',
       entitlement_updated_at: new Date().toISOString(),
     })
-    .eq('id', userId);
+    .eq('id', userId)
+    .eq('billing_provider', 'paddle')
+    .eq('paddle_subscription_id', paddleSubscriptionId);
 
   if (error) throw error;
   console.log(`[paddle-webhook] User ${userId} subscription canceled → inactive`);
@@ -320,18 +409,98 @@ async function handleSubscriptionPaused(
   supabase: ReturnType<typeof getSupabaseAdmin>,
 ): Promise<void> {
   const sub       = (event as { data?: Record<string, unknown> }).data;
-  const customData = sub?.customData as Record<string, unknown> | undefined;
-  const userId    = customData?.userId as string | undefined;
+  const paddleSubscriptionId = (sub?.id || sub?.subscription_id) as string | undefined;
+  if (!paddleSubscriptionId) throw new Error('Missing Paddle subscription identity in pause event');
+  const userId = await findMappedPaddleUserId(supabase, paddleSubscriptionId);
   if (!userId) return;
 
   const { error } = await supabase
     .from('users')
     .update({
+      billing_provider:      'paddle',
       membership_status:      'inactive',
       entitlement_updated_at: new Date().toISOString(),
     })
-    .eq('id', userId);
+    .eq('id', userId)
+    .eq('billing_provider', 'paddle')
+    .eq('paddle_subscription_id', paddleSubscriptionId);
 
   if (error) throw error;
   console.log(`[paddle-webhook] User ${userId} subscription paused → inactive`);
+}
+
+async function findMappedPaddleUserId(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  paddleSubscriptionId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('billing_provider', 'paddle')
+    .eq('paddle_subscription_id', paddleSubscriptionId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+async function findMappedPaddleCustomerUserId(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  paddleCustomerId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('billing_provider', 'paddle')
+    .eq('paddle_customer_id', paddleCustomerId)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
+}
+
+async function resolvePaddleUserId(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  paddleCustomerId: string,
+  paddleSubscriptionId: string,
+  customData?: Record<string, unknown>,
+): Promise<string | null> {
+  const customUserId = (customData?.userId || customData?.user_id);
+  const binding = customData?.userBinding;
+  const secret = await getPaddleUserBindingSecret();
+  const signedUserId = typeof customUserId === 'string'
+    && typeof binding === 'string'
+    && secret
+    && await verifyPaddleUserBinding(customUserId, binding, secret)
+    ? customUserId
+    : null;
+
+  const [subscriptionOwner, customerOwner] = await Promise.all([
+    findMappedPaddleUserId(supabase, paddleSubscriptionId),
+    findMappedPaddleCustomerUserId(supabase, paddleCustomerId),
+  ]);
+  if (subscriptionOwner && customerOwner && subscriptionOwner !== customerOwner) {
+    throw new Error('Paddle subscription and customer map to different Creator OS users');
+  }
+
+  const mappedUserId = subscriptionOwner || customerOwner;
+  if (customUserId && mappedUserId && customUserId !== mappedUserId) {
+    console.warn('[paddle-webhook] Checkout identity conflicts with the existing Paddle customer mapping');
+    return null;
+  }
+  if (!signedUserId && !mappedUserId) return null;
+
+  const userId = signedUserId || mappedUserId;
+  if (!userId || (mappedUserId && mappedUserId !== userId)) return null;
+
+  const { data: profile, error } = await supabase
+    .from('users')
+    .select('id, paddle_customer_id')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  if (!profile || (profile.paddle_customer_id && profile.paddle_customer_id !== paddleCustomerId)) {
+    console.warn('[paddle-webhook] Paddle customer does not match the linked Creator OS account');
+    return null;
+  }
+
+  return userId;
 }

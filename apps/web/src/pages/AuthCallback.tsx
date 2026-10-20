@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { Loader2 } from 'lucide-react';
 import BrandMark from '@/components/BrandMark';
 import { trackEvent } from '@/lib/analytics';
+import { getPostAuthDestination } from '@/lib/auth-redirect';
 
 // Module-level flag — survives React Strict Mode's double-mount/unmount cycle.
 let exchangeInProgress = false;
@@ -26,7 +27,8 @@ export default function AuthCallback() {
     const oauthError = searchParams.get('error');
     if (oauthError) {
       exchangeInProgress = false;
-      navigate(`/login?error=${encodeURIComponent(searchParams.get('error_description') || oauthError)}`);
+      const returnTo = getPostAuthDestination(searchParams.get('returnTo'));
+      navigate(`/login?error=${encodeURIComponent(searchParams.get('error_description') || oauthError)}&returnTo=${encodeURIComponent(returnTo)}`);
       return;
     }
 
@@ -92,10 +94,11 @@ export default function AuthCallback() {
         }
 
         await syncSession(sessionToSync);
-        navigate(profile?.onboarding_complete ? '/dashboard' : '/onboarding');
+        navigate(profile?.onboarding_complete ? getPostAuthDestination(searchParams.get('returnTo')) : '/onboarding');
       } catch (err: unknown) {
         exchangeInProgress = false;
-        navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}`);
+        const returnTo = getPostAuthDestination(searchParams.get('returnTo'));
+        navigate(`/login?error=${encodeURIComponent(err instanceof Error ? err.message : 'Sign-in failed')}&returnTo=${encodeURIComponent(returnTo)}`);
       }
     })();
   }, [navigate, searchParams, syncSession]);
